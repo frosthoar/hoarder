@@ -10,6 +10,7 @@ import typing
 import rar_path
 from shared import SEVENZIP
 import hash_file
+
 logger = logging.getLogger("hoarder.rar_file")
 
 
@@ -118,7 +119,10 @@ class RarFile(hash_file.HashFile):
 
     def list_rar(self) -> list[dict[str, str]]:
         """Get an info list about this archive and its contents."""
-        logger.debug("Listing %(name)s, using password %(password)s", {"name": self.path.name, "password": self.password})
+        logger.debug(
+            "Listing %(name)s, using password %(password)s",
+            {"name": self.path.name, "password": self.password},
+        )
 
         command_line = [
             str(SEVENZIP),
@@ -144,7 +148,10 @@ class RarFile(hash_file.HashFile):
             if entry_dict:
                 ret.append(entry_dict)
 
-        logger.debug("Found %(count)d files in %(name)s", {"count": len(ret), "name": self.path.name})
+        logger.debug(
+            "Found %(count)d files in %(name)s",
+            {"count": len(ret), "name": self.path.name},
+        )
         return ret
 
     def get_crc32_slow(
@@ -162,7 +169,14 @@ class RarFile(hash_file.HashFile):
             self.path,
             entry_path,
         ]
-        logger.debug("Processing archive %(name)s with path %(entry_path)s using password %(password)s", {"name": self.path.name, "entry_path": entry_path, "password": self.password})
+        logger.debug(
+            "Processing archive %(name)s with path %(entry_path)s using password %(password)s",
+            {
+                "name": self.path.name,
+                "entry_path": entry_path,
+                "password": self.password,
+            },
+        )
 
         sub = subprocess.run(command_line, capture_output=True, check=True)
 
@@ -182,9 +196,15 @@ class RarFile(hash_file.HashFile):
         )
 
         if not crc_match:
-            logger.error("Failed to get CRC for %(name)s: %(entry_path)s", {"name": self.path.name, "entry_path": entry_path})
+            logger.error(
+                "Failed to get CRC for %(name)s: %(entry_path)s",
+                {"name": self.path.name, "entry_path": entry_path},
+            )
             return None
-        logger.debug("Got CRC %(crc_match)s for %(name)s: %(entry_path)s", {"crc_match": crc_match, "name": self.path.name, "entry_path": entry_path})
+        logger.debug(
+            "Got CRC %(crc_match)s for %(name)s: %(entry_path)s",
+            {"crc_match": crc_match, "name": self.path.name, "entry_path": entry_path},
+        )
         return bytes.fromhex(crc_match)
 
     @property
@@ -202,4 +222,7 @@ class RarFile(hash_file.HashFile):
                     crc = self.get_crc32_slow(entry.path)  # used for V5, slow
                     entry.hash_value = crc
                 except subprocess.CalledProcessError:
-                    logger.error("Failed to get CRC32 for %(entry_path)s", {"entry_path": entry.path})
+                    logger.error(
+                        "Failed to get CRC32 for %(entry_path)s",
+                        {"entry_path": entry.path},
+                    )

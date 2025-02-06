@@ -1,4 +1,5 @@
 """This module contains the SfvFile class, which represents a SFV file."""
+
 import os
 import pathlib
 import typing
@@ -28,7 +29,9 @@ class SfvFile(hash_file.HashFile):
                     " ", maxsplit=1
                 )  # split on the last space, in case the filename contains spaces
             except ValueError:
-                logger.error("Line is not in the expected format: %(line)s", {"line": line})
+                logger.error(
+                    "Line is not in the expected format: %(line)s", {"line": line}
+                )
                 continue
             try:
                 file_size = None
@@ -37,7 +40,10 @@ class SfvFile(hash_file.HashFile):
                     # so we should be able to get the size of the file
                     file_size = os.path.getsize(path.parent / entry_path)
                 else:
-                    logger.warning("File '%(entry_path)s' does not exist", {"entry_path": entry_path})
+                    logger.warning(
+                        "File '%(entry_path)s' does not exist",
+                        {"entry_path": entry_path},
+                    )
 
                 sfv_file.files.append(
                     hash_file.FileEntry(
@@ -50,5 +56,8 @@ class SfvFile(hash_file.HashFile):
                 )
             except ValueError as e:
                 # we want to continue processing the file even if there's an error with one line
-                logger.error("Error converting '%(line)s' to FileEntry: %(error)s", {"line": line, "error": e})
+                logger.error(
+                    "Error converting '%(line)s' to FileEntry: %(error)s",
+                    {"line": line, "error": e},
+                )
         return sfv_file

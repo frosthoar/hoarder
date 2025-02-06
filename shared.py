@@ -4,17 +4,19 @@ import pathlib
 import sys
 import tomllib
 
+
 def load_config() -> dict:
     # get module path
 
     p = pathlib.Path(__file__).parent
     cf = p / "config.toml"
-    with open(cf, 'rb') as f:
+    with open(cf, "rb") as f:
         d = tomllib.load(f)
         p7z = pathlib.Path(d["executables"]["sevenzip"])
         if not os.path.isabs(p7z):
             d["executables"]["sevenzip"] = p / p7z
         return d
+
 
 config = load_config()
 
