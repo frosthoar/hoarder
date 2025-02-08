@@ -33,13 +33,13 @@ class HashFile(abc.ABC):
     """This class contains information about an hash file."""
 
     path: pathlib.Path
-    files: list[FileEntry]
+    files: typing.Sequence[FileEntry]
 
     def __init__(
-        self, path: pathlib.Path, files: typing.List[FileEntry] | None = None
+        self, path: pathlib.Path, files: typing.Sequence[FileEntry] | None = None
     ) -> None:
         """Create a HashFile object by reading information from an hash file given its path."""
-        self.files: typing.List[FileEntry] = files or []
+        self.files: typing.Sequence[FileEntry] = files or []
         self.path: pathlib.Path = path
 
     @classmethod

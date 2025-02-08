@@ -26,11 +26,13 @@ class RarFile(hash_file.HashFile):
         path: pathlib.Path,
         files: list[hash_file.FileEntry] | None = None,
         password: str | None = None,
+        version: rar_path.RarVersion | None = None,
     ) -> None:
         super().__init__(path, files)
         self.password = password
         self.version: rar_path.RarVersion | None = None
-        self.volumes: list[rar_path.RARPath] | None = None
+        self.volumes: int | None = None
+        self.version = version
 
     def get_volumes(self) -> list[pathlib.Path]:
         """Get a list of all volumes of the same RAR archive."""
@@ -61,34 +63,41 @@ class RarFile(hash_file.HashFile):
     def from_path(cls, path: pathlib.Path, password: str | None = None) -> typing.Self:
         """Create a RarFile object by reading information from a (main) RAR file given its path."""
 
-        if not path.exists():
-            raise FileNotFoundError(f"{path} not found")
         if path.is_dir():
+            logger.debug("A directory %s was given, trying to find RAR files", path)
             rar_dict: dict[str, list[pathlib.Path]] = rar_path.find_rar_files(path)
             if len(rar_dict) != 1:
                 raise ValueError(
                     f"Directory {path} contains multiple non-indexed RAR files"
                 )
             _, rar_volumes = rar_dict.popitem()
-            rar_file = cls(rar_volumes[0], password=password)
-            rar_file.volumes = len(rar_volumes)
-        else:
+            n_volumes = len(rar_volumes)
+            main_volume = rar_volumes[0]
+            logger.debug("Found %d volumes in %s", n_volumes, path)
+        elif path.is_file():
+            logger.debug("A file %s was given, trying to find RAR files", path)
             if match := (
                 rar_path.V5_PAT.match(str(path.name))
                 or rar_path.V3_PAT.match(str(path.name))
             ):
-                print(match["stem"])
-                rar_dict = rar_path.find_rar_files(path.parent)
-                print(rar_dict)
-                if match["stem"] in rar_dict:
-                    rar_file = cls(rar_dict[match["stem"]][0], password=password)
-                    rar_file.volumes = len(rar_dict[match["stem"]])
+                seek_stem = match["stem"]
+                logger.debug("Path %s matches a RAR pattern", path)
+                logger.debug("Finding RAR files with stem %s in directory %s", seek_stem, path.parent)
+                rar_dict = rar_path.find_rar_files(path.parent, seek_stem)
+                if rar_dict:
+                    n_volumes = len(rar_dict[seek_stem])
+                    logger.debug("Found %d volumes in %s", n_volumes, path.parent)
+                    main_volume = rar_dict[seek_stem][0]
+                    logger.debug("Main volume is %s", main_volume)
                 else:
                     raise ValueError(f"Path {path} does not match any RAR pattern")
             else:
                 raise ValueError(f"Path {path} does not match any RAR pattern")
+        else:
+            logger.debug("Path %s is not a file or directory", path)
+            raise FileNotFoundError(f"{path} could not be found")
 
-        infos = rar_file.list_rar()
+        infos = RarFile.list_rar(main_volume, password)
         type_entries = [entry for entry in infos if "Type" in entry]
         if not type_entries or len(type_entries) > 1:
             raise ValueError(f"No 'Type' entries found in {path}")
@@ -99,6 +108,7 @@ class RarFile(hash_file.HashFile):
         else:
             raise ValueError(f"Unknown RAR version {type_entries[0]['Type']} in {path}")
 
+        files: list[hash_file.FileEntry] = []
         for entry in infos:
             if "Path" in entry and "Type" not in entry:
                 entry_path = pathlib.Path(entry["Path"])
@@ -111,25 +121,25 @@ class RarFile(hash_file.HashFile):
                     # so the CRCs in the header are not useful for verification.
                     hash_value = bytes.fromhex(entry["CRC"]) if "CRC" in entry else None
                     algo = hash_file.Algo.CRC32 if hash_value else None
-                rar_file.files.append(
+                files.append(
                     hash_file.FileEntry(entry_path, size, is_dir, hash_value, algo)
                 )
-        rar_file.version = version
-        return rar_file
+        return cls(main_volume, files, password, version)
 
-    def list_rar(self) -> list[dict[str, str]]:
+    @classmethod
+    def list_rar(cls, path: pathlib.Path, password: str | None = None) -> list[dict[str, str]]:
         """Get an info list about this archive and its contents."""
         logger.debug(
             "Listing %(name)s, using password %(password)s",
-            {"name": self.path.name, "password": self.password},
+            {"name": path.name, "password": password},
         )
 
         command_line = [
             str(SEVENZIP),
             "l",
             "-slt",
-            "-p" + (self.password if self.password else ""),
-            str(self.path),
+            "-p" + (password if password else ""),
+            str(path),
         ]
 
         sub = subprocess.run(command_line, capture_output=True, check=True)
@@ -150,7 +160,7 @@ class RarFile(hash_file.HashFile):
 
         logger.debug(
             "Found %(count)d files in %(name)s",
-            {"count": len(ret), "name": self.path.name},
+            {"count": len(ret), "name": path.name},
         )
         return ret
 

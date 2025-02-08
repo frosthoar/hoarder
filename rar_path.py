@@ -141,17 +141,21 @@ def rar_sort(rar_paths: typing.Sequence[str | Path]) -> list[str]:
     return [rar_path.path for rar_path in sorted(parsed)]
 
 
-def find_rar_files(directory: Path | str) -> dict[str, list[Path]]:
+def find_rar_files(directory: Path | str, seek_stem: str | None = None) -> dict[str, list[Path]]:
     directory = Path(directory)
     rar_dict: dict[str, list[Path]] = {}
     for path in directory.iterdir():
         if match := V5_PAT.match(str(path.name)):
             stem = str(Path(match["stem"]))
+            if seek_stem and stem != seek_stem:
+                continue
             if rar_dict.get(stem):
                 rar_dict[stem].append(path)
             else:
                 rar_dict[stem] = [path]
         elif match := V3_PAT.match(str(path.name)):
+            if seek_stem and seek_stem != match["stem"]:
+                continue
             stem = str(Path(match["stem"]))
             if rar_dict.get(stem):
                 rar_dict[stem].append(path)
