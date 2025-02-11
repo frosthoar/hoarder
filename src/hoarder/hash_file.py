@@ -28,6 +28,9 @@ class FileEntry:
     hash_value: bytes | None = None
     algo: Algo | None = None
 
+    def __lt__(self, other: typing.Self) -> bool:
+        return self.path < other.path
+
 
 class HashFile(abc.ABC):
     """This class contains information about an hash file."""

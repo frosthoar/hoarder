@@ -5,7 +5,7 @@ import pathlib
 import typing
 import logging
 
-import hash_file
+import hoarder.hash_file as hash_file
 
 logger = logging.getLogger("hoarder.sfv_file")
 
@@ -25,7 +25,7 @@ class SfvFile(hash_file.HashFile):
                     logger.debug("Skipping line: %s", line)
                     continue
                 try:
-                    entry_path, crc = line.split(
+                    entry_path, crc = line.rsplit(
                         " ", maxsplit=1
                     )  # split on the last space, in case the filename contains spaces
                 except ValueError:
