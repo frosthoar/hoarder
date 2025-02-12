@@ -7,9 +7,9 @@ import re
 import subprocess
 import typing
 
-import rar_path
-from shared import SEVENZIP
-import hash_file
+import hoarder.rar_path as rar_path
+from hoarder.shared import SEVENZIP
+import hoarder.hash_file as hash_file
 
 logger = logging.getLogger("hoarder.rar_file")
 
