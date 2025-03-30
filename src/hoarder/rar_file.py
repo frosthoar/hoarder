@@ -111,6 +111,8 @@ class RarFile(hash_file.HashFile):
             raise ValueError(f"No 'Type' entries found in {path}")
         if type_entries[0]["Type"] == "Rar3":
             version = rar_path.RarVersion.V3
+        if type_entries[0]["Type"] == "Rar":
+            version = rar_path.RarVersion.V3
         elif type_entries[0]["Type"] == "Rar5":
             version = rar_path.RarVersion.V5
         else:
@@ -148,6 +150,8 @@ class RarFile(hash_file.HashFile):
             str(SEVENZIP),
             "l",
             "-slt",
+            "-scsUTF-8",
+            "-sccUTF-8",
             "-p" + (password if password else ""),
             str(path),
         ]
@@ -156,10 +160,10 @@ class RarFile(hash_file.HashFile):
 
         encoding = os.device_encoding(0)
         if encoding:
-            entries = sub.stdout.decode(encoding, errors="ignore").split(2 * os.linesep)
+            entries = sub.stdout.decode(errors="ignore").split(2 * os.linesep)
         else:
             raise RuntimeError("Coud not get encoding")
-        ret = []
+        ret: list[dict[str, str]] = []
 
         for entry in entries:
             lines = entry.splitlines()
@@ -236,13 +240,26 @@ class RarFile(hash_file.HashFile):
         """Update the hash values of all files in the archive.
         This will always use the slow method."""
         logger.debug("Updating hash values for %(name)s", {"name": self.path.name})
+        new_set = set()
         for entry in self:
-            if not entry.hash_value and not entry.is_dir:
+            if not entry.hash_value:
                 try:
-                    crc = self.get_crc32_slow(entry.path)  # used for V5, slow
-                    entry.hash_value = crc
+                    if entry.is_dir:
+                        crc = b"\x00" * 4
+                    else:
+                        crc = self.get_crc32_slow(entry.path)  # used for V5, slow
+                    new_set.add(
+                        hash_file.FileEntry(
+                            entry.path,
+                            entry.size,
+                            entry.is_dir,
+                            crc,
+                            hash_file.Algo.CRC32,
+                        )
+                    )
                 except subprocess.CalledProcessError:
                     logger.error(
                         "Failed to get CRC32 for %(entry_path)s",
                         {"entry_path": entry.path},
                     )
+        self.files = new_set

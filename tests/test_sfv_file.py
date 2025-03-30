@@ -63,6 +63,7 @@ def test_sfv_files():
     ).resolve()
 
     sfv_file_lowercase = hoarder.SfvFile.from_path(sfv_file_lowercase_path)
+
     assert len(sfv_file_lowercase.files) == 5
     assert sorted(sfv_file_lowercase.files) == sorted(sfv_file_compare)
     assert sfv_file_lowercase.path == sfv_file_lowercase_path
