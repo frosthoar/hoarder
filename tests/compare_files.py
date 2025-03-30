@@ -1,16 +1,7 @@
-import logging
-import pathlib
-import sys
-
 import hoarder
+import pathlib
 
-test_file_path = pathlib.Path(__file__).parent.resolve()
-add_path = (test_file_path / ".." / "src").resolve()
-sys.path.append(add_path.as_posix())
-
-logger = logging.getLogger("hoarder.test_sfv_file")
-
-sfv_file_compare = [
+compare_files = [
     hoarder.hash_file.FileEntry(
         pathlib.Path("empty_file"),
         0,
@@ -31,6 +22,13 @@ sfv_file_compare = [
         False,
         b"\xb3\xa6\x5a\xf4",
         hoarder.hash_file.Algo.CRC32,
+    ),
+    hoarder.hash_file.FileEntry(
+        path=pathlib.Path("sample_dir"),
+        size=0,
+        is_dir=True,
+        hash_value=b"\x00\x00\x00\x00",
+        algo=hoarder.hash_file.Algo.CRC32,
     ),
     hoarder.hash_file.FileEntry(
         path=pathlib.Path("sample_dir/english text 2.txt"),
@@ -54,23 +52,3 @@ sfv_file_compare = [
         hoarder.hash_file.Algo.CRC32,
     ),
 ]
-
-
-def test_sfv_files():
-    sfv_file_path = (
-        test_file_path / ".." / "test_files" / "sfv" / "rhash_output.sfv"
-    ).resolve()
-    sfv_file = hoarder.SfvFile.from_path(sfv_file_path)
-    assert len(sfv_file.files) == 6
-    assert sorted(sfv_file.files) == sorted(sfv_file_compare)
-    assert sfv_file.path == sfv_file_path
-
-    sfv_file_lowercase_path = (
-        test_file_path / ".." / "test_files" / "sfv" / "rhash_output_lowercase.sfv"
-    ).resolve()
-
-    sfv_file_lowercase = hoarder.SfvFile.from_path(sfv_file_lowercase_path)
-
-    assert len(sfv_file_lowercase.files) == 6
-    assert sorted(sfv_file_lowercase.files) == sorted(sfv_file_compare)
-    assert sfv_file_lowercase.path == sfv_file_lowercase_path
