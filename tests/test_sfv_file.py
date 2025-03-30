@@ -2,8 +2,8 @@ import logging
 import pathlib
 import sys
 
-import hoarder
 import compare_files
+import hoarder
 
 test_file_path = pathlib.Path(__file__).parent.resolve()
 add_path = (test_file_path / ".." / "src").resolve()
@@ -11,9 +11,8 @@ sys.path.append(add_path.as_posix())
 
 logger = logging.getLogger("hoarder.test_sfv_file")
 
-compare_files_wo_dir = [
-    el for el in compare_files.compare_files if not el.is_dir
-]
+compare_files_wo_dir = [el for el in compare_files.compare_files if not el.is_dir]
+
 
 def test_sfv_files():
     sfv_file_path = (

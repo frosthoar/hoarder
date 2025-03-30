@@ -2,9 +2,8 @@ import logging
 import pathlib
 import sys
 
-import hoarder
-
 import compare_files
+import hoarder
 
 test_file_path = pathlib.Path(__file__).parent.resolve()
 add_path = (test_file_path / ".." / "src").resolve()

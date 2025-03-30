@@ -1,5 +1,6 @@
-import hoarder
 import pathlib
+
+import hoarder
 
 compare_files = [
     hoarder.hash_file.FileEntry(
