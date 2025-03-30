@@ -3,8 +3,6 @@ import re
 import typing
 from pathlib import Path
 
-Self = typing.TypeVar("Self")
-
 
 class RarVersion(enum.IntEnum):
     AMBIGUOUS = 0
@@ -55,7 +53,7 @@ class RARPath(typing.NamedTuple):
     suffix: str
 
     @classmethod
-    def from_match(cls, match: re.Match | None) -> Self:
+    def from_match(cls, match: re.Match | None) -> RARPath:
         if match is None:
             raise ValueError("match is None")
         return cls(

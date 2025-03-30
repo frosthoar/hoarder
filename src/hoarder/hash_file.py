@@ -7,6 +7,7 @@ import enum
 import pathlib
 import typing
 
+
 class Algo(enum.IntEnum):
     """This class contains the possible hash algorithms."""
 
@@ -27,7 +28,7 @@ class FileEntry:
     hash_value: bytes | None = None
     algo: Algo | None = None
 
-    def __lt__(self, other: Self) -> bool:
+    def __lt__(self, other: FileEntry) -> bool:
         return self.path < other.path
 
 

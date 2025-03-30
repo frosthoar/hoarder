@@ -13,6 +13,9 @@ from hoarder.shared import SEVENZIP
 
 logger = logging.getLogger("hoarder.rar_file")
 
+T = typing.TypeVar("T", bound="RarFile")
+
+
 class RarFile(hash_file.HashFile):
     """This class contains information about a RAR file."""
 
@@ -59,7 +62,7 @@ class RarFile(hash_file.HashFile):
         raise ValueError(f"Ambiguous RAR file {self.path} with {self.volumes} volumes")
 
     @classmethod
-    def from_path(cls, path: pathlib.Path, password: str | None = None) -> RarFile:
+    def from_path(cls: typing.Type[T], path: pathlib.Path, password: str | None = None) -> T:
         """Create a RarFile object by reading information from a (main) RAR file given its path."""
 
         if path.is_dir():
