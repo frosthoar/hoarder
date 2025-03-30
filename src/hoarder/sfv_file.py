@@ -9,13 +9,11 @@ import hoarder.hash_file as hash_file
 
 logger = logging.getLogger("hoarder.sfv_file")
 
-Self = typing.TypeVar("Self")
-
 class SfvFile(hash_file.HashFile):
     """This class contains information about a SFV file."""
 
     @classmethod
-    def from_path(cls, path: pathlib.Path) -> Self:
+    def from_path(cls , path: pathlib.Path) -> SfvFile:
         """Create a SfvFile object by reading information from an SFV file given its path."""
         files = []
         with open(path, "rt", encoding="utf-8") as file:

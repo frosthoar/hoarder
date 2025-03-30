@@ -7,8 +7,6 @@ import enum
 import pathlib
 import typing
 
-Self = typing.TypeVar("Self")
-
 class Algo(enum.IntEnum):
     """This class contains the possible hash algorithms."""
 
@@ -48,7 +46,7 @@ class HashFile(abc.ABC):
 
     @classmethod
     @abc.abstractmethod
-    def from_path(cls, path: pathlib.Path) -> Self:
+    def from_path(cls, path: pathlib.Path) -> HashFile:
         """Create a HashFile object by reading information from an hash file given its path."""
 
     def __len__(self) -> int:
