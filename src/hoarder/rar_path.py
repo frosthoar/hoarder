@@ -45,6 +45,8 @@ V5_PAT = re.compile(
 """
 )
 
+T = typing.TypeVar("T", bound="RARPath")
+
 
 class RARPath(typing.NamedTuple):
     index: int  # type: ignore[assignment]
@@ -53,7 +55,7 @@ class RARPath(typing.NamedTuple):
     suffix: str
 
     @classmethod
-    def from_match(cls, match: re.Match | None) -> typing.Self:
+    def from_match(cls: typing.Type[T], match: re.Match | None) -> T:
         if match is None:
             raise ValueError("match is None")
         return cls(
@@ -141,7 +143,9 @@ def rar_sort(rar_paths: typing.Sequence[str | Path]) -> list[str]:
     return [rar_path.path for rar_path in sorted(parsed)]
 
 
-def find_rar_files(directory: Path | str, seek_stem: str | None = None) -> dict[str, list[Path]]:
+def find_rar_files(
+    directory: Path | str, seek_stem: str | None = None
+) -> dict[str, list[Path]]:
     directory = Path(directory)
     rar_dict: dict[str, list[Path]] = {}
     for path in directory.iterdir():

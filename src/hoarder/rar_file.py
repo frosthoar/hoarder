@@ -7,11 +7,13 @@ import re
 import subprocess
 import typing
 
-import rar_path
-from shared import SEVENZIP
-import hash_file
+import hoarder.hash_file as hash_file
+import hoarder.rar_path as rar_path
+from hoarder.shared import SEVENZIP
 
 logger = logging.getLogger("hoarder.rar_file")
+
+T = typing.TypeVar("T", bound="RarFile")
 
 
 class RarFile(hash_file.HashFile):
@@ -24,7 +26,7 @@ class RarFile(hash_file.HashFile):
     def __init__(
         self,
         path: pathlib.Path,
-        files: list[hash_file.FileEntry] | None = None,
+        files: set[hash_file.FileEntry] | None = None,
         password: str | None = None,
         version: rar_path.RarVersion | None = None,
     ) -> None:
@@ -60,7 +62,9 @@ class RarFile(hash_file.HashFile):
         raise ValueError(f"Ambiguous RAR file {self.path} with {self.volumes} volumes")
 
     @classmethod
-    def from_path(cls, path: pathlib.Path, password: str | None = None) -> typing.Self:
+    def from_path(
+        cls: typing.Type[T], path: pathlib.Path, password: str | None = None
+    ) -> T:
         """Create a RarFile object by reading information from a (main) RAR file given its path."""
 
         if path.is_dir():
@@ -82,7 +86,11 @@ class RarFile(hash_file.HashFile):
             ):
                 seek_stem = match["stem"]
                 logger.debug("Path %s matches a RAR pattern", path)
-                logger.debug("Finding RAR files with stem %s in directory %s", seek_stem, path.parent)
+                logger.debug(
+                    "Finding RAR files with stem %s in directory %s",
+                    seek_stem,
+                    path.parent,
+                )
                 rar_dict = rar_path.find_rar_files(path.parent, seek_stem)
                 if rar_dict:
                     n_volumes = len(rar_dict[seek_stem])
@@ -108,7 +116,7 @@ class RarFile(hash_file.HashFile):
         else:
             raise ValueError(f"Unknown RAR version {type_entries[0]['Type']} in {path}")
 
-        files: list[hash_file.FileEntry] = []
+        files: set[hash_file.FileEntry] = set()
         for entry in infos:
             if "Path" in entry and "Type" not in entry:
                 entry_path = pathlib.Path(entry["Path"])
@@ -121,13 +129,15 @@ class RarFile(hash_file.HashFile):
                     # so the CRCs in the header are not useful for verification.
                     hash_value = bytes.fromhex(entry["CRC"]) if "CRC" in entry else None
                     algo = hash_file.Algo.CRC32 if hash_value else None
-                files.append(
+                files.add(
                     hash_file.FileEntry(entry_path, size, is_dir, hash_value, algo)
                 )
         return cls(main_volume, files, password, version)
 
     @classmethod
-    def list_rar(cls, path: pathlib.Path, password: str | None = None) -> list[dict[str, str]]:
+    def list_rar(
+        cls, path: pathlib.Path, password: str | None = None
+    ) -> list[dict[str, str]]:
         """Get an info list about this archive and its contents."""
         logger.debug(
             "Listing %(name)s, using password %(password)s",

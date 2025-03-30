@@ -1,20 +1,22 @@
 """This module contains the SfvFile class, which represents a SFV file."""
 
+import logging
 import os
 import pathlib
 import typing
-import logging
 
-import hash_file
+import hoarder.hash_file as hash_file
 
 logger = logging.getLogger("hoarder.sfv_file")
+
+T = typing.TypeVar("T", bound="SfvFile")
 
 
 class SfvFile(hash_file.HashFile):
     """This class contains information about a SFV file."""
 
     @classmethod
-    def from_path(cls, path: pathlib.Path) -> typing.Self:
+    def from_path(cls: typing.Type[T], path: pathlib.Path) -> T:
         """Create a SfvFile object by reading information from an SFV file given its path."""
         files = []
         with open(path, "rt", encoding="utf-8") as file:
@@ -25,7 +27,7 @@ class SfvFile(hash_file.HashFile):
                     logger.debug("Skipping line: %s", line)
                     continue
                 try:
-                    entry_path, crc = line.split(
+                    entry_path, crc = line.rsplit(
                         " ", maxsplit=1
                     )  # split on the last space, in case the filename contains spaces
                 except ValueError:
@@ -60,4 +62,4 @@ class SfvFile(hash_file.HashFile):
                         "Error converting '%(line)s' to FileEntry: %(error)s",
                         {"line": line, "error": e},
                     )
-        return cls(path, files)
+        return cls(path, set(files))

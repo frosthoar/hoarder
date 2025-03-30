@@ -5,7 +5,6 @@ import dataclasses
 import enum
 import pathlib
 import typing
-import datetime
 
 
 class Algo(enum.IntEnum):
@@ -18,6 +17,9 @@ class Algo(enum.IntEnum):
     SHA512 = 5
 
 
+Self = typing.TypeVar("Self", bound="FileEntry")
+
+
 @dataclasses.dataclass(slots=True)
 class FileEntry:
     """This class contains information about a file, either on disk or as part of an archive."""
@@ -28,30 +30,31 @@ class FileEntry:
     hash_value: bytes | None = None
     algo: Algo | None = None
 
+    def __lt__(self: Self, other: Self) -> bool:
+        return self.path < other.path
+
+
+T = typing.TypeVar("T", bound="HashFile")
+
 
 class HashFile(abc.ABC):
     """This class contains information about an hash file."""
 
     path: pathlib.Path
-    files: typing.Sequence[FileEntry]
+    files: set[FileEntry]
 
-    def __init__(
-        self, path: pathlib.Path, files: typing.Sequence[FileEntry] | None = None
-    ) -> None:
+    def __init__(self, path: pathlib.Path, files: set[FileEntry] | None = None) -> None:
         """Create a HashFile object by reading information from an hash file given its path."""
-        self.files: typing.Sequence[FileEntry] = files or []
+        self.files: set[FileEntry] = files or set()
         self.path: pathlib.Path = path
 
     @classmethod
     @abc.abstractmethod
-    def from_path(cls, path: pathlib.Path) -> typing.Self:
+    def from_path(cls: typing.Type[T], path: pathlib.Path) -> T:
         """Create a HashFile object by reading information from an hash file given its path."""
 
     def __len__(self) -> int:
         return len(self.files)
-
-    def __getitem__(self, key: int) -> FileEntry:
-        return self.files[key]
 
     def __iter__(self) -> typing.Iterator[FileEntry]:
         return iter(self.files)
