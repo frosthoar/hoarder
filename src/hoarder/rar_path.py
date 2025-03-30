@@ -2,7 +2,8 @@ import enum
 import re
 import typing
 from pathlib import Path
-from typing_extensions import Self
+
+Self = typing.TypeVar("Self")
 
 
 class RarVersion(enum.IntEnum):

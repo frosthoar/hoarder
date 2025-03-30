@@ -1,18 +1,15 @@
 import logging
-import os
 import pathlib
 import sys
 
-import pytest
+import hoarder
+from hoarder import hash_file
 
 test_file_path = pathlib.Path(__file__).parent.resolve()
 add_path = (test_file_path / ".." / "src").resolve()
 sys.path.append(add_path.as_posix())
 
 logger = logging.getLogger("hoarder.test_sfv_file")
-
-import hoarder
-from hoarder import hash_file
 
 sfv_file_compare = [
     hoarder.hash_file.FileEntry(
