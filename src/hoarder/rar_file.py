@@ -13,7 +13,7 @@ from hoarder.shared import SEVENZIP
 
 logger = logging.getLogger("hoarder.rar_file")
 
-Self = TypeVar("Self")
+Self = typing.TypeVar("Self")
 
 class RarFile(hash_file.HashFile):
     """This class contains information about a RAR file."""

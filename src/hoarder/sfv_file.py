@@ -9,7 +9,7 @@ import hoarder.hash_file as hash_file
 
 logger = logging.getLogger("hoarder.sfv_file")
 
-Self = TypeVar("Self")
+Self = typing.TypeVar("Self")
 
 class SfvFile(hash_file.HashFile):
     """This class contains information about a SFV file."""
