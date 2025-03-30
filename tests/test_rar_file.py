@@ -33,19 +33,19 @@ rar_file_compare = [
         hoarder.hash_file.Algo.CRC32,
     ),
     hoarder.hash_file.FileEntry(
-        path=pathlib.Path('sample_dir'),
+        path=pathlib.Path("sample_dir"),
         size=0,
         is_dir=True,
-        hash_value=b'\x00\x00\x00\x00',
+        hash_value=b"\x00\x00\x00\x00",
         algo=hoarder.hash_file.Algo.CRC32,
     ),
     hoarder.hash_file.FileEntry(
-        path=pathlib.Path('sample_dir/english text 2.txt'),
+        path=pathlib.Path("sample_dir/english text 2.txt"),
         size=360,
         is_dir=False,
-        hash_value=b'\xdf\x9d\x9dH',
-        algo=hoarder.hash_file.Algo.CRC32
-        ),
+        hash_value=b"\xdf\x9d\x9dH",
+        algo=hoarder.hash_file.Algo.CRC32,
+    ),
     hoarder.hash_file.FileEntry(
         pathlib.Path("trailing whitespace .txt"),
         729,
@@ -62,7 +62,10 @@ rar_file_compare = [
     ),
 ]
 
-rar_file_wo_hashes_compare = [hoarder.hash_file.FileEntry(el.path, el.size, el.is_dir, None, None) for el in rar_file_compare]
+rar_file_wo_hashes_compare = [
+    hoarder.hash_file.FileEntry(el.path, el.size, el.is_dir, None, None)
+    for el in rar_file_compare
+]
 
 
 def test_rar_files():
@@ -82,10 +85,12 @@ def test_rar_files():
 
     rar5_file = hoarder.RarFile.from_path(rar_file_path, password="password")
     assert len(rar5_file.files) == 7
-    assert sorted(rar5_file.files) == sorted(rar_file_wo_hashes_compare)  # no hashes in RAR5 in header
+    assert sorted(rar5_file.files) == sorted(
+        rar_file_wo_hashes_compare
+    )  # no hashes in RAR5 in header
     assert rar5_file.path == rar_file_path
 
     rar5_file.update_hash_values()
-    assert sorted(rar5_file.files) == sorted(rar_file_compare)  # hashes now have been calculated
-
-
+    assert sorted(rar5_file.files) == sorted(
+        rar_file_compare
+    )  # hashes now have been calculated

@@ -6,7 +6,7 @@ from pathlib import Path
 
 class RarVersion(enum.IntEnum):
     AMBIGUOUS = 0
-    V3 = 3 # not easily distinguishable from V4
+    V3 = 3  # not easily distinguishable from V4
     V5 = 5
 
 

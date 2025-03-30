@@ -248,7 +248,15 @@ class RarFile(hash_file.HashFile):
                         crc = b"\x00" * 4
                     else:
                         crc = self.get_crc32_slow(entry.path)  # used for V5, slow
-                    new_set.add(hash_file.FileEntry(entry.path, entry.size, entry.is_dir, crc, hash_file.Algo.CRC32))
+                    new_set.add(
+                        hash_file.FileEntry(
+                            entry.path,
+                            entry.size,
+                            entry.is_dir,
+                            crc,
+                            hash_file.Algo.CRC32,
+                        )
+                    )
                 except subprocess.CalledProcessError:
                     logger.error(
                         "Failed to get CRC32 for %(entry_path)s",
