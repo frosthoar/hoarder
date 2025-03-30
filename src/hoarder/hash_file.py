@@ -41,7 +41,7 @@ class HashFile(abc.ABC):
     """This class contains information about an hash file."""
 
     path: pathlib.Path
-    files: typing.Sequence[FileEntry]
+    files: set[FileEntry]
 
     def __init__(
         self, path: pathlib.Path, files: typing.Sequence[FileEntry] | None = None
