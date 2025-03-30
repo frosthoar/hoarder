@@ -58,9 +58,6 @@ class HashFile(abc.ABC):
     def __len__(self) -> int:
         return len(self.files)
 
-    def __getitem__(self, key: int) -> FileEntry:
-        return self.files[key]
-
     def __iter__(self) -> typing.Iterator[FileEntry]:
         return iter(self.files)
 
