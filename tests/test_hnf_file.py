@@ -8,28 +8,36 @@ import hoarder
 
 compare_files = [
     hoarder.hash_file.FileEntry(
-        pathlib.PurePath(r"[ABC] 05. Lowercase and Brackets [x265][1080p][8714c76f].mkv"),
+        pathlib.PurePath(
+            r"[ABC] 05. Lowercase and Brackets [x265][1080p][8714c76f].mkv"
+        ),
         131072,
         False,
         b"\x87\x14\xc7\x6f",
         hoarder.hash_file.Algo.CRC32,
     ),
     hoarder.hash_file.FileEntry(
-        pathlib.PurePath(r"[Dummy] Uppercase and Brackets Ep13v2[Puresuhoruda][6519E6CF].mkv"),
+        pathlib.PurePath(
+            r"[Dummy] Uppercase and Brackets Ep13v2[Puresuhoruda][6519E6CF].mkv"
+        ),
         131072,
         False,
         b"\x65\x19\xe6\xcf",
         hoarder.hash_file.Algo.CRC32,
     ),
     hoarder.hash_file.FileEntry(
-        pathlib.PurePath(r"[Foobar] Lowercase and Parens - 11 (x264-AC3)(d74b7612).mkv"),
+        pathlib.PurePath(
+            r"[Foobar] Lowercase and Parens - 11 (x264-AC3)(d74b7612).mkv"
+        ),
         131072,
         False,
         b"\xd7\x4b\x76\x12",
         hoarder.hash_file.Algo.CRC32,
     ),
     hoarder.hash_file.FileEntry(
-        pathlib.PurePath(r"[Test] Uppercase and Parens! S02E080 (WEB 1080p x264 10-bit AAC) (5A365C81).mkv"),
+        pathlib.PurePath(
+            r"[Test] Uppercase and Parens! S02E080 (WEB 1080p x264 10-bit AAC) (5A365C81).mkv"
+        ),
         131072,
         False,
         b"\x5a\x36\x5c\x81",
@@ -54,4 +62,6 @@ def test_hnf_files():
         hnf_file = hoarder.HashNameFile.from_path(p / hnf_file_path)
         hnf_files.append(hnf_file)
     assert len(hnf_files) == 4
-    assert sorted(itertools.chain(*map(lambda x: x.files, hnf_files))) == sorted(compare_files)
+    assert sorted(itertools.chain(*map(lambda x: x.files, hnf_files))) == sorted(
+        compare_files
+    )

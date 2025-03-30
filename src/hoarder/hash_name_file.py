@@ -15,27 +15,32 @@ T = typing.TypeVar("T", bound="HashNameFile")
 
 # CRC32 regex in filenames
 
+
 class HashEnclosure(enum.Enum):
     """Enumeration of how a hash is stored in a file name."""
+
     SQUARE = "[]"
     PAREN = "()"
+
 
 class HashNameFile(hash_file.HashFile):
     """This class contains information about a file that has a hash in its name."""
 
+    # Regular expressions to match hash in file names
+    # are now precompiled with re.IGNORECASE
     _regexes: dict[HashEnclosure, re.Pattern[str]] = {
-            enc: re.compile(
-                    rf"""(?x)
+        enc: re.compile(
+            rf"""(?x)
                     ^(?P<stem>.+)
                     {re.escape(enc.value[0])}
                     (?P<crc>[0-9A-F]{{8}})
                     {re.escape(enc.value[1])}
                     (?P<suffix>\..+)$
                     """,
-                    re.IGNORECASE
-                )
-            for enc in HashEnclosure
-        }
+            re.IGNORECASE,
+        )
+        for enc in HashEnclosure
+    }
 
     enc: HashEnclosure
 
@@ -43,11 +48,10 @@ class HashNameFile(hash_file.HashFile):
         self,
         path: pathlib.Path,
         files: set[hash_file.FileEntry] | None = None,
-        enc: HashEnclosure = HashEnclosure.SQUARE
+        enc: HashEnclosure = HashEnclosure.SQUARE,
     ) -> None:
         super().__init__(path, files)
         self.enc = enc
-
 
     @classmethod
     def from_path(cls: typing.Type[T], path: pathlib.Path) -> T:
