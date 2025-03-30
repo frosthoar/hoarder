@@ -2,7 +2,6 @@
 
 import abc
 import dataclasses
-import datetime
 import enum
 import pathlib
 import typing
@@ -31,6 +30,7 @@ class FileEntry:
     def __lt__(self, other: typing.Self) -> bool:
         return self.path < other.path
 
+T = typing.TypeVar("T", bound="HashFile")
 
 class HashFile(abc.ABC):
     """This class contains information about an hash file."""
@@ -47,7 +47,7 @@ class HashFile(abc.ABC):
 
     @classmethod
     @abc.abstractmethod
-    def from_path(cls, path: pathlib.Path) -> HashFile:
+    def from_path(cls: typing.Type[T], path: pathlib.Path) -> T:
         """Create a HashFile object by reading information from an hash file given its path."""
 
     def __len__(self) -> int:

@@ -116,7 +116,7 @@ class RarFile(hash_file.HashFile):
         else:
             raise ValueError(f"Unknown RAR version {type_entries[0]['Type']} in {path}")
 
-        files: set[hash_file.FileEntry] = {}
+        files: set[hash_file.FileEntry] = set()
         for entry in infos:
             if "Path" in entry and "Type" not in entry:
                 entry_path = pathlib.Path(entry["Path"])
