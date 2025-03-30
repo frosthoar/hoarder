@@ -1,9 +1,9 @@
 """This module contains the SfvFile class, which represents a SFV file."""
 
+import logging
 import os
 import pathlib
 import typing
-import logging
 
 import hoarder.hash_file as hash_file
 
