@@ -62,7 +62,9 @@ class RarFile(hash_file.HashFile):
         raise ValueError(f"Ambiguous RAR file {self.path} with {self.volumes} volumes")
 
     @classmethod
-    def from_path(cls: typing.Type[T], path: pathlib.Path, password: str | None = None) -> T:
+    def from_path(
+        cls: typing.Type[T], path: pathlib.Path, password: str | None = None
+    ) -> T:
         """Create a RarFile object by reading information from a (main) RAR file given its path."""
 
         if path.is_dir():

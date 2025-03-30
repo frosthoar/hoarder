@@ -28,7 +28,7 @@ class FileEntry:
     hash_value: bytes | None = None
     algo: Algo | None = None
 
-    def __lt__(self, other: FileEntry) -> bool:
+    def __lt__(self, other: typing.Self) -> bool:
         return self.path < other.path
 
 
