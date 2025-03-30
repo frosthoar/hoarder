@@ -43,9 +43,7 @@ class HashFile(abc.ABC):
     path: pathlib.Path
     files: set[FileEntry]
 
-    def __init__(
-        self, path: pathlib.Path, files: set[FileEntry] | None = None
-    ) -> None:
+    def __init__(self, path: pathlib.Path, files: set[FileEntry] | None = None) -> None:
         """Create a HashFile object by reading information from an hash file given its path."""
         self.files: set[FileEntry] = files or set()
         self.path: pathlib.Path = path

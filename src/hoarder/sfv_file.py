@@ -62,4 +62,4 @@ class SfvFile(hash_file.HashFile):
                         "Error converting '%(line)s' to FileEntry: %(error)s",
                         {"line": line, "error": e},
                     )
-        return cls(path, files)
+        return cls(path, set(files))
