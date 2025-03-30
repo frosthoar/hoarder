@@ -16,6 +16,8 @@ class Algo(enum.IntEnum):
     SHA256 = 4
     SHA512 = 5
 
+Self = typing.TypeVar("Self", bound="FileEntry")
+
 
 @dataclasses.dataclass(slots=True)
 class FileEntry:
@@ -27,10 +29,12 @@ class FileEntry:
     hash_value: bytes | None = None
     algo: Algo | None = None
 
-    def __lt__(self, other: typing.Self) -> bool:
+    def __lt__(self: Self, other: Self) -> bool:
         return self.path < other.path
 
+
 T = typing.TypeVar("T", bound="HashFile")
+
 
 class HashFile(abc.ABC):
     """This class contains information about an hash file."""

@@ -45,6 +45,8 @@ V5_PAT = re.compile(
 """
 )
 
+T = typing.TypeVar("T", bound="RarPath")
+
 
 class RARPath(typing.NamedTuple):
     index: int  # type: ignore[assignment]
@@ -53,7 +55,7 @@ class RARPath(typing.NamedTuple):
     suffix: str
 
     @classmethod
-    def from_match(cls, match: re.Match | None) -> RARPath:
+    def from_match(cls: typing.Type[T], match: re.Match | None) -> T:
         if match is None:
             raise ValueError("match is None")
         return cls(
