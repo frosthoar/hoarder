@@ -3,7 +3,6 @@ import pathlib
 import sys
 
 import hoarder
-from hoarder import hash_file
 
 test_file_path = pathlib.Path(__file__).parent.resolve()
 add_path = (test_file_path / ".." / "src").resolve()

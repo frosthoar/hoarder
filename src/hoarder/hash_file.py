@@ -16,6 +16,7 @@ class Algo(enum.IntEnum):
     SHA256 = 4
     SHA512 = 5
 
+
 Self = typing.TypeVar("Self", bound="FileEntry")
 
 

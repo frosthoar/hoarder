@@ -45,7 +45,7 @@ V5_PAT = re.compile(
 """
 )
 
-T = typing.TypeVar("T", bound="RarPath")
+T = typing.TypeVar("T", bound="RARPath")
 
 
 class RARPath(typing.NamedTuple):
