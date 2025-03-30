@@ -20,7 +20,7 @@ class Algo(enum.IntEnum):
 Self = typing.TypeVar("Self", bound="FileEntry")
 
 
-@dataclasses.dataclass(slots=True)
+@dataclasses.dataclass(slots=True, eq=True, frozen=True)
 class FileEntry:
     """This class contains information about a file, either on disk or as part of an archive."""
 
