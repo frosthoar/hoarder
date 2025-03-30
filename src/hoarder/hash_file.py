@@ -47,7 +47,7 @@ class HashFile(abc.ABC):
         self, path: pathlib.Path, files: typing.Sequence[FileEntry] | None = None
     ) -> None:
         """Create a HashFile object by reading information from an hash file given its path."""
-        self.files: typing.Sequence[FileEntry] = files or []
+        self.files: set[FileEntry] = files or set()
         self.path: pathlib.Path = path
 
     @classmethod
