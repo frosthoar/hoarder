@@ -56,7 +56,6 @@ class HashNameFile(hash_file.HashFile):
     @classmethod
     def from_path(cls: typing.Type[T], path: pathlib.Path) -> T:
         """Create a HashNameFile object by reading information from a file name given its path."""
-        files = []
         if not path.is_file():
             raise FileNotFoundError(f"File not found: {path}")
         logger.debug("Reading %s", path)
@@ -72,7 +71,7 @@ class HashNameFile(hash_file.HashFile):
             raise ValueError(f"No hash found in {path}")
         file_size = os.path.getsize(path)
 
-        files.append(
+        files = {
             hash_file.FileEntry(
                 pathlib.PurePath(path.name),
                 file_size,
@@ -80,6 +79,6 @@ class HashNameFile(hash_file.HashFile):
                 crc,
                 algo,
             )
-        )
+        }
 
         return cls(path, files, enc)
