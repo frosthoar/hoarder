@@ -147,13 +147,13 @@ class RarFile(hash_file.HashFile):
         )
 
         command_line = [
-            str(SEVENZIP),
+            SEVENZIP,
             "l",
             "-slt",
             "-scsUTF-8",
             "-sccUTF-8",
             "-p" + (password if password else ""),
-            str(path),
+            path,
         ]
 
         sub = subprocess.run(command_line, capture_output=True, check=True)
