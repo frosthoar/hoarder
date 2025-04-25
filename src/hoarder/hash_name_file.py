@@ -50,6 +50,15 @@ class HashNameFile(hash_file.HashFile):
         files: set[hash_file.FileEntry] | None = None,
         enc: HashEnclosure = HashEnclosure.SQUARE,
     ) -> None:
+        if files is None:
+            if len(files) != 1:
+                raise ValueError("HashNameFile must have exactly one file entry.")
+            if files[0].is_dir:
+                raise ValueError("HashNameFile cannot have a directory entry.")
+            if files[0].path != path.name:
+                raise ValueError(
+                    f"HashNameFile path {path} does not match file entry {files[0].path}"
+                )
         super().__init__(path, files)
         self.enc = enc
 

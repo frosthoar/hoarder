@@ -1,4 +1,4 @@
-"""This module contains the RarFile class, which hoolds information about a RAR file"""
+"""This module contains the RarFile class, which holds information about a RAR file"""
 
 import logging
 import os
@@ -20,8 +20,8 @@ class RarFile(hash_file.HashFile):
     """This class contains information about a RAR file."""
 
     password: str | None
-    volumes: int | None
     version: rar_path.RarVersion | None
+    n_volumes: int | None
 
     def __init__(
         self,
@@ -29,37 +29,38 @@ class RarFile(hash_file.HashFile):
         files: set[hash_file.FileEntry] | None = None,
         password: str | None = None,
         version: rar_path.RarVersion | None = None,
+        n_volumes: int | None = None,
     ) -> None:
         super().__init__(path, files)
         self.password = password
-        self.version: rar_path.RarVersion | None = None
-        self.volumes: int | None = None
+        self.version: rar_path.RarVersion | None = version
         self.version = version
+        self.n_volumes: int | None = n_volumes
 
     def get_volumes(self) -> list[pathlib.Path]:
         """Get a list of all volumes of the same RAR archive."""
-        if self.volumes is None:
+        if self.n_volumes is None:
             raise ValueError(f"Volumes not set for {self.path}")
-        if self.volumes == 0:
+        if self.n_volumes == 0:
             raise ValueError(f"Invalid number of volumes for {self.path}")
-        if self.volumes == 1:
+        if self.n_volumes == 1:
             return [self.path]
         if self.version == rar_path.RarVersion.V3:
             return [self.path.parent / f"{self.path.stem}.rar"] + [
                 self.path.parent / f"{self.path.stem}.r{index:02d}"
-                for index in range(0, self.volumes - 1)
+                for index in range(0, self.n_volumes - 1)
             ]
         if self.version == rar_path.RarVersion.V5:
             stem = self.path.stem.split(".part")[0]
             volume_list = [
                 self.path.parent / f"{stem}.part{index}.rar"
-                for index in range(1, self.volumes + 1)
+                for index in range(1, self.n_volumes + 1)
             ]
             for p in volume_list:
                 if not p.exists():
                     raise FileNotFoundError(f"Volume {p} not found")
             return volume_list
-        raise ValueError(f"Ambiguous RAR file {self.path} with {self.volumes} volumes")
+        raise ValueError(f"Ambiguous RAR file {self.path} with {self.n_volumes} volumes")
 
     @classmethod
     def from_path(
@@ -134,7 +135,7 @@ class RarFile(hash_file.HashFile):
                 files.add(
                     hash_file.FileEntry(entry_path, size, is_dir, hash_value, algo)
                 )
-        return cls(main_volume, files, password, version)
+        return cls(main_volume, files, password, version, n_volumes)
 
     @classmethod
     def list_rar(
@@ -242,18 +243,11 @@ class RarFile(hash_file.HashFile):
                         crc = b"\x00" * 4
                     else:
                         crc = self.get_crc32_slow(entry.path)  # used for V5, slow
-                    new_set.add(
-                        hash_file.FileEntry(
-                            entry.path,
-                            entry.size,
-                            entry.is_dir,
-                            crc,
-                            hash_file.Algo.CRC32,
-                        )
-                    )
+
+                    entry.hash_value = crc
+                    entry.algo = hash_file.Algo.CRC32
                 except subprocess.CalledProcessError:
                     logger.error(
                         "Failed to get CRC32 for %(entry_path)s",
                         {"entry_path": entry.path},
                     )
-        self.files = new_set
