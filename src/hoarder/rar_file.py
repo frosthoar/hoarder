@@ -147,22 +147,20 @@ class RarFile(hash_file.HashFile):
         )
 
         command_line = [
-            str(SEVENZIP),
+            SEVENZIP,
             "l",
             "-slt",
             "-scsUTF-8",
             "-sccUTF-8",
             "-p" + (password if password else ""),
-            str(path),
+            path,
         ]
 
         sub = subprocess.run(command_line, capture_output=True, check=True)
 
-        encoding = os.device_encoding(0)
-        if encoding:
-            entries = sub.stdout.decode(errors="ignore").split(2 * os.linesep)
-        else:
-            raise RuntimeError("Coud not get encoding")
+        entries = sub.stdout.decode(errors="ignore", encoding="utf-8").split(
+            2 * os.linesep
+        )
         ret: list[dict[str, str]] = []
 
         for entry in entries:
@@ -189,6 +187,8 @@ class RarFile(hash_file.HashFile):
             SEVENZIP,
             "t",
             "-scrc",
+            "-scsUTF-8",
+            "-sccUTF-8",
             "-p" + (self.password or ""),
             self.path,
             entry_path,
@@ -204,11 +204,7 @@ class RarFile(hash_file.HashFile):
 
         sub = subprocess.run(command_line, capture_output=True, check=True)
 
-        encoding = os.device_encoding(0)
-        if encoding:
-            lines = sub.stdout.decode(encoding, errors="ignore").splitlines()
-        else:
-            raise RuntimeError("Coud not get encoding")
+        lines = sub.stdout.decode(errors="ignore", encoding="utf-8").splitlines()
 
         crc_match = next(
             (
