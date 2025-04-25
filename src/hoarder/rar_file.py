@@ -159,7 +159,9 @@ class RarFile(hash_file.HashFile):
 
         sub = subprocess.run(command_line, capture_output=True, check=True)
 
-        entries = sub.stdout.decode(errors="ignore", encoding="utf-8").split(2 * os.linesep)
+        entries = sub.stdout.decode(errors="ignore", encoding="utf-8").split(
+            2 * os.linesep
+        )
         ret: list[dict[str, str]] = []
 
         for entry in entries:
