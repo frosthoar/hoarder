@@ -170,5 +170,3 @@ def find_rar_files(
         scheme, rar_volumes = rar_sort(v)
         ret_dict[k] = (scheme, [Path(p) for p in rar_volumes])
     return ret_dict
-        
-
