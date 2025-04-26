@@ -74,9 +74,9 @@ class RarFile(hash_file.HashFile):
 
         if path.is_dir():
             logger.debug("A directory %s was given, trying to find RAR files", path)
-            rar_dict: dict[str, tuple[rar_path.RarScheme, list[pathlib.Path]]] = (
-                rar_path.find_rar_files(path)
-            )
+            rar_dict: dict[
+                    str, tuple[rar_path.RarScheme, list[pathlib.Path]]
+            ] = rar_path.find_rar_files(path)
             if len(rar_dict) != 1:
                 raise ValueError(
                     f"Directory {path} contains multiple non-indexed RAR files"
