@@ -1,0 +1,7 @@
+# pyproject.toml
+[tool.pytest.ini_options]
+typeguard-packages = "hoarder"
+pythonpath = "src"
+# optional extras:
+# typeguard-collection-check-strategy = "ALL_ITEMS"
+# typeguard-debug-instrumentation    = true

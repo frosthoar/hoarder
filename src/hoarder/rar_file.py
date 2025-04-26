@@ -74,12 +74,14 @@ class RarFile(hash_file.HashFile):
 
         if path.is_dir():
             logger.debug("A directory %s was given, trying to find RAR files", path)
-            rar_dict: dict[str, list[pathlib.Path]] = rar_path.find_rar_files(path)
+            rar_dict: dict[
+                str, tuple[rar_path.RarScheme, list[pathlib.Path]]
+            ] = rar_path.find_rar_files(path)
             if len(rar_dict) != 1:
                 raise ValueError(
                     f"Directory {path} contains multiple non-indexed RAR files"
                 )
-            _, rar_volumes = rar_dict.popitem()
+            _, (scheme, rar_volumes) = rar_dict.popitem()
             n_volumes = len(rar_volumes)
             main_volume = rar_volumes[0]
             logger.debug("Found %d volumes in %s", n_volumes, path)
@@ -98,9 +100,11 @@ class RarFile(hash_file.HashFile):
                 )
                 rar_dict = rar_path.find_rar_files(path.parent, seek_stem)
                 if rar_dict:
-                    n_volumes = len(rar_dict[seek_stem])
+                    logger.info(rar_dict)
+                    scheme, rar_volumes = rar_dict[seek_stem]
+                    n_volumes = len(rar_volumes)
                     logger.debug("Found %d volumes in %s", n_volumes, path.parent)
-                    main_volume = rar_dict[seek_stem][0]
+                    main_volume = rar_dict[seek_stem][1][0]
                     logger.debug("Main volume is %s", main_volume)
                 else:
                     raise ValueError(f"Path {path} does not match any RAR pattern")
@@ -135,7 +139,8 @@ class RarFile(hash_file.HashFile):
                 files.add(
                     hash_file.FileEntry(entry_path, size, is_dir, hash_value, algo)
                 )
-        return cls(main_volume, files, password, version, None, n_volumes)
+        logger.info(scheme)
+        return cls(main_volume, files, password, version, scheme, n_volumes)
 
     @classmethod
     def list_rar(

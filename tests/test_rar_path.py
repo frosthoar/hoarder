@@ -30,7 +30,7 @@ def test_parse() -> None:
         parse_rar_list(("",))
         raise AssertionError("Bad format")
     except ValueError as e:
-        assert str(e) == '"" does not match the version-3 pattern'
+        assert str(e) == '"" does not match the scheme-3 pattern'
 
     try:
         parse_rar_list(("a.rar", "b.r00"))
@@ -64,16 +64,22 @@ def test_parse() -> None:
 
 
 def test_sort() -> None:
-    assert rar_sort(("a.r00", "a.rar", "a.r01")) == [
-        "a.rar",
-        "a.r00",
-        "a.r01",
-    ], "Simple DOT_RNN sort"
+    assert rar_sort(("a.r00", "a.rar", "a.r01")) == (
+        RarScheme.DOT_RNN,
+        [
+            "a.rar",
+            "a.r00",
+            "a.r01",
+        ],
+    ), "Simple DOT_RNN sort"
 
-    assert rar_sort(("a.part2.rar", "a.part1.rar")) == [
-        "a.part1.rar",
-        "a.part2.rar",
-    ], "Simple PART_N sort"
+    assert rar_sort(("a.part2.rar", "a.part1.rar")) == (
+        RarScheme.PART_N,
+        [
+            "a.part1.rar",
+            "a.part2.rar",
+        ],
+    ), "Simple PART_N sort"
 
 
 if __name__ == "__main__":
