@@ -60,7 +60,9 @@ class RarFile(hash_file.HashFile):
                 if not p.exists():
                     raise FileNotFoundError(f"Volume {p} not found")
             return volume_list
-        raise ValueError(f"Ambiguous RAR file {self.path} with {self.n_volumes} volumes")
+        raise ValueError(
+            f"Ambiguous RAR file {self.path} with {self.n_volumes} volumes"
+        )
 
     @classmethod
     def from_path(

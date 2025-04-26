@@ -28,7 +28,9 @@ def test_rar_files():
     assert len(rar4_file.files) == 7
     assert sorted(rar4_file.files) == sorted(compare_files.compare_files)
     assert rar4_file.path == rar4_file_path
-    assert rar4_file.version == hoarder.RarVersion.V3  # cannot be distinguished from RAR4
+    assert (
+        rar4_file.version == hoarder.RarVersion.V3
+    )  # cannot be distinguished from RAR4
     assert rar4_file.n_volumes == 1
 
     rar_file_path = (
