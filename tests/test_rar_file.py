@@ -29,9 +29,9 @@ def test_rar_files():
     rar4_file.update_hash_values()
     assert sorted(rar4_file.files) == sorted(compare_files.compare_files)
     assert rar4_file.path == rar4_file_path
-    #  assert (
-    #      rar4_file.scheme == hoarder.RarScheme.DOT_RNN
-    #  )  # cannot be distinguished from RAR4
+    assert (
+        rar4_file.scheme == hoarder.RarScheme.DOT_RNN
+    )  # cannot be distinguished from RAR4
     assert rar4_file.n_volumes == 1
 
     rar_file_path = (

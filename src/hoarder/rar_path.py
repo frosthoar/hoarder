@@ -80,15 +80,15 @@ def parse_rar_list(
 
     if any(m is None for m in matches):
         matches = [DOT_RNN_PAT.match(str(p)) for p in paths]
-        version = RarScheme.DOT_RNN
+        scheme = RarScheme.DOT_RNN
 
         for path, match in zip(paths, matches):
             if match is None:
-                raise ValueError(f'"{path}" does not match the version-3 pattern')
+                raise ValueError(f'"{path}" does not match the scheme-3 pattern')
     elif len(paths) > 1:
-        version = RarScheme.PART_N
+        scheme = RarScheme.PART_N
     else:
-        version = RarScheme.AMBIGUOUS
+        scheme = RarScheme.AMBIGUOUS
 
     parsed = [RARPath.from_match(match) for match in matches]
 
@@ -99,7 +99,7 @@ def parse_rar_list(
 
     actual = {match.index for match in parsed}
 
-    match version:
+    match scheme:
         case RarScheme.DOT_RNN:
             base = -1
         case RarScheme.PART_N:
@@ -107,15 +107,15 @@ def parse_rar_list(
         case RarScheme.AMBIGUOUS:
             # It's only possible for this to be a valid PART_N if the only index is 1
             if actual == {1}:
-                return version, parsed
-            version = RarScheme.DOT_RNN
+                return scheme, parsed
+            scheme = RarScheme.DOT_RNN
             base = -1
 
             # This started as an ambiguous case where the index might have been part of a PART_N suffix.
             # Since we've ruled that out, the actual index set is reinterpreted as the base only (-1).
             actual = {-1}
 
-    if version == RarScheme.DOT_RNN:
+    if scheme == RarScheme.DOT_RNN:
         n_unnumbered = sum(1 for match in parsed if match.suffix == "rar")
         if n_unnumbered != 1:
             raise ValueError(
@@ -135,17 +135,17 @@ def parse_rar_list(
             "The following indices are missing: " + ", ".join(str(i) for i in missing)
         )
 
-    return version, parsed
+    return scheme, parsed
 
 
-def rar_sort(rar_paths: typing.Sequence[str | Path]) -> list[str]:
-    version, parsed = parse_rar_list(rar_paths)
-    return [rar_path.path for rar_path in sorted(parsed)]
+def rar_sort(rar_paths: typing.Sequence[str | Path]) -> tuple[RarScheme, list[str]]:
+    scheme, parsed = parse_rar_list(rar_paths)
+    return scheme, [rar_path.path for rar_path in sorted(parsed)]
 
 
 def find_rar_files(
     directory: Path | str, seek_stem: str | None = None
-) -> dict[str, list[Path]]:
+) -> dict[str, tuple[RarScheme, list[Path]]]:
     directory = Path(directory)
     rar_dict: dict[str, list[Path]] = {}
     for path in directory.iterdir():
@@ -165,4 +165,10 @@ def find_rar_files(
                 rar_dict[stem].append(path)
             else:
                 rar_dict[stem] = [path]
-    return {k: [Path(p) for p in rar_sort(v)] for k, v in rar_dict.items()}
+    ret_dict = {}
+    for k, v in rar_dict.items():
+        scheme, rar_volumes = rar_sort(v)
+        ret_dict[k] = (scheme, [Path(p) for p in rar_volumes])
+    return ret_dict
+        
+
