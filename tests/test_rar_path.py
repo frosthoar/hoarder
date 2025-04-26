@@ -1,12 +1,15 @@
 import hoarder
 from hoarder.rar_path import parse_rar_list, RarScheme, rar_sort
 
+
 def test_parse() -> None:
     assert (
         parse_rar_list(("a.part1.rar", "a.part2.rar"))[0] == RarScheme.PART_N
     ), "Simple PART_N"
 
-    assert parse_rar_list(("a.rar", "a.r00", "a.r01"))[0] == RarScheme.DOT_RNN, "Simple DOT_RNN"
+    assert (
+        parse_rar_list(("a.rar", "a.r00", "a.r01"))[0] == RarScheme.DOT_RNN
+    ), "Simple DOT_RNN"
 
     assert (
         parse_rar_list(("a.rar",))[0] == RarScheme.DOT_RNN
@@ -62,16 +65,16 @@ def test_parse() -> None:
 
 
 def test_sort() -> None:
-    assert tuple(rar_sort(("a.r00", "a.rar", "a.r01"))[1]) == (
+    assert tuple(rar_sort(("a.r00", "a.rar", "a.r01"))) == (
         "a.rar",
         "a.r00",
         "a.r01",
     ), "Simple DOT_RNN sort"
 
-    assert tuple(rar_sort(("a.part2.rar", "a.part1.rar"))[1]) == (
+    assert tuple(rar_sort(("a.part2.rar", "a.part1.rar"))) == (
         "a.part1.rar",
         "a.part2.rar",
-        ), "Simple PART_N sort"
+    ), "Simple PART_N sort"
 
 
 if __name__ == "__main__":

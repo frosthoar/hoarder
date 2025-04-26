@@ -140,7 +140,7 @@ def parse_rar_list(
 
 def rar_sort(rar_paths: typing.Sequence[str | Path]) -> list[str]:
     version, parsed = parse_rar_list(rar_paths)
-    return version, (rar_path.path for rar_path in sorted(parsed))
+    return (rar_path.path for rar_path in sorted(parsed))
 
 
 def find_rar_files(
@@ -165,8 +165,4 @@ def find_rar_files(
                 rar_dict[stem].append(path)
             else:
                 rar_dict[stem] = [path]
-    return {k: [Path(p) for p in rar_sort(v)[1]] for k, v in rar_dict.items()}
-
-
-
-
+    return {k: [Path(p) for p in rar_sort(v)] for k, v in rar_dict.items()}
