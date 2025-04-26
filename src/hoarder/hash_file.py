@@ -20,9 +20,17 @@ class Algo(enum.IntEnum):
 Self = typing.TypeVar("Self", bound="FileEntry")
 
 
-@dataclasses.dataclass(slots=True, eq=True, frozen=True)
+@dataclasses.dataclass(slots=True, eq=True)
 class FileEntry:
-    """This class contains information about a file, either on disk or as part of an archive."""
+    """
+    Represents a file in a hash-based collection (SFV, RAR, etc.).
+
+    Identity and hashing are based on the file's relative path.
+    DO NOT mix FileEntry instances from different containers unless
+    their paths are guaranteed to be unique.
+
+    This class is mutable to allow gradual enrichment (e.g. adding hashes).
+    """
 
     path: pathlib.PurePath
     size: int | None
@@ -32,6 +40,9 @@ class FileEntry:
 
     def __lt__(self: Self, other: Self) -> bool:
         return self.path < other.path
+
+    def __hash__(self: Self) -> int:
+        return hash(self.path)
 
 
 T = typing.TypeVar("T", bound="HashFile")
