@@ -57,7 +57,7 @@ class HashNameFile(hash_file.HashFile):
                 raise ValueError("HashNameFile cannot have a directory entry.")
             if next(iter(files)).path != path.name:
                 raise ValueError(
-                    f"HashNameFile path {path} does not match file entry {files[0].path}"
+                    f"HashNameFile path {path} does not match file entry {next(iter(path)).path}"
                 )
         super().__init__(path, files)
         self.enc = enc

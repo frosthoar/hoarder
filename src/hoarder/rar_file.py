@@ -237,7 +237,6 @@ class RarFile(hash_file.HashFile):
         """Update the hash values of all files in the archive.
         This will always use the slow method."""
         logger.debug("Updating hash values for %(name)s", {"name": self.path.name})
-        new_set = set()
         for entry in self:
             if not entry.hash_value:
                 try:
