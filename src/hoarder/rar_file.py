@@ -20,7 +20,8 @@ class RarFile(hash_file.HashFile):
     """This class contains information about a RAR file."""
 
     password: str | None
-    version: rar_path.RarVersion | None
+    scheme: rar_path.RarScheme | None
+    version: str | None
     n_volumes: int | None
 
     def __init__(
@@ -28,13 +29,14 @@ class RarFile(hash_file.HashFile):
         path: pathlib.Path,
         files: set[hash_file.FileEntry] | None = None,
         password: str | None = None,
-        version: rar_path.RarVersion | None = None,
+        version: str | None = None,
+        scheme: rar_path.RarScheme | None = None,
         n_volumes: int | None = None,
     ) -> None:
         super().__init__(path, files)
         self.password = password
-        self.version: rar_path.RarVersion | None = version
-        self.version = version
+        self.scheme: rar_path.RarScheme | None = scheme
+        self.scheme = scheme
         self.n_volumes: int | None = n_volumes
 
     def get_volumes(self) -> list[pathlib.Path]:
@@ -45,12 +47,12 @@ class RarFile(hash_file.HashFile):
             raise ValueError(f"Invalid number of volumes for {self.path}")
         if self.n_volumes == 1:
             return [self.path]
-        if self.version == rar_path.RarVersion.V3:
+        if self.scheme == rar_path.RarScheme.DOT_RNN:
             return [self.path.parent / f"{self.path.stem}.rar"] + [
                 self.path.parent / f"{self.path.stem}.r{index:02d}"
                 for index in range(0, self.n_volumes - 1)
             ]
-        if self.version == rar_path.RarVersion.V5:
+        if self.scheme == rar_path.RarScheme.PART_N:
             stem = self.path.stem.split(".part")[0]
             volume_list = [
                 self.path.parent / f"{stem}.part{index}.rar"
@@ -84,8 +86,8 @@ class RarFile(hash_file.HashFile):
         elif path.is_file():
             logger.debug("A file %s was given, trying to find RAR files", path)
             if match := (
-                rar_path.V5_PAT.match(str(path.name))
-                or rar_path.V3_PAT.match(str(path.name))
+                rar_path.DOT_RNN_PAT.match(str(path.name))
+                or rar_path.PART_N_PAT.match(str(path.name))
             ):
                 seek_stem = match["stem"]
                 logger.debug("Path %s matches a RAR pattern", path)
@@ -110,16 +112,12 @@ class RarFile(hash_file.HashFile):
 
         infos = RarFile.list_rar(main_volume, password)
         type_entries = [entry for entry in infos if "Type" in entry]
+
         if not type_entries or len(type_entries) > 1:
-            raise ValueError(f"No 'Type' entries found in {path}")
-        if type_entries[0]["Type"] == "Rar3":
-            version = rar_path.RarVersion.V3
-        if type_entries[0]["Type"] == "Rar":
-            version = rar_path.RarVersion.V3
-        elif type_entries[0]["Type"] == "Rar5":
-            version = rar_path.RarVersion.V5
+            version = None
+            logger.warn(f"No 'Type' entries found in {path}")
         else:
-            raise ValueError(f"Unknown RAR version {type_entries[0]['Type']} in {path}")
+            version = type_entries[0]["Type"]
 
         files: set[hash_file.FileEntry] = set()
         for entry in infos:
@@ -129,7 +127,7 @@ class RarFile(hash_file.HashFile):
                 is_dir = entry["Folder"] == "+"
                 hash_value = None
                 algo = None
-                if version == rar_path.RarVersion.V3:
+                if version and version.upper() in ("RAR", "RAR3"):
                     # RAR5 hashes the file contents again with their respective mtimes,
                     # so the CRCs in the header are not useful for verification.
                     hash_value = bytes.fromhex(entry["CRC"]) if "CRC" in entry else None
@@ -137,7 +135,7 @@ class RarFile(hash_file.HashFile):
                 files.add(
                     hash_file.FileEntry(entry_path, size, is_dir, hash_value, algo)
                 )
-        return cls(main_volume, files, password, version, n_volumes)
+        return cls(main_volume, files, password, version, None, n_volumes)
 
     @classmethod
     def list_rar(
@@ -245,7 +243,7 @@ class RarFile(hash_file.HashFile):
                     if entry.is_dir:
                         crc = b"\x00" * 4
                     else:
-                        crc = self.get_crc32_slow(entry.path)  # used for V5, slow
+                        crc = self.get_crc32_slow(entry.path)  # used for PART_N, slow
 
                     entry.hash_value = crc
                     entry.algo = hash_file.Algo.CRC32
