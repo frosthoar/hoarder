@@ -140,7 +140,7 @@ def parse_rar_list(
 
 def rar_sort(rar_paths: typing.Sequence[str | Path]) -> list[str]:
     version, parsed = parse_rar_list(rar_paths)
-    return (rar_path.path for rar_path in sorted(parsed))
+    return [rar_path.path for rar_path in sorted(parsed)]
 
 
 def find_rar_files(
