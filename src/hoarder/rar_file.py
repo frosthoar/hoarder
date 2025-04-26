@@ -127,7 +127,7 @@ class RarFile(hash_file.HashFile):
                 is_dir = entry["Folder"] == "+"
                 hash_value = None
                 algo = None
-                if version.upper() in ("RAR", "RAR3"):
+                if version and version.upper() in ("RAR", "RAR3"):
                     # RAR5 hashes the file contents again with their respective mtimes,
                     # so the CRCs in the header are not useful for verification.
                     hash_value = bytes.fromhex(entry["CRC"]) if "CRC" in entry else None
