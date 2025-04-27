@@ -44,6 +44,8 @@ class HashNameFile(hash_file.HashFile):
 
     enc: HashEnclosure
 
+    DELETABLE: typing.ClassVar[bool] = False
+
     def __init__(
         self,
         path: pathlib.Path,
@@ -60,7 +62,7 @@ class HashNameFile(hash_file.HashFile):
                     f"HashNameFile path {path} does not match file entry {next(iter(files)).path}"
                 )
         super().__init__(path, files)
-        self.enc = enc
+        self.enc: HashEnclosure = enc
 
     @classmethod
     def from_path(cls: typing.Type[T], path: pathlib.Path) -> T:
