@@ -53,6 +53,8 @@ class HashFile(abc.ABC):
 
     path: pathlib.Path
     files: set[FileEntry]
+    present: bool = True
+
     DELETABLE: ClassVar[bool] = True
 
     def __init__(self, path: pathlib.Path, files: set[FileEntry] | None = None) -> None:
