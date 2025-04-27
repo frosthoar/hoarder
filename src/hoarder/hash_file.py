@@ -53,7 +53,7 @@ class HashFile(abc.ABC):
 
     path: pathlib.Path
     files: set[FileEntry]
-    present: bool = True
+    present: bool
 
     DELETABLE: ClassVar[bool] = True
 

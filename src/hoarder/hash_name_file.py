@@ -61,6 +61,7 @@ class HashNameFile(hash_file.HashFile):
                     f"HashNameFile path {path} does not match file entry {next(iter(files)).path}"
                 )
         super().__init__(path, files)
+        self.present = True
         self.enc = enc
 
     @classmethod
