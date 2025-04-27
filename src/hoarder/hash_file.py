@@ -53,6 +53,7 @@ class HashFile(abc.ABC):
 
     path: pathlib.Path
     files: set[FileEntry]
+    DELETABLE: ClassVar[bool] = True
 
     def __init__(self, path: pathlib.Path, files: set[FileEntry] | None = None) -> None:
         """Create a HashFile object by reading information from an hash file given its path."""
