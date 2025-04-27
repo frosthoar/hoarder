@@ -44,7 +44,6 @@ class HashNameFile(hash_file.HashFile):
 
     enc: HashEnclosure
 
-
     DELETABLE: typing.ClassVar[bool] = False
 
     def __init__(
