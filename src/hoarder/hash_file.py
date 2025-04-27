@@ -55,7 +55,7 @@ class HashFile(abc.ABC):
     files: set[FileEntry]
     present: bool
 
-    DELETABLE: ClassVar[bool] = True
+    DELETABLE: typing.ClassVar[bool] = True
 
     def __init__(self, path: pathlib.Path, files: set[FileEntry] | None = None) -> None:
         """Create a HashFile object by reading information from an hash file given its path."""
