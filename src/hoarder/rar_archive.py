@@ -18,7 +18,16 @@ T = typing.TypeVar("T", bound="RarArchive")
 
 class RarArchive(hash_archive.HashArchive):
     """This class contains information about a RAR file."""
-    __slots__ = ["path", "files", "password", "version", "scheme", "n_volumes", "present"]
+
+    __slots__ = [
+        "path",
+        "files",
+        "password",
+        "version",
+        "scheme",
+        "n_volumes",
+        "present",
+    ]
 
     password: str | None
     scheme: rar_path.RarScheme | None
@@ -75,9 +84,9 @@ class RarArchive(hash_archive.HashArchive):
 
         if path.is_dir():
             logger.debug("A directory %s was given, trying to find RAR files", path)
-            rar_dict: dict[
-                str, tuple[rar_path.RarScheme, list[pathlib.Path]]
-            ] = rar_path.find_rar_files(path)
+            rar_dict: dict[str, tuple[rar_path.RarScheme, list[pathlib.Path]]] = (
+                rar_path.find_rar_files(path)
+            )
             if len(rar_dict) != 1:
                 raise ValueError(
                     f"Directory {path} contains multiple non-indexed RAR files"
