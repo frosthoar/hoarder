@@ -54,14 +54,14 @@ logger = logging.getLogger("hoarder.test_hnf_file")
 compare_files_wo_dir = [el for el in compare_files if not el.is_dir]
 
 
-def test_hnf_files():
-    hnf_files = []
+def test_hnf_archives():
+    hnf_archives = []
     p = test_file_path / ".." / "test_files" / "hnf"
     for hnf_file_path in os.listdir(p):
         logger.debug(hnf_file_path)
-        hnf_file = hoarder.HashNameArchive.from_path(p / hnf_file_path)
-        hnf_files.append(hnf_file)
-    assert len(hnf_files) == 4
-    assert sorted(itertools.chain(*map(lambda x: x.files, hnf_files))) == sorted(
+        hnf_archive = hoarder.HashNameArchive.from_path(p / hnf_file_path)
+        hnf_archives.append(hnf_archive)
+    assert len(hnf_archives) == 4
+    assert sorted(itertools.chain(*map(lambda x: x.files, hnf_archives))) == sorted(
         compare_files
     )
