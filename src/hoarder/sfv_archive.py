@@ -14,6 +14,7 @@ T = typing.TypeVar("T", bound="SfvArchive")
 
 class SfvArchive(hash_archive.HashArchive):
     """This class contains information about a SFV file."""
+
     __slots__ = ["path", "files", "present"]
 
     @classmethod
