@@ -1,4 +1,4 @@
-"""This module contains the HashNameFile class, which represents a file with a hash in its name."""
+"""This module contains the HashNameArchive class, which represents a file with a hash in its name."""
 
 import enum
 import logging
@@ -7,11 +7,11 @@ import pathlib
 import re
 import typing
 
-import hoarder.hash_file as hash_file
+import hoarder.hash_archive as hash_archive
 
 logger = logging.getLogger("hoarder.hash_name_file")
 
-T = typing.TypeVar("T", bound="HashNameFile")
+T = typing.TypeVar("T", bound="HashNameArchive")
 
 # CRC32 regex in filenames
 
@@ -23,8 +23,9 @@ class HashEnclosure(enum.Enum):
     PAREN = "()"
 
 
-class HashNameFile(hash_file.HashFile):
+class HashNameArchive(hash_archive.HashArchive):
     """This class contains information about a file that has a hash in its name."""
+    __slots__ = ["path", "files", "enc", "present"]
 
     # Regular expressions to match hash in file names
     # are now precompiled with re.IGNORECASE
@@ -49,24 +50,24 @@ class HashNameFile(hash_file.HashFile):
     def __init__(
         self,
         path: pathlib.Path,
-        files: set[hash_file.FileEntry] | None = None,
+        files: set[hash_archive.FileEntry] | None = None,
         enc: HashEnclosure = HashEnclosure.SQUARE,
     ) -> None:
         if files is not None:
             if len(files) != 1:
-                raise ValueError("HashNameFile must have exactly one file entry.")
+                raise ValueError("HashNameArchive must have exactly one file entry.")
             if next(iter(files)).is_dir:
-                raise ValueError("HashNameFile cannot have a directory entry.")
+                raise ValueError("HashNameArchive cannot have a directory entry.")
             if next(iter(files)).path.name != path.name:
                 raise ValueError(
-                    f"HashNameFile path {path} does not match file entry {next(iter(files)).path}"
+                    f"HashNameArchive path {path} does not match file entry {next(iter(files)).path}"
                 )
         super().__init__(path, files)
         self.enc: HashEnclosure = enc
 
     @classmethod
     def from_path(cls: typing.Type[T], path: pathlib.Path) -> T:
-        """Create a HashNameFile object by reading information from a file name given its path."""
+        """Create a HashNameArchive object by reading information from a file name given its path."""
         if not path.is_file():
             raise FileNotFoundError(f"File not found: {path}")
         logger.debug("Reading %s", path)
@@ -76,14 +77,14 @@ class HashNameFile(hash_file.HashFile):
             match = cls._regexes[enc].match(path.name)
             if match:
                 crc = bytes.fromhex(match.group("crc"))
-                algo = hash_file.Algo.CRC32
+                algo = hash_archive.Algo.CRC32
                 break
         if not crc:
             raise ValueError(f"No hash found in {path}")
         file_size = os.path.getsize(path)
 
         files = {
-            hash_file.FileEntry(
+            hash_archive.FileEntry(
                 pathlib.PurePath(path.name),
                 file_size,
                 False,

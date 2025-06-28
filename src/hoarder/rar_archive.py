@@ -1,4 +1,4 @@
-"""This module contains the RarFile class, which holds information about a RAR file"""
+"""This module contains the RarArchive class, which holds information about a RAR file"""
 
 import logging
 import os
@@ -7,17 +7,18 @@ import re
 import subprocess
 import typing
 
-import hoarder.hash_file as hash_file
+import hoarder.hash_archive as hash_archive
 import hoarder.rar_path as rar_path
 from hoarder.shared import SEVENZIP
 
 logger = logging.getLogger("hoarder.rar_file")
 
-T = typing.TypeVar("T", bound="RarFile")
+T = typing.TypeVar("T", bound="RarArchive")
 
 
-class RarFile(hash_file.HashFile):
+class RarArchive(hash_archive.HashArchive):
     """This class contains information about a RAR file."""
+    __slots__ = ["path", "files", "password", "version", "scheme", "n_volumes", "present"]
 
     password: str | None
     scheme: rar_path.RarScheme | None
@@ -27,7 +28,7 @@ class RarFile(hash_file.HashFile):
     def __init__(
         self,
         path: pathlib.Path,
-        files: set[hash_file.FileEntry] | None = None,
+        files: set[hash_archive.FileEntry] | None = None,
         password: str | None = None,
         version: str | None = None,
         scheme: rar_path.RarScheme | None = None,
@@ -70,7 +71,7 @@ class RarFile(hash_file.HashFile):
     def from_path(
         cls: typing.Type[T], path: pathlib.Path, password: str | None = None
     ) -> T:
-        """Create a RarFile object by reading information from a (main) RAR file given its path."""
+        """Create a RarArchive object by reading information from a (main) RAR file given its path."""
 
         if path.is_dir():
             logger.debug("A directory %s was given, trying to find RAR files", path)
@@ -114,7 +115,7 @@ class RarFile(hash_file.HashFile):
             logger.debug("Path %s is not a file or directory", path)
             raise FileNotFoundError(f"{path} could not be found")
 
-        infos = RarFile.list_rar(main_volume, password)
+        infos = RarArchive.list_rar(main_volume, password)
         type_entries = [entry for entry in infos if "Type" in entry]
 
         if not type_entries or len(type_entries) > 1:
@@ -123,7 +124,7 @@ class RarFile(hash_file.HashFile):
         else:
             version = type_entries[0]["Type"]
 
-        files: set[hash_file.FileEntry] = set()
+        files: set[hash_archive.FileEntry] = set()
         for entry in infos:
             if "Path" in entry and "Type" not in entry:
                 entry_path = pathlib.Path(entry["Path"])
@@ -135,9 +136,9 @@ class RarFile(hash_file.HashFile):
                     # RAR5 hashes the file contents again with their respective mtimes,
                     # so the CRCs in the header are not useful for verification.
                     hash_value = bytes.fromhex(entry["CRC"]) if "CRC" in entry else None
-                    algo = hash_file.Algo.CRC32 if hash_value else None
+                    algo = hash_archive.Algo.CRC32 if hash_value else None
                 files.add(
-                    hash_file.FileEntry(entry_path, size, is_dir, hash_value, algo)
+                    hash_archive.FileEntry(entry_path, size, is_dir, hash_value, algo)
                 )
         logger.info(scheme)
         return cls(main_volume, files, password, version, scheme, n_volumes)
@@ -251,7 +252,7 @@ class RarFile(hash_file.HashFile):
                         crc = self.get_crc32_slow(entry.path)  # used for PART_N, slow
 
                     entry.hash_value = crc
-                    entry.algo = hash_file.Algo.CRC32
+                    entry.algo = hash_archive.Algo.CRC32
                 except subprocess.CalledProcessError:
                     logger.error(
                         "Failed to get CRC32 for %(entry_path)s",

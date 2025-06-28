@@ -1,16 +1,16 @@
-from . import hash_file, rar_file, sfv_file, shared
-from .hash_name_file import HashNameFile
-from .rar_file import RarFile
+from . import hash_archive, rar_archive, sfv_archive, shared
+from .hash_name_archive import HashNameArchive
+from .rar_archive import RarArchive
 from .rar_path import RarScheme
-from .sfv_file import SfvFile
+from .sfv_archive import SfvArchive
 
 __all__ = [
     "shared",
-    "hash_file",
-    "rar_file",
-    "sfv_file",
-    "RarFile",
-    "SfvFile",
+    "hash_archive",
+    "rar_archive",
+    "sfv_archive",
+    "RarArchive",
+    "SfvArchive",
     "RarScheme",
-    "HashNameFile",
+    "HashNameArchive",
 ]

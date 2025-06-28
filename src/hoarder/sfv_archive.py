@@ -1,23 +1,24 @@
-"""This module contains the SfvFile class, which represents a SFV file."""
+"""This module contains the SfvArchive class, which represents a SFV file."""
 
 import logging
 import os
 import pathlib
 import typing
 
-import hoarder.hash_file as hash_file
+import hoarder.hash_archive as hash_archive
 
 logger = logging.getLogger("hoarder.sfv_file")
 
-T = typing.TypeVar("T", bound="SfvFile")
+T = typing.TypeVar("T", bound="SfvArchive")
 
 
-class SfvFile(hash_file.HashFile):
+class SfvArchive(hash_archive.HashArchive):
     """This class contains information about a SFV file."""
 
     @classmethod
     def from_path(cls: typing.Type[T], path: pathlib.Path) -> T:
-        """Create a SfvFile object by reading information from an SFV file given its path."""
+        """Create a SfvArchive object by reading information from an SFV file given its path."""
+        __slots__ = ["path", "files", "present"]
         files = []
         with open(path, "rt", encoding="utf-8") as file:
             logger.debug("Reading %s", path)
@@ -48,12 +49,12 @@ class SfvFile(hash_file.HashFile):
                         )
 
                     files.append(
-                        hash_file.FileEntry(
+                        hash_archive.FileEntry(
                             pathlib.Path(entry_path),
                             file_size,
                             False,
                             bytes.fromhex(crc),
-                            hash_file.Algo.CRC32,
+                            hash_archive.Algo.CRC32,
                         )
                     )
                 except ValueError as e:
