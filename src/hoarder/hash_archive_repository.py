@@ -25,7 +25,7 @@ class TypeConfig:
 
 
 HASH_ARCHIVE_TYPE = TypeConfig(
-    cls=HashArchive, # will never be used, abstract class
+    cls=HashArchive,  # will never be used, abstract class
     save={
         "path": lambda obj: str(obj.path),
         "type": lambda obj: type(obj).__name__,
@@ -97,6 +97,7 @@ TYPE_TABLE: dict[str, TypeConfig] = {
         },
     ),
 }
+
 
 def get_db_connection(path: str) -> sqlite3.Connection:
     conn = sqlite3.connect(path)
@@ -202,25 +203,25 @@ class HashArchiveRepository:
         conn.row_factory = sqlite3.Row
         cur = conn.cursor()
         cur.execute("BEGIN;")
-        
+
         cur.execute(
             "SELECT type, path, present, password, rar_scheme, rar_version, n_volumes, hash_enclosure FROM hash_archives WHERE path = :path",
-            {"path": str(path)}
+            {"path": str(path)},
         )
         hash_archive_row = cur.fetchone()
         hash_archive = construct_object_from_row(
             hash_archive_row, hash_archive_row["type"]
         )
-        
+
         cur.execute(
             "SELECT path, size, is_dir, hash_value, algo FROM file_entries WHERE archive_id = (SELECT id FROM hash_archives WHERE path = :path)",
-            {"path": str(path)}
+            {"path": str(path)},
         )
         file_entry_rows = cur.fetchall()
         file_entries = set()
         for row in file_entry_rows:
             file_entries.add(construct_object_from_row(row, "FileEntry"))
-        
+
         hash_archive.files = file_entries
         conn.close()
         return hash_archive
