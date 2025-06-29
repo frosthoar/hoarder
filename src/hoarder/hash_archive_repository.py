@@ -2,12 +2,11 @@ import dataclasses
 import datetime
 import pathlib
 import sqlite3
-
 from collections.abc import Callable
-from typing import Type, Any
+from typing import Any, Type
 
 from hoarder import HashNameArchive, RarArchive, RarScheme, SfvArchive
-from hoarder.hash_archive import Algo, FileEntry, HashArchive 
+from hoarder.hash_archive import Algo, FileEntry, HashArchive
 from hoarder.hash_name_archive import HashEnclosure
 
 
