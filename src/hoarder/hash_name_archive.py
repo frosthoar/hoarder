@@ -26,8 +26,6 @@ class HashEnclosure(enum.Enum):
 class HashNameArchive(hash_archive.HashArchive):
     """This class contains information about a file that has a hash in its name."""
 
-    __slots__ = ["path", "files", "enc", "present"]
-
     # Regular expressions to match hash in file names
     # are now precompiled with re.IGNORECASE
     _regexes: dict[HashEnclosure, re.Pattern[str]] = {
@@ -64,6 +62,8 @@ class HashNameArchive(hash_archive.HashArchive):
                     f"HashNameArchive path {path} does not match file entry {next(iter(files)).path}"
                 )
         super().__init__(path, files)
+        if not isinstance(enc, HashEnclosure):
+            raise ValueError("Invalid hash enclosure")
         self.enc: HashEnclosure = enc
 
     @classmethod
