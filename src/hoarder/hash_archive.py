@@ -76,8 +76,8 @@ class HashArchive(abc.ABC):
 
     def __str__(self) -> str:
         placeholder = "-"
-        maxlen_path = max(len(str(file.path)) for file in self)
-        maxlen_size = max(len(str(file.size or placeholder)) for file in self)
+        maxlen_path = max([0] + [len(str(file.path)) for file in self])
+        maxlen_size = max([0] + [len(str(file.size or placeholder)) for file in self])
         maxlen_hash = 8 if any(file.hash_value for file in self) else 0
         maxlen_algo = 5 if any(file.algo for file in self) else 0
         class_name = self.__class__.__name__

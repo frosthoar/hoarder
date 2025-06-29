@@ -15,8 +15,6 @@ T = typing.TypeVar("T", bound="SfvArchive")
 class SfvArchive(hash_archive.HashArchive):
     """This class contains information about a SFV file."""
 
-    __slots__ = ["path", "files", "present"]
-
     @classmethod
     def from_path(cls: typing.Type[T], path: pathlib.Path) -> T:
         """Create a SfvArchive object by reading information from an SFV file given its path."""

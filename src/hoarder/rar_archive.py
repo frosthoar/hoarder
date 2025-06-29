@@ -19,16 +19,6 @@ T = typing.TypeVar("T", bound="RarArchive")
 class RarArchive(hash_archive.HashArchive):
     """This class contains information about a RAR file."""
 
-    __slots__ = [
-        "path",
-        "files",
-        "password",
-        "version",
-        "scheme",
-        "n_volumes",
-        "present",
-    ]
-
     password: str | None
     scheme: rar_path.RarScheme | None
     version: str | None
@@ -48,6 +38,7 @@ class RarArchive(hash_archive.HashArchive):
         self.scheme: rar_path.RarScheme | None = scheme
         self.scheme = scheme
         self.n_volumes: int | None = n_volumes
+        self.version = None
 
     def get_volumes(self) -> list[pathlib.Path]:
         """Get a list of all volumes of the same RAR archive."""
