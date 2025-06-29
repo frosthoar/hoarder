@@ -188,7 +188,8 @@ class HashArchiveRepository:
                 [f":{col} AS {col}" for col in fe_insert_dicts[0].keys()]
             )
 
-            sql_insert = f"INSERT INTO file_entries({col_str}, archive_id) SELECT {as_str}, id as archive_id FROM hash_archives WHERE path = :archive_path ;"
+            sql_insert = f"""INSERT INTO file_entries({col_str}, archive_id)
+            SELECT {as_str}, id as archive_id FROM hash_archives WHERE path = :archive_path ;"""
             full = [
                 (d | {"archive_path": ha_insert_dict["path"]}) for d in fe_insert_dicts
             ]
@@ -204,7 +205,8 @@ class HashArchiveRepository:
         cur.execute("BEGIN;")
 
         cur.execute(
-            "SELECT type, path, present, password, rar_scheme, rar_version, n_volumes, hash_enclosure FROM hash_archives WHERE path = :path",
+            """SELECT type, path, present, password, rar_scheme, rar_version, n_volumes, hash_enclosure
+            FROM hash_archives WHERE path = :path""",
             {"path": str(path)},
         )
         hash_archive_row = cur.fetchone()
@@ -213,7 +215,8 @@ class HashArchiveRepository:
         )
 
         cur.execute(
-            "SELECT path, size, is_dir, hash_value, algo FROM file_entries WHERE archive_id = (SELECT id FROM hash_archives WHERE path = :path)",
+            """SELECT path, size, is_dir, hash_value, algo FROM file_entries WHERE archive_id =
+            (SELECT id FROM hash_archives WHERE path = :path)""",
             {"path": str(path)},
         )
         file_entry_rows = cur.fetchall()
