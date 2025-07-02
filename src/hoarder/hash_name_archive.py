@@ -62,12 +62,11 @@ class HashNameArchive(hash_archive.HashArchive):
                     f"HashNameArchive path {path} does not match file entry {next(iter(files)).path}"
                 )
         super().__init__(path, files)
-        if not isinstance(enc, HashEnclosure):
-            raise ValueError("Invalid hash enclosure")
-        self.enc: HashEnclosure = enc
+        self.enc = enc
 
     @classmethod
-    def from_path(cls: typing.Type[T], path: pathlib.Path) -> T:
+    @typing.override
+    def from_path(cls: type[T], path: pathlib.Path) -> T:
         """Create a HashNameArchive object by reading information from a file name given its path."""
         if not path.is_file():
             raise FileNotFoundError(f"File not found: {path}")
@@ -80,8 +79,9 @@ class HashNameArchive(hash_archive.HashArchive):
                 crc = bytes.fromhex(match.group("crc"))
                 algo = hash_archive.Algo.CRC32
                 break
-        if not crc:
-            raise ValueError(f"No hash found in {path}")
+        else:
+            raise ValueError(f"Could not extract hash from {path}")
+
         file_size = os.path.getsize(path)
 
         files = {

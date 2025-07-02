@@ -35,9 +35,8 @@ class RarArchive(hash_archive.HashArchive):
     ) -> None:
         super().__init__(path, files)
         self.password = password
-        self.scheme: rar_path.RarScheme | None = scheme
         self.scheme = scheme
-        self.n_volumes: int | None = n_volumes
+        self.n_volumes = n_volumes
         self.version = None
 
     def get_volumes(self) -> list[pathlib.Path]:
@@ -68,8 +67,9 @@ class RarArchive(hash_archive.HashArchive):
         )
 
     @classmethod
+    @typing.override
     def from_path(
-        cls: typing.Type[T], path: pathlib.Path, password: str | None = None
+        cls: type[T], path: pathlib.Path, password: str | None = None
     ) -> T:
         """Create a RarArchive object by reading information from a (main) RAR file given its path."""
 
@@ -120,7 +120,7 @@ class RarArchive(hash_archive.HashArchive):
 
         if not type_entries or len(type_entries) > 1:
             version = None
-            logger.warn(f"No 'Type' entries found in {path}")
+            logger.warning(f"No 'Type' entries found in {path}")
         else:
             version = type_entries[0]["Type"]
 
@@ -185,7 +185,7 @@ class RarArchive(hash_archive.HashArchive):
 
     def get_crc32_slow(
         self,
-        entry_path: pathlib.Path | str,
+        entry_path: pathlib.PurePath | str,
     ) -> bytes | None:
         """The slow method to get the CRC32 of a file in a RAR archive.
         7z extracts files internally - this is necessary for RAR5 archives,

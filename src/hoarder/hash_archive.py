@@ -1,7 +1,9 @@
 """This module contains classes and functions to handle files (e.g. SFV, RAR, ...) containing hash information."""
+from __future__ import annotations
 
 import abc
 import dataclasses
+import collections.abc
 import enum
 import pathlib
 import typing
@@ -15,9 +17,6 @@ class Algo(enum.IntEnum):
     SHA1 = 3
     SHA256 = 4
     SHA512 = 5
-
-
-Self = typing.TypeVar("Self", bound="FileEntry")
 
 
 @dataclasses.dataclass(slots=True, eq=True)
@@ -38,10 +37,11 @@ class FileEntry:
     hash_value: bytes | None = None
     algo: Algo | None = None
 
-    def __lt__(self: Self, other: Self) -> bool:
+    def __lt__(self: FileEntry, other: FileEntry) -> bool:
         return self.path < other.path
 
-    def __hash__(self: Self) -> int:
+    @typing.override
+    def __hash__(self: FileEntry) -> int:
         return hash(self.path)
 
 
@@ -55,25 +55,29 @@ class HashArchive(abc.ABC):
     files: set[FileEntry]
     present: bool
 
+    # Indicates whether the archive file itself (e.g., .sfv, .rar) can safely be deleted after processing.
+    # Most archives are deletable without consequence, except for special cases like HashNameArchive,
+    # where the archive is essentially the file itself and must not be deleted.
     DELETABLE: typing.ClassVar[bool] = True
 
     def __init__(self, path: pathlib.Path, files: set[FileEntry] | None = None) -> None:
         """Create a HashArchive object by reading information from an hash file given its path."""
-        self.files: set[FileEntry] = files or set()
-        self.path: pathlib.Path = path
-        self.present: bool = True
+        self.files = files or set()
+        self.path = path
+        self.present = True
 
     @classmethod
     @abc.abstractmethod
-    def from_path(cls: typing.Type[T], path: pathlib.Path) -> T:
+    def from_path(cls: type[T], path: pathlib.Path) -> T:
         """Create a HashArchive object by reading information from an hash file given its path."""
 
     def __len__(self) -> int:
         return len(self.files)
 
-    def __iter__(self) -> typing.Iterator[FileEntry]:
+    def __iter__(self) -> collections.abc.Iterator[FileEntry]:
         return iter(self.files)
 
+    @typing.override
     def __str__(self) -> str:
         placeholder = "-"
         maxlen_path = max([0] + [len(str(file.path)) for file in self])
@@ -86,7 +90,7 @@ class HashArchive(abc.ABC):
             a
             for a in dir(self)
             if not a.startswith("_")
-            and not callable(getattr(self, a))
+            and not isinstance(getattr(self, a),typing.Callable)
             and a not in ["files", "path"]
         ]
         for attr in printable_attributes:

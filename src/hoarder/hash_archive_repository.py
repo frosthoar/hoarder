@@ -2,8 +2,9 @@ import dataclasses
 import datetime
 import pathlib
 import sqlite3
+import enum
 from collections.abc import Callable
-from typing import Any, Type
+from typing import Any, cast, TypeVar
 
 from hoarder import HashNameArchive, RarArchive, RarScheme, SfvArchive
 from hoarder.hash_archive import Algo, FileEntry, HashArchive
@@ -12,27 +13,71 @@ from hoarder.hash_name_archive import HashEnclosure
 
 @dataclasses.dataclass(frozen=True)
 class TypeConfig:
-    """How to persist & hydrate classes."""
+    """Configuration on how to persist & hydrate classes."""
 
-    cls: Type
+    cls: type
 
     # SQL column → function that extracts its value from the instance
-    save: dict[str, Callable[[Any], Any]]
+    save: dict[str, Callable[[object], object]]
 
     # Obj prop   → function that extracts its value from the SQL hash_archive_row
-    load: dict[str, Callable[[sqlite3.Row], Any]]
+    load: dict[str, Callable[[sqlite3.Row], object]]
 
+def type_saver(obj: object) -> str:
+    return type(obj).__name__
+
+def timestamp_saver(_: object) -> str:
+    return datetime.datetime.strftime(datetime.datetime.now(), "%Y-%m-%d %H:%M:%S")
+
+OUT = TypeVar("OUT", bound="type")
+
+def build_simple_saver(attr: str, outcls: OUT) -> Callable[[object], OUT | None]:
+    def simple_saver(obj: object) -> OUT | None:
+        if getattr(obj, attr, None):
+            val = cast(OUT, outcls(getattr(obj, attr)))
+            return val
+        else:
+            return None
+    return simple_saver
+
+def build_simple_loader(key: str, outcls: OUT) -> Callable[[sqlite3.Row], OUT | None]:
+    def simple_loader(row: sqlite3.Row) -> OUT | None:
+        if row[key]:
+            val = cast(OUT, outcls(row[key]))
+            return val
+        else:
+            return None
+    return simple_loader
+
+def build_enum_saver(attr: str) -> Callable[[object],str | None]:
+    def enum_saver(obj: object) -> str | None:
+        if hasattr(obj, attr):
+            val = cast(enum.Enum, getattr(obj, attr))
+            return str(val.name)
+        else:
+            return None
+    return enum_saver
+
+E = TypeVar("E", bound=enum.Enum)
+
+def build_enum_loader(attr: str, cls: type[E]) -> Callable[[sqlite3.Row], E | None]:
+    def enum_loader(row: sqlite3.Row) -> E | None:
+        if row[attr]:
+            val = cast(str, row[attr])
+            return cast(E, getattr(cls, val))
+        else:
+            return None
+    return enum_loader
+        
 
 HASH_ARCHIVE_TYPE = TypeConfig(
     cls=HashArchive,  # will never be used, abstract class
     save={
-        "path": lambda obj: str(obj.path),
-        "type": lambda obj: type(obj).__name__,
-        "timestamp": lambda obj: datetime.datetime.strftime(
-            datetime.datetime.now(), "%Y-%m-%d %H:%M:%S"
-        ),
+        "path": build_simple_saver("path", str),
+        "type": type_saver,
+        "timestamp": timestamp_saver,
     },
-    load={"path": lambda hash_archive_row: pathlib.Path(hash_archive_row["path"])},
+    load={"path": build_simple_loader("path", pathlib.Path)}
 )
 
 TYPE_TABLE: dict[str, TypeConfig] = {
@@ -41,11 +86,11 @@ TYPE_TABLE: dict[str, TypeConfig] = {
         save=(
             HASH_ARCHIVE_TYPE.save
             | {
-                "hash_enclosure": lambda obj: obj.enc.name,
+                "hash_enclosure": build_enum_saver("enc")
             }
         ),
         load=(
-            HASH_ARCHIVE_TYPE.load | {"enc": lambda d: getattr(HashEnclosure, d["enc"])}
+            HASH_ARCHIVE_TYPE.load | {"enc": build_enum_loader("hash_enclosure", HashEnclosure) }
         ),
     ),
     "RarArchive": TypeConfig(
@@ -53,23 +98,19 @@ TYPE_TABLE: dict[str, TypeConfig] = {
         save=(
             HASH_ARCHIVE_TYPE.save
             | {
-                "password": lambda obj: obj.password,
-                "rar_scheme": lambda obj: obj.scheme.name if obj.scheme else None,
-                "rar_version": lambda obj: obj.version,
-                "n_volumes": lambda obj: obj.n_volumes,
+                "password": build_simple_saver("password", str),
+                "rar_scheme": build_enum_saver("scheme"),
+                "rar_version": build_simple_saver("version", str),
+                "n_volumes": build_simple_saver("n_volumes", int),
             }
         ),
         load=(
             HASH_ARCHIVE_TYPE.load
             | {
-                "password": lambda hash_archive_row: hash_archive_row["password"],
-                "scheme": lambda hash_archive_row: getattr(
-                    RarScheme, hash_archive_row["rar_scheme"]
-                )
-                if hash_archive_row["rar_scheme"]
-                else None,
-                "version": lambda hash_archive_row: hash_archive_row["rar_version"],
-                "n_volumes": lambda hash_archive_row: hash_archive_row["n_volumes"],
+                "password": build_simple_loader("password", str),
+                "scheme": build_enum_loader("rar_scheme", RarScheme),
+                "version": build_simple_loader("rar_version", str),
+                "n_volumes": build_simple_loader("n_volumes", int),
             }
         ),
     ),
@@ -79,20 +120,18 @@ TYPE_TABLE: dict[str, TypeConfig] = {
     "FileEntry": TypeConfig(
         cls=FileEntry,
         save={
-            "path": lambda obj: str(obj.path),
-            "size": lambda obj: obj.size,
-            "is_dir": lambda obj: int(obj.is_dir),
-            "hash_value": lambda obj: obj.hash_value,
-            "algo": lambda obj: obj.algo.name if obj.algo else None,
+            "path": build_simple_saver("path", str),
+            "size": build_simple_saver("size", int),
+            "is_dir": build_simple_saver("is_dir", int),
+            "hash_value": build_simple_saver("hash_value", bytes),
+            "algo": build_enum_saver("algo")
         },
         load={
-            "path": lambda hash_archive_row: pathlib.PurePath(hash_archive_row["path"]),
-            "size": lambda hash_archive_row: hash_archive_row["size"],
-            "is_dir": lambda hash_archive_row: bool(hash_archive_row["is_dir"]),
-            "hash_value": lambda hash_archive_row: hash_archive_row["hash_value"],
-            "algo": lambda hash_archive_row: getattr(Algo, hash_archive_row["algo"])
-            if hash_archive_row["algo"]
-            else None,
+            "path": build_simple_loader("path", pathlib.PurePath),
+            "size": build_simple_loader("size", int),
+            "is_dir": build_simple_loader("is_dir", bool),
+            "hash_value": build_simple_loader("hash_value", bytes),
+            "algo": build_enum_loader("algo", Algo),
         },
     ),
 }
