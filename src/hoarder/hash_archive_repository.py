@@ -5,10 +5,33 @@ import sqlite3
 import enum
 from collections.abc import Callable
 from typing import Any, cast, TypeVar
+from types import TracebackType
 
 from hoarder import HashNameArchive, RarArchive, RarScheme, SfvArchive
 from hoarder.hash_archive import Algo, FileEntry, HashArchive
 from hoarder.hash_name_archive import HashEnclosure
+
+class Sqlite3WithForeignKeys:
+    path: pathlib.Path
+    conn: sqlite3.Connection | None
+
+    def __init__(self, path: pathlib.Path | str):
+        self.path = pathlib.Path(path)
+        self.conn = None
+
+    def __enter__(self) -> sqlite3.Connection:
+        self.conn = sqlite3.connect(self.path, autocommit=False)
+        _ = self.conn("PRAGMA foreign_keys = ON;")
+        return self.conn
+
+    def __exit__(self, exc_type: type[BaseException] | None, exc_value: BaseException | None, traceback: TracebackType | None) -> bool:
+        if exc_value is None and self.conn:
+            self.conn.commit()
+            self.conn.close()
+        elif self.conn:
+            self.conn.rollback()
+            self.conn.close()
+        return False
 
 
 @dataclasses.dataclass(frozen=True)
@@ -23,13 +46,17 @@ class TypeConfig:
     # Obj prop   → function that extracts its value from the SQL hash_archive_row
     load: dict[str, Callable[[sqlite3.Row], object]]
 
+
 def type_saver(obj: object) -> str:
     return type(obj).__name__
+
 
 def timestamp_saver(_: object) -> str:
     return datetime.datetime.strftime(datetime.datetime.now(), "%Y-%m-%d %H:%M:%S")
 
+
 OUT = TypeVar("OUT", bound="type")
+
 
 def build_simple_saver(attr: str, outcls: OUT) -> Callable[[object], OUT | None]:
     def simple_saver(obj: object) -> OUT | None:
@@ -38,7 +65,9 @@ def build_simple_saver(attr: str, outcls: OUT) -> Callable[[object], OUT | None]
             return val
         else:
             return None
+
     return simple_saver
+
 
 def build_simple_loader(key: str, outcls: OUT) -> Callable[[sqlite3.Row], OUT | None]:
     def simple_loader(row: sqlite3.Row) -> OUT | None:
@@ -47,18 +76,23 @@ def build_simple_loader(key: str, outcls: OUT) -> Callable[[sqlite3.Row], OUT | 
             return val
         else:
             return None
+
     return simple_loader
 
-def build_enum_saver(attr: str) -> Callable[[object],str | None]:
+
+def build_enum_saver(attr: str) -> Callable[[object], str | None]:
     def enum_saver(obj: object) -> str | None:
         if hasattr(obj, attr):
             val = cast(enum.Enum, getattr(obj, attr))
             return str(val.name)
         else:
             return None
+
     return enum_saver
 
+
 E = TypeVar("E", bound=enum.Enum)
+
 
 def build_enum_loader(attr: str, cls: type[E]) -> Callable[[sqlite3.Row], E | None]:
     def enum_loader(row: sqlite3.Row) -> E | None:
@@ -67,8 +101,9 @@ def build_enum_loader(attr: str, cls: type[E]) -> Callable[[sqlite3.Row], E | No
             return cast(E, getattr(cls, val))
         else:
             return None
+
     return enum_loader
-        
+
 
 HASH_ARCHIVE_TYPE = TypeConfig(
     cls=HashArchive,  # will never be used, abstract class
@@ -77,20 +112,16 @@ HASH_ARCHIVE_TYPE = TypeConfig(
         "type": type_saver,
         "timestamp": timestamp_saver,
     },
-    load={"path": build_simple_loader("path", pathlib.Path)}
+    load={"path": build_simple_loader("path", pathlib.Path)},
 )
 
 TYPE_TABLE: dict[str, TypeConfig] = {
     "HashNameArchive": TypeConfig(
         cls=HashNameArchive,
-        save=(
-            HASH_ARCHIVE_TYPE.save
-            | {
-                "hash_enclosure": build_enum_saver("enc")
-            }
-        ),
+        save=(HASH_ARCHIVE_TYPE.save | {"hash_enclosure": build_enum_saver("enc")}),
         load=(
-            HASH_ARCHIVE_TYPE.load | {"enc": build_enum_loader("hash_enclosure", HashEnclosure) }
+            HASH_ARCHIVE_TYPE.load
+            | {"enc": build_enum_loader("hash_enclosure", HashEnclosure)}
         ),
     ),
     "RarArchive": TypeConfig(
@@ -124,7 +155,7 @@ TYPE_TABLE: dict[str, TypeConfig] = {
             "size": build_simple_saver("size", int),
             "is_dir": build_simple_saver("is_dir", int),
             "hash_value": build_simple_saver("hash_value", bytes),
-            "algo": build_enum_saver("algo")
+            "algo": build_enum_saver("algo"),
         },
         load={
             "path": build_simple_loader("path", pathlib.PurePath),
@@ -135,12 +166,6 @@ TYPE_TABLE: dict[str, TypeConfig] = {
         },
     ),
 }
-
-
-def get_db_connection(path: str) -> sqlite3.Connection:
-    conn = sqlite3.connect(path)
-    conn.execute("PRAGMA foreign_keys = ON;")
-    return conn
 
 
 def build_insert_dict(obj: Any) -> dict[str, str]:
@@ -167,7 +192,6 @@ class HashArchiveRepository:
         self._create_tables()
 
     def _create_tables(self):
-        conn = get_db_connection(self.db_path)
         cur = conn.cursor()
 
         cur.execute(
@@ -204,7 +228,6 @@ class HashArchiveRepository:
         conn.close()
 
     def update(self, hash_archive: HashArchive):
-        conn = get_db_connection(self.db_path)
         conn.execute("PRAGMA foreign_keys = ON;")
         cur = conn.cursor()
         cur.execute("BEGIN;")
@@ -237,7 +260,6 @@ class HashArchiveRepository:
         conn.close()
 
     def load(self, path: pathlib.Path):
-        conn = get_db_connection(self.db_path)
         conn.execute("PRAGMA foreign_keys = ON;")
         conn.row_factory = sqlite3.Row
         cur = conn.cursor()
