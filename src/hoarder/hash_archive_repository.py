@@ -6,8 +6,7 @@ from types import TracebackType
 from typing import cast
 
 from hoarder.hash_archive import Algo, FileEntry, HashArchive
-from hoarder.hash_name_archive import HashEnclosure
-from hoarder.hash_name_archive import HashNameArchive
+from hoarder.hash_name_archive import HashEnclosure, HashNameArchive
 from hoarder.rar_archive import RarArchive
 from hoarder.rar_path import RarScheme
 from hoarder.sfv_archive import SfvArchive
