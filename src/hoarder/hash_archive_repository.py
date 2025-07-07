@@ -1,16 +1,16 @@
+import collections.abc
 import datetime
 import pathlib
 import sqlite3
-import collections.abc
-from typing import cast
 from types import TracebackType
+from typing import cast
 
+from hoarder.hash_archive import Algo, FileEntry, HashArchive
+from hoarder.hash_name_archive import HashEnclosure
 from hoarder.hash_name_archive import HashNameArchive
 from hoarder.rar_archive import RarArchive
 from hoarder.rar_path import RarScheme
 from hoarder.sfv_archive import SfvArchive
-from hoarder.hash_archive import Algo, FileEntry, HashArchive
-from hoarder.hash_name_archive import HashEnclosure
 
 
 class Sqlite3FK:
@@ -112,8 +112,8 @@ class HashArchiveRepository:
                 _ = cur.executemany(
                     """
                     INSERT INTO file_entries (path, size, is_dir, hash_value, algo, archive_id)
-                    SELECT :path AS path, :size AS size, :is_dir AS is_dir, :hash_value AS hash_value, :algo AS algo, id as archive_id FROM
-                    hash_archives WHERE path = :archive_path
+                    SELECT :path AS path, :size AS size, :is_dir AS is_dir, :hash_value AS hash_value,
+                    :algo AS algo, id as archive_id FROM hash_archives WHERE path = :archive_path
                     """,
                     fe_rows,
                 )

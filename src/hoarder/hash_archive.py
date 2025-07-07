@@ -2,7 +2,6 @@
 
 import abc
 import dataclasses
-import collections.abc
 import enum
 import pathlib
 import typing
