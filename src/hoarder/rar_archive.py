@@ -127,7 +127,7 @@ class RarArchive(hash_archive.HashArchive):
         files: set[hash_archive.FileEntry] = set()
         for entry in infos:
             if "Path" in entry and "Type" not in entry:
-                entry_path = pathlib.Path(entry["Path"])
+                entry_path = pathlib.PurePath(entry["Path"])
                 size = int(entry["Size"])
                 is_dir = entry["Folder"] == "+"
                 hash_value = None
@@ -154,13 +154,13 @@ class RarArchive(hash_archive.HashArchive):
         )
 
         command_line = [
-            SEVENZIP,
+            str(SEVENZIP),
             "l",
             "-slt",
             "-scsUTF-8",
             "-sccUTF-8",
             "-p" + (password if password else ""),
-            path,
+            str(path),
         ]
 
         sub = subprocess.run(command_line, capture_output=True, check=True)
@@ -191,14 +191,14 @@ class RarArchive(hash_archive.HashArchive):
         7z extracts files internally - this is necessary for RAR5 archives,
         where we can't use the CRCs in the header."""
         command_line = [
-            SEVENZIP,
+            str(SEVENZIP),
             "t",
             "-scrc",
             "-scsUTF-8",
             "-sccUTF-8",
             "-p" + (self.password or ""),
-            self.path,
-            entry_path,
+            str(self.path),
+            str(entry_path),
         ]
         logger.debug(
             "Processing archive %(name)s with path %(entry_path)s using password %(password)s",

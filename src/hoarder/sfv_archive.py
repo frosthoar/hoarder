@@ -49,7 +49,7 @@ class SfvArchive(hash_archive.HashArchive):
 
                     files.append(
                         hash_archive.FileEntry(
-                            pathlib.Path(entry_path),
+                            pathlib.PurePath(entry_path),
                             file_size,
                             False,
                             bytes.fromhex(crc),

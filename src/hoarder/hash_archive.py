@@ -1,5 +1,4 @@
 """This module contains classes and functions to handle files (e.g. SFV, RAR, ...) containing hash information."""
-from __future__ import annotations
 
 import abc
 import dataclasses
@@ -17,6 +16,9 @@ class Algo(enum.IntEnum):
     SHA1 = 3
     SHA256 = 4
     SHA512 = 5
+
+
+Self = typing.TypeVar("Self", bound="FileEntry")
 
 
 @dataclasses.dataclass(slots=True, eq=True)
@@ -37,11 +39,10 @@ class FileEntry:
     hash_value: bytes | None = None
     algo: Algo | None = None
 
-    def __lt__(self: FileEntry, other: FileEntry) -> bool:
+    def __lt__(self: Self, other: Self) -> bool:
         return self.path < other.path
 
-    @typing.override
-    def __hash__(self: FileEntry) -> int:
+    def __hash__(self: Self) -> int:
         return hash(self.path)
 
 
@@ -62,22 +63,40 @@ class HashArchive(abc.ABC):
 
     def __init__(self, path: pathlib.Path, files: set[FileEntry] | None = None) -> None:
         """Create a HashArchive object by reading information from an hash file given its path."""
-        self.files = files or set()
-        self.path = path
-        self.present = True
+        self.files: set[FileEntry] = files or set()
+        self.path: pathlib.Path = path
+        self.present: bool = True
 
     @classmethod
     @abc.abstractmethod
-    def from_path(cls: type[T], path: pathlib.Path) -> T:
+    def from_path(cls: typing.Type[T], path: pathlib.Path) -> T:
         """Create a HashArchive object by reading information from an hash file given its path."""
 
     def __len__(self) -> int:
         return len(self.files)
 
-    def __iter__(self) -> collections.abc.Iterator[FileEntry]:
+    def __iter__(self) -> typing.Iterator[FileEntry]:
         return iter(self.files)
 
-    @typing.override
+
+    def _printable_attributes(self):
+        return [
+            a
+            for a in dir(self)
+            if not a.startswith("_")
+            and not callable(getattr(self, a))
+            and not hasattr(type(self), a)
+        ]
+
+    def __repr__(self) -> str:
+        class_name = self.__class__.__name__
+        d: dict[str, str | list[str]] = { }
+        d["class_name"] = class_name
+        for attr in self._printable_attributes():
+            d[attr] = getattr(self, attr)
+        d["files"] = sorted([repr(f) for f in self.files])
+        return str(dict(sorted(d.items())))
+
     def __str__(self) -> str:
         placeholder = "-"
         maxlen_path = max([0] + [len(str(file.path)) for file in self])
@@ -86,16 +105,19 @@ class HashArchive(abc.ABC):
         maxlen_algo = 5 if any(file.algo for file in self) else 0
         class_name = self.__class__.__name__
         ret = f"{class_name}: {self.path}\n"
-        printable_attributes = [
-            a
-            for a in dir(self)
-            if not a.startswith("_")
-            and not isinstance(getattr(self, a),typing.Callable)
-            and a not in ["files", "path"]
-        ]
-        for attr in printable_attributes:
-            ret += f"  {attr}: {getattr(self, attr)}\n"
-        for file in self:
+
+        cols = 0
+        header_fields = self._printable_attributes()
+        header_fields.remove("files")
+        header_fields.remove("path")
+
+        for attr in filter(lambda x: x not in ["files", "path"], self._printable_attributes()):
+            line = f"  {attr}: {getattr(self, attr)}"
+            ret += line + "\n"
+            cols = max(cols, len(line))
+
+        ret += "="*cols + "\n"
+        for file in sorted(self):
             hash_str = file.hash_value.hex() if file.hash_value else placeholder
             algo_str = file.algo.name if file.algo else placeholder
             ret += (
