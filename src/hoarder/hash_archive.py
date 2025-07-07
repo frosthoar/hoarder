@@ -78,7 +78,6 @@ class HashArchive(abc.ABC):
     def __iter__(self) -> typing.Iterator[FileEntry]:
         return iter(self.files)
 
-
     def _printable_attributes(self):
         return [
             a
@@ -90,7 +89,7 @@ class HashArchive(abc.ABC):
 
     def __repr__(self) -> str:
         class_name = self.__class__.__name__
-        d: dict[str, str | list[str]] = { }
+        d: dict[str, str | list[str]] = {}
         d["class_name"] = class_name
         for attr in self._printable_attributes():
             d[attr] = getattr(self, attr)
@@ -111,12 +110,14 @@ class HashArchive(abc.ABC):
         header_fields.remove("files")
         header_fields.remove("path")
 
-        for attr in filter(lambda x: x not in ["files", "path"], self._printable_attributes()):
+        for attr in filter(
+            lambda x: x not in ["files", "path"], self._printable_attributes()
+        ):
             line = f"  {attr}: {getattr(self, attr)}"
             ret += line + "\n"
             cols = max(cols, len(line))
 
-        ret += "="*cols + "\n"
+        ret += "=" * cols + "\n"
         for file in sorted(self):
             hash_str = file.hash_value.hex() if file.hash_value else placeholder
             algo_str = file.algo.name if file.algo else placeholder

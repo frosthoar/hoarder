@@ -4,13 +4,14 @@ import pathlib
 import sys
 import tomllib
 
-def load_config() -> dict[str,dict[str,str]]:
+
+def load_config() -> dict[str, dict[str, str]]:
     # get module path
 
     p = pathlib.Path(__file__).parent
     cf = p / "config.toml"
     with open(cf, "rb") as f:
-        d: dict[str, dict[str,str]] = tomllib.load(f)
+        d: dict[str, dict[str, str]] = tomllib.load(f)
         path_str: str = str(d["executables"]["sevenzip"])
         p7z = pathlib.Path(path_str)
         if not os.path.isabs(p7z):
