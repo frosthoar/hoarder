@@ -65,7 +65,6 @@ class HashNameArchive(hash_archive.HashArchive):
         self.enc = enc
 
     @classmethod
-    @typing.override
     def from_path(cls: type[T], path: pathlib.Path) -> T:
         """Create a HashNameArchive object by reading information from a file name given its path."""
         if not path.is_file():
