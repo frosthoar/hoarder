@@ -40,6 +40,7 @@ class Sqlite3FK:
         assert self._conn is not None
         if exc_value is None:
             self._conn.commit()
+            self._conn.close()
         else:
             self._conn.rollback()
             self._conn.close()
