@@ -1,4 +1,4 @@
-from . import hash_archive, rar_archive, sfv_archive, shared, hash_archive_repository
+from . import hash_archive, hash_archive_repository, rar_archive, sfv_archive, shared
 from .hash_archive_repository import HashArchiveRepository
 from .hash_name_archive import HashNameArchive
 from .rar_archive import RarArchive
