@@ -35,9 +35,8 @@ class RarArchive(hash_archive.HashArchive):
     ) -> None:
         super().__init__(path, files)
         self.password = password
-        self.scheme: rar_path.RarScheme | None = scheme
         self.scheme = scheme
-        self.n_volumes: int | None = n_volumes
+        self.n_volumes = n_volumes
         self.version = None
 
     def get_volumes(self) -> list[pathlib.Path]:
@@ -68,9 +67,7 @@ class RarArchive(hash_archive.HashArchive):
         )
 
     @classmethod
-    def from_path(
-        cls: typing.Type[T], path: pathlib.Path, password: str | None = None
-    ) -> T:
+    def from_path(cls: type[T], path: pathlib.Path, password: str | None = None) -> T:
         """Create a RarArchive object by reading information from a (main) RAR file given its path."""
 
         if path.is_dir():
@@ -120,14 +117,14 @@ class RarArchive(hash_archive.HashArchive):
 
         if not type_entries or len(type_entries) > 1:
             version = None
-            logger.warn(f"No 'Type' entries found in {path}")
+            logger.warning(f"No 'Type' entries found in {path}")
         else:
             version = type_entries[0]["Type"]
 
         files: set[hash_archive.FileEntry] = set()
         for entry in infos:
             if "Path" in entry and "Type" not in entry:
-                entry_path = pathlib.Path(entry["Path"])
+                entry_path = pathlib.PurePath(entry["Path"])
                 size = int(entry["Size"])
                 is_dir = entry["Folder"] == "+"
                 hash_value = None
@@ -154,13 +151,13 @@ class RarArchive(hash_archive.HashArchive):
         )
 
         command_line = [
-            SEVENZIP,
+            str(SEVENZIP),
             "l",
             "-slt",
             "-scsUTF-8",
             "-sccUTF-8",
             "-p" + (password if password else ""),
-            path,
+            str(path),
         ]
 
         sub = subprocess.run(command_line, capture_output=True, check=True)
@@ -185,20 +182,20 @@ class RarArchive(hash_archive.HashArchive):
 
     def get_crc32_slow(
         self,
-        entry_path: pathlib.Path | str,
+        entry_path: pathlib.PurePath | str,
     ) -> bytes | None:
         """The slow method to get the CRC32 of a file in a RAR archive.
         7z extracts files internally - this is necessary for RAR5 archives,
         where we can't use the CRCs in the header."""
         command_line = [
-            SEVENZIP,
+            str(SEVENZIP),
             "t",
             "-scrc",
             "-scsUTF-8",
             "-sccUTF-8",
             "-p" + (self.password or ""),
-            self.path,
-            entry_path,
+            str(self.path),
+            str(entry_path),
         ]
         logger.debug(
             "Processing archive %(name)s with path %(entry_path)s using password %(password)s",

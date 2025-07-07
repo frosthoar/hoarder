@@ -55,6 +55,9 @@ class HashArchive(abc.ABC):
     files: set[FileEntry]
     present: bool
 
+    # Indicates whether the archive file itself (e.g., .sfv, .rar) can safely be deleted after processing.
+    # Most archives are deletable without consequence, except for special cases like HashNameArchive,
+    # where the archive is essentially the file itself and must not be deleted.
     DELETABLE: typing.ClassVar[bool] = True
 
     def __init__(self, path: pathlib.Path, files: set[FileEntry] | None = None) -> None:
@@ -74,6 +77,24 @@ class HashArchive(abc.ABC):
     def __iter__(self) -> typing.Iterator[FileEntry]:
         return iter(self.files)
 
+    def _printable_attributes(self):
+        return [
+            a
+            for a in dir(self)
+            if not a.startswith("_")
+            and not callable(getattr(self, a))
+            and not hasattr(type(self), a)
+        ]
+
+    def __repr__(self) -> str:
+        class_name = self.__class__.__name__
+        d: dict[str, str | list[str]] = {}
+        d["class_name"] = class_name
+        for attr in self._printable_attributes():
+            d[attr] = getattr(self, attr)
+        d["files"] = sorted([repr(f) for f in self.files])
+        return str(dict(sorted(d.items())))
+
     def __str__(self) -> str:
         placeholder = "-"
         maxlen_path = max([0] + [len(str(file.path)) for file in self])
@@ -82,16 +103,19 @@ class HashArchive(abc.ABC):
         maxlen_algo = 5 if any(file.algo for file in self) else 0
         class_name = self.__class__.__name__
         ret = f"{class_name}: {self.path}\n"
-        printable_attributes = [
-            a
-            for a in dir(self)
-            if not a.startswith("_")
-            and not callable(getattr(self, a))
-            and a not in ["files", "path"]
-        ]
-        for attr in printable_attributes:
-            ret += f"  {attr}: {getattr(self, attr)}\n"
-        for file in self:
+
+        cols = 0
+        header_fields = self._printable_attributes()
+        header_fields.remove("files")
+        header_fields.remove("path")
+
+        for attr in header_fields:
+            line = f"  {attr}: {getattr(self, attr)}"
+            ret += line + "\n"
+            cols = max(cols, len(line))
+
+        ret += "=" * cols + "\n"
+        for file in sorted(self):
             hash_str = file.hash_value.hex() if file.hash_value else placeholder
             algo_str = file.algo.name if file.algo else placeholder
             ret += (
