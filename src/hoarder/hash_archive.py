@@ -110,9 +110,7 @@ class HashArchive(abc.ABC):
         header_fields.remove("files")
         header_fields.remove("path")
 
-        for attr in filter(
-            lambda x: x not in ["files", "path"], self._printable_attributes()
-        ):
+        for attr in header_fields:
             line = f"  {attr}: {getattr(self, attr)}"
             ret += line + "\n"
             cols = max(cols, len(line))
