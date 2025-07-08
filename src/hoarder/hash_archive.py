@@ -37,12 +37,25 @@ class FileEntry:
     is_dir: bool
     hash_value: bytes | None = None
     algo: Algo | None = None
+    info: str | None = None
 
     def __lt__(self: Self, other: Self) -> bool:
         return self.path < other.path
 
     def __hash__(self: Self) -> int:
         return hash(self.path)
+
+    def pretty_print(self: Self) -> str:
+        return f"""
+        ====== FileEntry ======
+        path:       {self.path}
+        size:       {self.size}
+        is_dir:     {self.is_dir}
+        hash_value: {self.hash_value.hex()}
+        algo:       {self.algo.name if self.algo else None}
+        info:       {self.info}
+        ======================="""
+
 
 
 T = typing.TypeVar("T", bound="HashArchive")
@@ -53,7 +66,8 @@ class HashArchive(abc.ABC):
 
     path: pathlib.Path
     files: set[FileEntry]
-    present: bool
+    deleted: bool
+    info: str | None = None
 
     # Indicates whether the archive file itself (e.g., .sfv, .rar) can safely be deleted after processing.
     # Most archives are deletable without consequence, except for special cases like HashNameArchive,
@@ -64,7 +78,7 @@ class HashArchive(abc.ABC):
         """Create a HashArchive object by reading information from an hash file given its path."""
         self.files: set[FileEntry] = files or set()
         self.path: pathlib.Path = path
-        self.present: bool = True
+        self.deleted: bool = True
 
     @classmethod
     @abc.abstractmethod
@@ -95,7 +109,7 @@ class HashArchive(abc.ABC):
         d["files"] = sorted([repr(f) for f in self.files])
         return str(dict(sorted(d.items())))
 
-    def __str__(self) -> str:
+    def pretty_print(self) -> str:
         placeholder = "-"
         maxlen_path = max([0] + [len(str(file.path)) for file in self])
         maxlen_size = max([0] + [len(str(file.size or placeholder)) for file in self])
