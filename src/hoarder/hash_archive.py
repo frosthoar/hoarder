@@ -8,7 +8,6 @@ import enum
 import pathlib
 import typing
 
-
 class Algo(enum.IntEnum):
     """This class contains the possible hash algorithms."""
 
@@ -17,7 +16,6 @@ class Algo(enum.IntEnum):
     SHA1 = 3
     SHA256 = 4
     SHA512 = 5
-
 
 @dataclasses.dataclass(slots=True, eq=True)
 class FileEntry:
