@@ -1,37 +1,49 @@
 import logging
 import pathlib
-import sys
-import logging
 
 import hoarder
 import tests.compare_files
 
 logger = logging.getLogger("hoarder.test_rar_file")
 
-def test_rar_archives():
-    rar4_archive_path = (
-         pathlib.Path(r"../test_files/rar/v4_split_encrypted.rar")
-    ).resolve()
-    v4_split_archive = hoarder.RarArchive.from_path(rar4_archive_path, password="dragon")
-    for f in v4_split_archive.files:
+def test_rar_archives_set(main_archive_path: pathlib.Path | str,
+        password: str,
+        n_contained_files: int,
+        n_volumes: int,
+        naming_scheme: hoarder.RarScheme,
+        compare_files_list: list[hoarder.FileEntry]
+        ) -> None:
+    main_archive_path = (pathlib.Path(main_archive_path)).resolve()
+    rar_archive = hoarder.RarArchive.from_path(main_archive_path, password=password)
+    logger.debug(f"== Listing {main_archive_path}")
+    for f in rar_archive.files:
         logger.debug(f)
-    assert len(v4_split_archive.files) == 4
-    v4_split_archive.update_hash_values()
-    assert sorted(v4_split_archive.files) == sorted(tests.compare_files.hnf_file_entries)
-    assert v4_split_archive.path == rar4_archive_path
+    logger.debug(f"==============================")
+    assert len(rar_archive.files) == n_contained_files
+    rar_archive.update_hash_values()
+    assert sorted(rar_archive.files) == sorted(compare_files_list)
+    assert rar_archive.path == main_archive_path
     assert (
-        v4_split_archive.scheme == hoarder.RarScheme.DOT_RNN
-    )  # cannot be distinguished from RAR4
-    assert v4_split_archive.n_volumes == 9
+        rar_archive.scheme == naming_scheme
+    )
+    assert rar_archive.n_volumes == n_volumes
 
-    v4_s_eh_path = pathlib.Path("../test_files/rar/v4_split_headers_encrypted.rar").resolve()
 
-    v4_split_encrypted_headers = hoarder.RarArchive.from_path(v4_s_eh_path, password="secret")
-    assert len(v4_split_encrypted_headers.files) == 4
-    assert sorted(v4_split_encrypted_headers.files) == sorted(tests.compare_files.hnf_file_entries)  # no hashes in RAR5 in header
-    assert v4_split_encrypted_headers.path == v4_s_eh_path
+def test_rar_archives() -> None:
+    test_rar_archives_set(
+            "../test_files/rar/v4_split_encrypted.rar",
+            "dragon",
+            4,
+            9,
+            hoarder.RarScheme.DOT_RNN,
+            tests.compare_files.hnf_file_entries
+            )
 
-    v4_split_encrypted_headers.update_hash_values()
-    assert sorted(v4_split_encrypted_headers.files) == sorted(tests.compare_files.hnf_file_entries)  # hashes now have been calculated
-    #    assert v4_split_encrypted_headers.scheme == hoarder.RarScheme.PART_N
-    assert v4_split_encrypted_headers.n_volumes == 9
+    test_rar_archives_set(
+            "../test_files/rar/v4_split_headers_encrypted.rar",
+            "secret",
+            4,
+            9,
+            hoarder.RarScheme.DOT_RNN,
+            tests.compare_files.hnf_file_entries
+            )
