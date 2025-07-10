@@ -5,9 +5,9 @@ import pathlib
 import sys
 
 import hoarder
-import compare_files
+import tests.compare_files
 
-hnf_compare_files = compare_files.hnf_file_entries
+hnf_compare_files = tests.compare_files.hnf_file_entries
 
 test_file_path = pathlib.Path(__file__).parent.resolve()
 add_path = (test_file_path / ".." / "src").resolve()
