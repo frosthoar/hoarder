@@ -41,10 +41,6 @@ for dirpath, _, filenames in os.walk(test_file_path):
         fe: hoarder.FileEntry = create_test_file_entry(test_file_path, entry)
         dummy_dir_entries.append(fe)
 
-for d in dummy_dir_entries:
-    print(d.pretty_print())
-    print("\n")
-
 hnf_file_path = ap / ".." / "test_files" / "hnf"
 
 hnf_file_entries: list[hoarder.FileEntry] = []
@@ -53,8 +49,3 @@ for dirpath, _, filenames in os.walk(hnf_file_path):
     for filename in filenames:
         fe = create_test_file_entry(hnf_file_path / dirpath , pathlib.Path(filename))
         hnf_file_entries.append(fe)
-
-print("---------------")
-for d in hnf_file_entries:
-    print(d.pretty_print())
-    print("\n")
