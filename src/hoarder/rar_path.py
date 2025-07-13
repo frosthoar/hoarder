@@ -1,6 +1,7 @@
 import enum
 import re
 import typing
+import collections.abc
 from pathlib import Path
 
 
@@ -34,7 +35,7 @@ PART_N_PAT = re.compile(
         .+  # require a stem of at least one character
     )
     \.part   # beginning of first suffix component
-    (?P<index>
+    (?P<volume_index>
         \d+  # at least one digit
     )
     \.       # beginning of last suffix component
@@ -49,28 +50,29 @@ T = typing.TypeVar("T", bound="RARPath")
 
 
 class RARPath(typing.NamedTuple):
-    index: int  # type: ignore[assignment]
+    volume_index: int  # type: ignore[assignment]
     path: str
     stem: str
     suffix: str
 
     @classmethod
-    def from_match(cls: typing.Type[T], match: re.Match | None) -> T:
+    def from_match(cls: type[T], match: re.Match[str] | None) -> T:
         if match is None:
             raise ValueError("match is None")
         return cls(
-            index=-1 if match["index"] is None else int(match["index"]),
+            volume_index=-1 if match["volume_index"] is None else int(match["volume_index"]),
             path=match.string,
             stem=match["stem"],
             suffix=match["suffix"],
         )
 
+    @typing.override
     def __str__(self) -> str:
         return self.path
 
 
 def parse_rar_list(
-    paths: typing.Sequence[str | Path],
+    paths: collections.abc.Sequence[str | Path],
 ) -> tuple[RarScheme, list[RARPath]]:
     if len(paths) == 0:
         # Since there is no non-indexed .rar, this must be interpreted as an "empty PART_N"

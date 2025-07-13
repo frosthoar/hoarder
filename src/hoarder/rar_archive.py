@@ -67,6 +67,7 @@ class RarArchive(hash_archive.HashArchive):
         )
 
     @classmethod
+    @typing.override
     def from_path(cls: type[T], path: pathlib.Path, password: str | None = None) -> T:
         """Create a RarArchive object by reading information from a (main) RAR file given its path."""
 

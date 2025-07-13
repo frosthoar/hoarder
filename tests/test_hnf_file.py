@@ -4,28 +4,23 @@ import os
 import pathlib
 import sys
 
+import pytest
 import hoarder
-import tests.compare_files
-
-hnf_compare_files = tests.compare_files.hnf_file_entries
-
-test_file_path = pathlib.Path(__file__).parent.resolve()
-add_path = (test_file_path / ".." / "src").resolve()
-sys.path.append(add_path.as_posix())
+import tests.test_case_file_info
 
 logger = logging.getLogger("hoarder.test_hnf_file")
 
-compare_files_wo_dir = [el for el in hnf_compare_files if not el.is_dir]
+@pytest.fixture
+def list_hnf_file_paths():
+    hnf_file_path = pathlib.Path(__file__).parent.resolve() / ".." / "test_files" / "hnf"
+    return [ hnf_file_path / p for p in os.listdir(hnf_file_path)]
 
-
-def test_hnf_archives():
+def test_hnf_archives(list_hnf_file_paths: list[pathlib.Path]):
     hnf_archives = []
-    p = test_file_path / ".." / "test_files" / "hnf"
-    for hnf_file_path in os.listdir(p):
-        logger.debug(hnf_file_path)
-        hnf_archive = hoarder.HashNameArchive.from_path(p / hnf_file_path)
+    for hnf_file_path in list_hnf_file_paths:
+        hnf_archive = hoarder.HashNameArchive.from_path(hnf_file_path)
         hnf_archives.append(hnf_archive)
     assert len(hnf_archives) == 4
     assert sorted(itertools.chain(*map(lambda x: x.files, hnf_archives))) == sorted(
-        hnf_compare_files
+        tests.test_case_file_info.HNF_FILES
     )
