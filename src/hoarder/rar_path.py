@@ -20,8 +20,8 @@ DOT_RNN_PAT = re.compile(
     \.      # suffix separator dot
     (?P<suffix>
         rar |  # first literal 'rar' suffix
-        r(?P<index>
-            \d\d  # two-digit index
+        r(?P<volume_index>
+            \d\d  # two-digit volume index
         )
     )
     $  # end
@@ -99,7 +99,7 @@ def parse_rar_list(
         if getattr(rp, "stem", None) != stem:
             raise ValueError(f"{rp} has an inconsistent stem")
 
-    actual = {match.index for match in parsed}
+    actual = {match.volume_index for match in parsed}
 
     match scheme:
         case RarScheme.DOT_RNN:
@@ -107,14 +107,14 @@ def parse_rar_list(
         case RarScheme.PART_N:
             base = 1
         case RarScheme.AMBIGUOUS:
-            # It's only possible for this to be a valid PART_N if the only index is 1
+            # It's only possible for this to be a valid PART_N if the only volume index is 1
             if actual == {1}:
                 return scheme, parsed
             scheme = RarScheme.DOT_RNN
             base = -1
 
-            # This started as an ambiguous case where the index might have been part of a PART_N suffix.
-            # Since we've ruled that out, the actual index set is reinterpreted as the base only (-1).
+            # This started as an ambiguous case where the volume index might have been part of a PART_N suffix.
+            # Since we've ruled that out, the actual volume index set is reinterpreted as the base only (-1).
             actual = {-1}
 
     if scheme == RarScheme.DOT_RNN:

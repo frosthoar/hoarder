@@ -23,7 +23,7 @@ def test_repository(create_test_dir):
         "[Foobar] Lowercase and Parens - 11 (x264-AC3)(d74b7612).sfv",
         "[Test] Uppercase and Parens! S02E080 (WEB 1080p x264 10-bit AAC) (5A365C81).sfv",
     ]:
-        p = pathlib.Path("../test_files/sfv/") / sfv_fn
+        p = pathlib.Path("./test_files/sfv/") / sfv_fn
 
         print(p.is_file())
 
@@ -45,7 +45,7 @@ def test_repository(create_test_dir):
     ]:
         logger.debug(rar_fn)
         saved_rar_file = hoarder.RarArchive.from_path(
-            pathlib.Path("../test_files/rar/") / rar_fn,
+            pathlib.Path("./test_files/rar/") / rar_fn,
             password=password,
         )
         saved_rar_file_path = saved_rar_file.path
@@ -61,7 +61,7 @@ def test_repository(create_test_dir):
         "[Test] Uppercase and Parens! S02E080 (WEB 1080p x264 10-bit AAC) (5A365C81).mkv"
     ]:
         saved_hnf_file = hoarder.HashNameArchive.from_path(
-            pathlib.Path("../test_files/hnf/") / hnf_fn
+            pathlib.Path("./test_files/hnf/") / hnf_fn
         )
         saved_hnf_file_path = saved_hnf_file.path
         ha_repo.save(saved_hnf_file)

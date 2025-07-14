@@ -49,7 +49,7 @@ HNF_FILES = [
 
 TEST_FILES = [
     FileEntry(
-        path=PurePath("../test_files/files/Dummy.S01E01.Title.1080p/other_file.bin"),
+        path=PurePath("Dummy.S01E01.Title.1080p/other_file.bin"),
         size=1024,
         is_dir=False,
         hash_value=b"\xe0\x9e\xd6\x7f",
@@ -57,7 +57,7 @@ TEST_FILES = [
         info=None,
     ),
     FileEntry(
-        path=PurePath("../test_files/files/Dummy.S01E01.Title.1080p/random_file.bin"),
+        path=PurePath("Dummy.S01E01.Title.1080p/random_file.bin"),
         size=1024,
         is_dir=False,
         hash_value=b"\n\x04\xb2\x1d",

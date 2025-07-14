@@ -10,7 +10,7 @@ logger = logging.getLogger("hoarder.test_rar_file")
 
 RAR_TUPLES = [
     (
-        pathlib.Path("../test_files/rar/v4_split_encrypted.rar"),
+        pathlib.Path("./test_files/rar/v4_split_encrypted.rar"),
         "dragon",
         4,
         9,
@@ -18,7 +18,7 @@ RAR_TUPLES = [
         tests.test_case_file_info.HNF_FILES,
     ),
     (
-        pathlib.Path("../test_files/rar/v4_split_headers_encrypted.rar"),
+        pathlib.Path("./test_files/rar/v4_split_headers_encrypted.rar"),
         "secret",
         4,
         9,
@@ -30,7 +30,6 @@ RAR_TUPLES = [
 
 @pytest.mark.parametrize("rar_data_tuple", RAR_TUPLES)
 def test_rar_archives_set(rar_data_tuple: tuple[pathlib.Path, str, int, int, hoarder.RarScheme, list[hoarder.FileEntry]]) -> None:
-    print(rar_data_tuple)
     (
         main_archive_path,
         password,
