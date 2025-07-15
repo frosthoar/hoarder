@@ -11,6 +11,11 @@ import hoarder.hash_archive as hash_archive
 import hoarder.rar_path as rar_path
 from hoarder.shared import SEVENZIP
 
+try:
+    from typing import override
+except ImportError:
+    from typing_extensions import override
+
 logger = logging.getLogger("hoarder.rar_file")
 
 T = typing.TypeVar("T", bound="RarArchive")
@@ -67,7 +72,7 @@ class RarArchive(hash_archive.HashArchive):
         )
 
     @classmethod
-    @typing.override
+    @override
     def from_path(cls: type[T], path: pathlib.Path, password: str | None = None) -> T:
         """Create a RarArchive object by reading information from a (main) RAR file given its path."""
 
