@@ -1,6 +1,5 @@
 import logging
 import pathlib
-import collections.abc
 
 import pytest
 import hoarder
@@ -25,6 +24,30 @@ RAR_TUPLES = [
         hoarder.RarScheme.DOT_RNN,
         tests.test_case_file_info.HNF_FILES,
     ),
+    (
+        pathlib.Path("./test_files/rar/v5_split_headers_encrypted.part01.rar"),
+        "swordfish",
+        4,
+        17,
+        hoarder.RarScheme.DOT_RNN,
+        tests.test_case_file_info.HNF_FILES,
+    ),
+    (
+        pathlib.Path("./test_files/rar/v5_unencrypted.rar"),
+        None,
+        4,
+        1,
+        hoarder.RarScheme.DOT_RNN,
+        tests.test_case_file_info.HNF_FILES,
+    ),
+    (
+        pathlib.Path("./test_files/rar/v5_unencrypted_dir.rar"),
+        None,
+        2,
+        1,
+        hoarder.RarScheme.DOT_RNN,
+        tests.test_case_file_info.HNF_FILES,
+    )
 ]
 
 
@@ -51,7 +74,3 @@ def test_rar_archives_set(rar_data_tuple: tuple[pathlib.Path, str, int, int, hoa
     assert rar_archive.path == main_archive_path
     assert rar_archive.scheme == naming_scheme
     assert rar_archive.n_volumes == n_volumes
-
-
-def x() -> collections.abc.Generator[int]:
-    yield 1
