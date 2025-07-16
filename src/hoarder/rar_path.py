@@ -3,7 +3,10 @@ import re
 import typing
 import collections.abc
 from pathlib import Path
-
+try:
+    from typing import override
+except ImportError:
+    from typing_extensions import override
 
 class RarScheme(enum.IntEnum):
     AMBIGUOUS = 0
@@ -66,7 +69,7 @@ class RARPath(typing.NamedTuple):
             suffix=match["suffix"],
         )
 
-    @typing.override
+    @override
     def __str__(self) -> str:
         return self.path
 
