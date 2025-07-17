@@ -16,7 +16,7 @@ def create_test_dir(tmpdir_factory):
 
 
 def test_repository(create_test_dir):
-    ha_repo = hoarder.HashArchiveRepository(create_test_dir / "hoarder.db")
+    ha_repo = hoarder.HashArchiveRepository(pathlib.Path(create_test_dir / "hoarder.db"))
     for sfv_fn in [
         "[ABC] 05. Lowercase and Brackets [x265][1080p][8714c76f].sfv",
         "[Dummy] Uppercase and Brackets Ep13v2[Puresuhoruda][6519E6CF].sfv",

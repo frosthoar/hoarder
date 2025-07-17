@@ -29,7 +29,7 @@ RAR_TUPLES = [
         "swordfish",
         4,
         17,
-        hoarder.RarScheme.DOT_RNN,
+        hoarder.RarScheme.PART_N,
         tests.test_case_file_info.HNF_FILES,
     ),
     (
@@ -46,7 +46,7 @@ RAR_TUPLES = [
         2,
         1,
         hoarder.RarScheme.DOT_RNN,
-        tests.test_case_file_info.HNF_FILES,
+        tests.test_case_file_info.TEST_FILES
     )
 ]
 
