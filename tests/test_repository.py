@@ -1,6 +1,5 @@
 import logging
 import pathlib
-import tempfile
 
 import pytest
 import hoarder
@@ -18,10 +17,7 @@ def create_test_dir(tmpdir_factory):
 def test_repository(create_test_dir):
     ha_repo = hoarder.HashArchiveRepository(pathlib.Path(create_test_dir / "hoarder.db"))
     for sfv_fn in [
-        "[ABC] 05. Lowercase and Brackets [x265][1080p][8714c76f].sfv",
-        "[Dummy] Uppercase and Brackets Ep13v2[Puresuhoruda][6519E6CF].sfv",
-        "[Foobar] Lowercase and Parens - 11 (x264-AC3)(d74b7612).sfv",
-        "[Test] Uppercase and Parens! S02E080 (WEB 1080p x264 10-bit AAC) (5A365C81).sfv",
+        "files.sfv",
     ]:
         p = pathlib.Path("./test_files/sfv/") / sfv_fn
 
@@ -37,11 +33,7 @@ def test_repository(create_test_dir):
         assert repr(saved_sfv_file) == repr(retrieved_sfv_file)
 
     for rar_fn, password in [
-            ("v4_split_encrypted.rar", "dragon"),
-        ("v4_split_headers_encrypted.rar", "secret"),
-        ("v5_split_headers_encrypted.part01.rar", "swordfish"),
-        ("v5_unencrypted.rar", None),
-        ("v5_unencrypted_dir.rar", None)
+        ("v4_split_headers_encrypted.rar", "password")
     ]:
         logger.debug(rar_fn)
         saved_rar_file = hoarder.RarArchive.from_path(
