@@ -10,10 +10,14 @@ import tests.test_case_file_info
 
 logger = logging.getLogger("hoarder.test_hnf_file")
 
+
 @pytest.fixture
 def list_hnf_file_paths():
-    hnf_file_path = pathlib.Path(__file__).parent.resolve() / ".." / "test_files" / "hnf"
-    return [ hnf_file_path / p for p in os.listdir(hnf_file_path)]
+    hnf_file_path = (
+        pathlib.Path(__file__).parent.resolve() / ".." / "test_files" / "hnf"
+    )
+    return [hnf_file_path / p for p in os.listdir(hnf_file_path)]
+
 
 def test_hnf_archives(list_hnf_file_paths: list[pathlib.Path]):
     hnf_archives = []

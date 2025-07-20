@@ -6,9 +6,7 @@ import pytest
 
 HNF_FILES = [
     FileEntry(
-        path=PurePath(
-        "[ABC] 05. Lowercase and Brackets [x265][1080p][8714c76f].mkv"
-        ),
+        path=PurePath("[ABC] 05. Lowercase and Brackets [x265][1080p][8714c76f].mkv"),
         size=131072,
         is_dir=False,
         hash_value=b"\x87\x14\xc7o",
@@ -17,7 +15,7 @@ HNF_FILES = [
     ),
     FileEntry(
         path=PurePath(
-        "[Dummy] Uppercase and Brackets Ep13v2[Puresuhoruda][6519E6CF].mkv"
+            "[Dummy] Uppercase and Brackets Ep13v2[Puresuhoruda][6519E6CF].mkv"
         ),
         size=131072,
         is_dir=False,
@@ -26,9 +24,7 @@ HNF_FILES = [
         info=None,
     ),
     FileEntry(
-        path=PurePath(
-        "[Foobar] Lowercase and Parens - 11 (x264-AC3)(d74b7612).mkv"
-        ),
+        path=PurePath("[Foobar] Lowercase and Parens - 11 (x264-AC3)(d74b7612).mkv"),
         size=131072,
         is_dir=False,
         hash_value=b"\xd7Kv\x12",
@@ -37,7 +33,7 @@ HNF_FILES = [
     ),
     FileEntry(
         path=PurePath(
-        "[Test] Uppercase and Parens! S02E080 (WEB 1080p x264 10-bit AAC) (5A365C81).mkv"
+            "[Test] Uppercase and Parens! S02E080 (WEB 1080p x264 10-bit AAC) (5A365C81).mkv"
         ),
         size=131072,
         is_dir=False,
@@ -50,540 +46,456 @@ HNF_FILES = [
 from pathlib import PurePath
 
 TEST_FILES_MAIN_DIR = FileEntry(
-            path=PurePath("./files"),
-            size=0,
-            is_dir=True,
-            hash_value=b"\x00\x00\x00\x00",
-            algo=Algo.CRC32,
-            info=None,
-            )
+    path=PurePath("./files"),
+    size=0,
+    is_dir=True,
+    hash_value=b"\x00\x00\x00\x00",
+    algo=Algo.CRC32,
+    info=None,
+)
 
-
-        
 
 TEST_FILES = [
-        FileEntry(
-            path=PurePath("./files/stock.raw"),
-            size=1948,
-            is_dir=False,
-            hash_value=b"\xa0\x86\x54\x2d",
-            algo=Algo.CRC32,
-            info=None,
-            ),
-        FileEntry(
-            path=PurePath("./files/(2XVR83rF)environmental[EwI!EhWI]/across.raw"),
-            size=1865,
-            is_dir=False,
-            hash_value=b"\x7b\xb0\x5d\xd4",
-            algo=Algo.CRC32,
-            info=None,
-            ),
-        FileEntry(
-            path=PurePath("./files/(2XVR83rF)environmental[EwI!EhWI]/(JlDa p9I)worker[DQ UvjJa]/friend.dat"),
-            size=1337,
-            is_dir=False,
-            hash_value=b"\x96\xa9\xe9\x24",
-            algo=Algo.CRC32,
-            info=None,
-            ),
-        FileEntry(
-            path=PurePath("./files/(2XVR83rF)environmental[EwI!EhWI]/(JlDa p9I)worker[DQ UvjJa]/later.bin"),
-            size=1816,
-            is_dir=False,
-            hash_value=b"\x22\x3a\xac\xc9",
-            algo=Algo.CRC32,
-            info=None,
-            ),
-        FileEntry(
-            path=PurePath("./files/(2XVR83rF)environmental[EwI!EhWI]/(JlDa p9I)worker[DQ UvjJa]/pull.bin"),
-            size=1759,
-            is_dir=False,
-            hash_value=b"\xac\x44\xaa\x7c",
-            algo=Algo.CRC32,
-            info=None,
-            ),
-        FileEntry(
-            path=PurePath("./files/(2XVR83rF)environmental[EwI!EhWI]/[2u62YzPk]travel(64PeYN04)/money.dat"),
-            size=1752,
-            is_dir=False,
-            hash_value=b"\x3f\xcc\x5a\x14",
-            algo=Algo.CRC32,
-            info=None,
-            ),
     FileEntry(
-            path=PurePath("./files/(2XVR83rF)environmental[EwI!EhWI]/[2u62YzPk]travel(64PeYN04)/[Glxw7cTt]talk[6n5SFybj]/discover.dat"),
-            size=1950,
-            is_dir=False,
-            hash_value=b"\xf8\x54\x11\x51",
-            algo=Algo.CRC32,
-            info=None,
-            ),
-    FileEntry(
-            path=PurePath("./files/(2XVR83rF)environmental[EwI!EhWI]/[2u62YzPk]travel(64PeYN04)/[Glxw7cTt]talk[6n5SFybj]/gun.raw"),
-            size=1932,
-            is_dir=False,
-            hash_value=b"\x67\x70\xea\x81",
-            algo=Algo.CRC32,
-            info=None,
-            ),
-    FileEntry(
-            path=PurePath("./files/(2XVR83rF)environmental[EwI!EhWI]/[2u62YzPk]travel(64PeYN04)/[MoXHQ63o]table(6r7vRf0V)/security.raw"),
-            size=1942,
-            is_dir=False,
-            hash_value=b"\xd5\x2a\xfb\x45",
-            algo=Algo.CRC32,
-            info=None,
-            ),
-    FileEntry(
-            path=PurePath("./files/(2XVR83rF)environmental[EwI!EhWI]/[sjYDtb_q]life[wr7v_0D0]/specific.raw"),
-            size=1503,
-            is_dir=False,
-            hash_value=b"\xd2\xd6\x5c\x3e",
-            algo=Algo.CRC32,
-            info=None,
-            ),
-    FileEntry(
-            path=PurePath("./files/(2XVR83rF)environmental[EwI!EhWI]/[sjYDtb_q]life[wr7v_0D0]/(D9T9jFT2)mind[cVTorH_5]/center.dat"),
-            size=1840,
-            is_dir=False,
-            hash_value=b"\xdc\x7b\x22\xab",
-            algo=Algo.CRC32,
-            info=None,
-            ),
-    FileEntry(
-            path=PurePath("./files/(2XVR83rF)environmental[EwI!EhWI]/[sjYDtb_q]life[wr7v_0D0]/(D9T9jFT2)mind[cVTorH_5]/join.raw"),
-            size=1047,
-            is_dir=False,
-            hash_value=b"\x6c\x15\x99\x20",
-            algo=Algo.CRC32,
-            info=None,
-            ),
-    FileEntry(
-            path=PurePath("./files/(2XVR83rF)environmental[EwI!EhWI]/[sjYDtb_q]life[wr7v_0D0]/[Nc4Jvep!]while(!JheDpw2)/(n6Wysr57)choice(zJJFVlzT)/measure.raw"),
-            size=1786,
-            is_dir=False,
-            hash_value=b"\xd7\xbe\xfd\x3e",
-            algo=Algo.CRC32,
-            info=None,
-            ),
-    FileEntry(
-            path=PurePath("./files/(F1AuIP S)reason(3RDyXXVL)/chance.dat"),
-            size=1068,
-            is_dir=False,
-            hash_value=b"\x51\xca\xe7\x3b",
-            algo=Algo.CRC32,
-            info=None,
-            ),
-    FileEntry(
-            path=PurePath("./files/(F1AuIP S)reason(3RDyXXVL)/whatever.bin"),
-            size=1473,
-            is_dir=False,
-            hash_value=b"\x5f\xb9\x9f\xd5",
-            algo=Algo.CRC32,
-            info=None,
-            ),
-    FileEntry(
-            path=PurePath("./files/(F1AuIP S)reason(3RDyXXVL)/(2s.05hWf)bill(sU R_I6T)/nation.dat"),
-            size=1452,
-            is_dir=False,
-            hash_value=b"\xe3\x0f\x93\xac",
-            algo=Algo.CRC32,
-            info=None,
-            ),
-    FileEntry(
-            path=PurePath("./files/(F1AuIP S)reason(3RDyXXVL)/(2s.05hWf)bill(sU R_I6T)/receive.bin"),
-            size=1542,
-            is_dir=False,
-            hash_value=b"\xb0\x8f\xa9\x08",
-            algo=Algo.CRC32,
-            info=None,
-            ),
-    FileEntry(
-            path=PurePath("./files/(F1AuIP S)reason(3RDyXXVL)/(2s.05hWf)bill(sU R_I6T)/(z02d8Iu )him[BAx0mnec]/[pt56uDci]show[tgZ96hM8]/career.bin"),
-            size=1962,
-            is_dir=False,
-            hash_value=b"\x47\x9b\xd4\x22",
-            algo=Algo.CRC32,
-            info=None,
-            ),
-    FileEntry(
-            path=PurePath("./files/(F1AuIP S)reason(3RDyXXVL)/[O!NKsn9!]collection[5yu 9oBc]/service.bin"),
-            size=1722,
-            is_dir=False,
-            hash_value=b"\xa0\x50\x7c\xd1",
-            algo=Algo.CRC32,
-            info=None,
-            ),
-    FileEntry(
-            path=PurePath("./files/(F1AuIP S)reason(3RDyXXVL)/[O!NKsn9!]collection[5yu 9oBc]/small.bin"),
-            size=1416,
-            is_dir=False,
-            hash_value=b"\x0f\x6b\x9b\x20",
-            algo=Algo.CRC32,
-            info=None,
-            ),
-    FileEntry(
-            path=PurePath("./files/(F1AuIP S)reason(3RDyXXVL)/[O!NKsn9!]collection[5yu 9oBc]/(xrg118hG)form(THgxXePF)/tonight.raw"),
-            size=1031,
-            is_dir=False,
-            hash_value=b"\xf5\x7f\x27\xd1",
-            algo=Algo.CRC32,
-            info=None,
-            ),
-    FileEntry(
-            path=PurePath("./files/(F1AuIP S)reason(3RDyXXVL)/[O!NKsn9!]collection[5yu 9oBc]/(xrg118hG)form(THgxXePF)/[jLEOP5nA]do(onks8SXc)/challenge.raw"),
-            size=1876,
-            is_dir=False,
-            hash_value=b"\xdc\xcd\x10\xb1",
-            algo=Algo.CRC32,
-            info=None,
-            ),
-    FileEntry(
-            path=PurePath("./files/(qq0wEAwI)admit[VgRSg86a]/debate.dat"),
-            size=1914,
-            is_dir=False,
-            hash_value=b"\xe7\x20\xa2\xc5",
-            algo=Algo.CRC32,
-            info=None,
-            ),
-    FileEntry(
-            path=PurePath("./files/(qq0wEAwI)admit[VgRSg86a]/(Fq7P.ug0)follow(iHcDMpCN)/[5AjIycF_]international(B..x1.AV)/cause.bin"),
-            size=1642,
-            is_dir=False,
-            hash_value=b"\xbe\x50\xdc\x23",
-            algo=Algo.CRC32,
-            info=None,
-            ),
-    FileEntry(
-            path=PurePath("./files/(qq0wEAwI)admit[VgRSg86a]/(Fq7P.ug0)follow(iHcDMpCN)/[5AjIycF_]international(B..x1.AV)/[ _4ugNJ2]page(Hmz0rVlE)/would.dat"),
-            size=1127,
-            is_dir=False,
-            hash_value=b"\x24\xc1\xa6\x4a",
-            algo=Algo.CRC32,
-            info=None,
-            ),
-    FileEntry(
-            path=PurePath("./files/(qq0wEAwI)admit[VgRSg86a]/(Fq7P.ug0)follow(iHcDMpCN)/[5Q_uVxwz]institution(rnVc6ciW)/data.dat"),
-            size=1674,
-            is_dir=False,
-            hash_value=b"\xbb\x35\x64\xdd",
-            algo=Algo.CRC32,
-            info=None,
-            ),
-    FileEntry(
-            path=PurePath("./files/(qq0wEAwI)admit[VgRSg86a]/(Fq7P.ug0)follow(iHcDMpCN)/[l EyatoF]outside(!4.QZ M_)/center.bin"),
-            size=1044,
-            is_dir=False,
-            hash_value=b"\x29\x58\x87\xd7",
-            algo=Algo.CRC32,
-            info=None,
-            ),
-    FileEntry(
-            path=PurePath("./files/(qq0wEAwI)admit[VgRSg86a]/(Fq7P.ug0)follow(iHcDMpCN)/[l EyatoF]outside(!4.QZ M_)/[!LteGMmg]Mrs(Yn pbAtG)/decide.bin"),
-            size=1693,
-            is_dir=False,
-            hash_value=b"\x80\x81\x11\x69",
-            algo=Algo.CRC32,
-            info=None,
-            ),
-    FileEntry(
-            path=PurePath("./files/(qq0wEAwI)admit[VgRSg86a]/(SA7foiQ2)apply(y4ZN9hZ6)/security.bin"),
-            size=1855,
-            is_dir=False,
-            hash_value=b"\xcd\x75\x14\x95",
-            algo=Algo.CRC32,
-            info=None,
-            ),
-    FileEntry(
-            path=PurePath("./files/(qq0wEAwI)admit[VgRSg86a]/(SA7foiQ2)apply(y4ZN9hZ6)/[dnL5pNhh]suggest[_8xmi1Sj]/should.bin"),
-            size=1679,
-            is_dir=False,
-            hash_value=b"\x86\x64\xde\x59",
-            algo=Algo.CRC32,
-            info=None,
-            ),
-    FileEntry(
-            path=PurePath("./files/(qq0wEAwI)admit[VgRSg86a]/(SA7foiQ2)apply(y4ZN9hZ6)/[dnL5pNhh]suggest[_8xmi1Sj]/south.bin"),
-            size=1361,
-            is_dir=False,
-            hash_value=b"\x80\x2a\x92\xa1",
-            algo=Algo.CRC32,
-            info=None,
-            ),
-    FileEntry(
-            path=PurePath("./files/(qq0wEAwI)admit[VgRSg86a]/(SA7foiQ2)apply(y4ZN9hZ6)/[lteMTjC!]yeah[jFglBSKa]/(Qc XKSTy)her[1gAMct0 ]/fight.dat"),
-            size=1788,
-            is_dir=False,
-            hash_value=b"\xe0\x42\x99\xf4",
-            algo=Algo.CRC32,
-            info=None,
-            ),
-    FileEntry(
-            path=PurePath("./files/(qq0wEAwI)admit[VgRSg86a]/[SBzOxfqB]read[QKE2RAde]/conference.dat"),
-            size=1932,
-            is_dir=False,
-            hash_value=b"\xac\x4a\xa6\xda",
-            algo=Algo.CRC32,
-            info=None,
-            ),
-    FileEntry(
-            path=PurePath("./files/(qq0wEAwI)admit[VgRSg86a]/[SBzOxfqB]read[QKE2RAde]/newspaper.dat"),
-            size=1790,
-            is_dir=False,
-            hash_value=b"\xee\xb4\x15\x03",
-            algo=Algo.CRC32,
-            info=None,
-            ),
-    FileEntry(
-            path=PurePath("./files/(qq0wEAwI)admit[VgRSg86a]/[SBzOxfqB]read[QKE2RAde]/scientist.dat"),
-            size=1716,
-            is_dir=False,
-            hash_value=b"\x93\xbb\x27\x59",
-            algo=Algo.CRC32,
-            info=None,
-            ),
-    FileEntry(
-            path=PurePath("./files/(ugjO0h7V)job(WLss1CFo)/state.raw"),
-            size=1708,
-            is_dir=False,
-            hash_value=b"\x6c\xd1\xe8\xe6",
-            algo=Algo.CRC32,
-            info=None,
-            ),
-    FileEntry(
-            path=PurePath("./files/(ugjO0h7V)job(WLss1CFo)/(P8MG2NGY)stage[2kdHLQ7c]/police.bin"),
-            size=1754,
-            is_dir=False,
-            hash_value=b"\x5c\xcf\x43\x2f",
-            algo=Algo.CRC32,
-            info=None,
-            ),
-    FileEntry(
-            path=PurePath("./files/(ugjO0h7V)job(WLss1CFo)/(P8MG2NGY)stage[2kdHLQ7c]/[6RnhJhvv]stock[F8h1FO6V]/item.bin"),
-            size=1649,
-            is_dir=False,
-            hash_value=b"\x5e\x3d\x67\xc5",
-            algo=Algo.CRC32,
-            info=None,
-            ),
-    FileEntry(
-            path=PurePath("./files/(ugjO0h7V)job(WLss1CFo)/(P8MG2NGY)stage[2kdHLQ7c]/[VgVNn.vC]third[1s6k8Bl5]/operation.dat"),
-            size=1220,
-            is_dir=False,
-            hash_value=b"\x6c\x53\x9d\x8b",
-            algo=Algo.CRC32,
-            info=None,
-            ),
-    FileEntry(
-            path=PurePath("./files/(ugjO0h7V)job(WLss1CFo)/[EOa1DZQe]forward[AlweRhm3]/any.raw"),
-            size=1465,
-            is_dir=False,
-            hash_value=b"\x0d\x38\x96\x2f",
-            algo=Algo.CRC32,
-            info=None,
-            ),
-    FileEntry(
-            path=PurePath("./files/(ugjO0h7V)job(WLss1CFo)/[EOa1DZQe]forward[AlweRhm3]/your.dat"),
-            size=1540,
-            is_dir=False,
-            hash_value=b"\x64\x2e\xdd\xc6",
-            algo=Algo.CRC32,
-            info=None,
-            ),
-    FileEntry(
-            path=PurePath("./files/(ugjO0h7V)job(WLss1CFo)/[m9Tk6LxN]never[87zRG Z4]/picture.raw"),
-            size=1419,
-            is_dir=False,
-            hash_value=b"\x34\x71\x61\x8a",
-            algo=Algo.CRC32,
-            info=None,
-            ),
-    FileEntry(
-            path=PurePath("./files/(ugjO0h7V)job(WLss1CFo)/[m9Tk6LxN]never[87zRG Z4]/tax.dat"),
-            size=1914,
-            is_dir=False,
-            hash_value=b"\xdc\x14\x7e\x3f",
-            algo=Algo.CRC32,
-            info=None,
-            ),
-    FileEntry(
-            path=PurePath("./files/(ugjO0h7V)job(WLss1CFo)/[m9Tk6LxN]never[87zRG Z4]/[PV!TfReD]show(KbLJCgZ7)/buy.dat"),
-            size=1740,
-            is_dir=False,
-            hash_value=b"\xdd\xa0\x4b\x88",
-            algo=Algo.CRC32,
-            info=None,
-            ),
-    FileEntry(
-            path=PurePath("./files/(ugjO0h7V)job(WLss1CFo)/[m9Tk6LxN]never[87zRG Z4]/[PV!TfReD]show(KbLJCgZ7)/[_7Wb1Zt8]send[BxdYTDT_]/TV.dat"),
-            size=1997,
-            is_dir=False,
-            hash_value=b"\x28\xf2\xc0\xfe",
-            algo=Algo.CRC32,
-            info=None,
-            ),
-    FileEntry(
-            path=PurePath("./files/(2XVR83rF)environmental[EwI!EhWI]"),
-            size=0,
-            is_dir=True,
-            hash_value=b"\x00\x00\x00\x00",
-            algo=Algo.CRC32,
-            info=None,
-            ),
-    FileEntry(
-            path=PurePath("./files/(2XVR83rF)environmental[EwI!EhWI]/(JlDa p9I)worker[DQ UvjJa]"),
-            size=0,
-            is_dir=True,
-            hash_value=b"\x00\x00\x00\x00",
-            algo=Algo.CRC32,
-            info=None,
-            ),
-    FileEntry(
-            path=PurePath("./files/(2XVR83rF)environmental[EwI!EhWI]/[2u62YzPk]travel(64PeYN04)"),
-            size=0,
-            is_dir=True,
-            hash_value=b"\x00\x00\x00\x00",
-            algo=Algo.CRC32,
-            info=None,
-            ),
-    FileEntry(
-            path=PurePath("./files/(2XVR83rF)environmental[EwI!EhWI]/[2u62YzPk]travel(64PeYN04)/[Glxw7cTt]talk[6n5SFybj]"),
-            size=0,
-            is_dir=True,
-            hash_value=b"\x00\x00\x00\x00",
-            algo=Algo.CRC32,
-            info=None,
-            ),
-    FileEntry(
-            path=PurePath("./files/(2XVR83rF)environmental[EwI!EhWI]/[2u62YzPk]travel(64PeYN04)/[MoXHQ63o]table(6r7vRf0V)"),
-            size=0,
-            is_dir=True,
-            hash_value=b"\x00\x00\x00\x00",
-            algo=Algo.CRC32,
-            info=None,
-            ),
-    FileEntry(
-            path=PurePath("./files/(2XVR83rF)environmental[EwI!EhWI]/[2u62YzPk]travel(64PeYN04)/[MoXHQ63o]table(6r7vRf0V)/(qp9bG.r )probably(WV3!Ul5F)"),
-            size=0,
-            is_dir=True,
-            hash_value=b"\x00\x00\x00\x00",
-            algo=Algo.CRC32,
-            info=None,
-            ),
-    FileEntry(
-            path=PurePath("./files/(2XVR83rF)environmental[EwI!EhWI]/[2u62YzPk]travel(64PeYN04)/[MoXHQ63o]table(6r7vRf0V)/(qp9bG.r )probably(WV3!Ul5F)/[_AujWdds]new[IieV24Sf]"),
-            size=0,
-            is_dir=True,
-            hash_value=b"\x00\x00\x00\x00",
-            algo=Algo.CRC32,
-            info=None,
-            ),
-    FileEntry(
-            path=PurePath("./files/(2XVR83rF)environmental[EwI!EhWI]/[sjYDtb_q]life[wr7v_0D0]"),
-            size=0,
-            is_dir=True,
-            hash_value=b"\x00\x00\x00\x00",
-            algo=Algo.CRC32,
-            info=None,
-            ),
-    FileEntry(
-            path=PurePath("./files/(2XVR83rF)environmental[EwI!EhWI]/[sjYDtb_q]life[wr7v_0D0]/(D9T9jFT2)mind[cVTorH_5]"),
-            size=0,
-            is_dir=True,
-            hash_value=b"\x00\x00\x00\x00",
-            algo=Algo.CRC32,
-            info=None,
-            ),
-    FileEntry(
-            path=PurePath("./files/(2XVR83rF)environmental[EwI!EhWI]/[sjYDtb_q]life[wr7v_0D0]/[Nc4Jvep!]while(!JheDpw2)"),
-            size=0,
-            is_dir=True,
-            hash_value=b"\x00\x00\x00\x00",
-            algo=Algo.CRC32,
-            info=None,
-            ),
-    FileEntry(
-            path=PurePath("./files/(2XVR83rF)environmental[EwI!EhWI]/[sjYDtb_q]life[wr7v_0D0]/[Nc4Jvep!]while(!JheDpw2)/(n6Wysr57)choice(zJJFVlzT)"),
-            size=0,
-            is_dir=True,
-            hash_value=b"\x00\x00\x00\x00",
-            algo=Algo.CRC32,
-            info=None,
-            ),
-    FileEntry(
-            path=PurePath("./files/(2XVR83rF)environmental[EwI!EhWI]/[sjYDtb_q]life[wr7v_0D0]/[Nc4Jvep!]while(!JheDpw2)/(T BaVlQh)them(eZmh9Vvu)"),
-            size=0,
-            is_dir=True,
-            hash_value=b"\x00\x00\x00\x00",
-            algo=Algo.CRC32,
-            info=None,
-            ),
-    FileEntry(
-            path=PurePath("./files/(2XVR83rF)environmental[EwI!EhWI]/[sjYDtb_q]life[wr7v_0D0]/[Nc4Jvep!]while(!JheDpw2)/(T BaVlQh)them(eZmh9Vvu)/(4mtmf8g_)building(pK_DZ zD)"),
-            size=0,
-            is_dir=True,
-            hash_value=b"\x00\x00\x00\x00",
-            algo=Algo.CRC32,
-            info=None,
-            ),
-    FileEntry(
-            path=PurePath("./files/(F1AuIP S)reason(3RDyXXVL)"),
-            size=0,
-            is_dir=True,
-            hash_value=b"\x00\x00\x00\x00",
-            algo=Algo.CRC32,
-            info=None,
-            ),
-    FileEntry(
-            path=PurePath("./files/(F1AuIP S)reason(3RDyXXVL)/(2s.05hWf)bill(sU R_I6T)"),
-            size=0,
-            is_dir=True,
-            hash_value=b"\x00\x00\x00\x00",
-            algo=Algo.CRC32,
-            info=None,
-            ),
-    FileEntry(
-            path=PurePath("./files/(F1AuIP S)reason(3RDyXXVL)/(2s.05hWf)bill(sU R_I6T)/(z02d8Iu )him[BAx0mnec]"),
-            size=0,
-            is_dir=True,
-            hash_value=b"\x00\x00\x00\x00",
-            algo=Algo.CRC32,
-            info=None,
-            ),
-    FileEntry(
-            path=PurePath("./files/(F1AuIP S)reason(3RDyXXVL)/(2s.05hWf)bill(sU R_I6T)/(z02d8Iu )him[BAx0mnec]/[pt56uDci]show[tgZ96hM8]"),
-            size=0,
-            is_dir=True,
-            hash_value=b"\x00\x00\x00\x00",
-            algo=Algo.CRC32,
-            info=None,
-            ),
-    FileEntry(
-            path=PurePath("./files/(F1AuIP S)reason(3RDyXXVL)/(2s.05hWf)bill(sU R_I6T)/(z02d8Iu )him[BAx0mnec]/[qYwWCzYT]development(DtTbp8oo)"),
-            size=0,
-            is_dir=True,
-            hash_value=b"\x00\x00\x00\x00",
-            algo=Algo.CRC32,
-            info=None,
-            ),
-    FileEntry(
-            path=PurePath("./files/(F1AuIP S)reason(3RDyXXVL)/(2s.05hWf)bill(sU R_I6T)/(z02d8Iu )him[BAx0mnec]/[qYwWCzYT]development(DtTbp8oo)/(AQwUZgUf)girl[mfFVHI0Z]"),
-            size=0,
-            is_dir=True,
-            hash_value=b"\x00\x00\x00\x00",
-            algo=Algo.CRC32,
-            info=None,
-            ),
-    FileEntry(
-            path=PurePath("./files/(F1AuIP S)reason(3RDyXXVL)/[O!NKsn9!]collection[5yu 9oBc]"),
-            size=0,
-        is_dir=True,
-        hash_value=b"\x00\x00\x00\x00",
+        path=PurePath("./files/stock.raw"),
+        size=1948,
+        is_dir=False,
+        hash_value=b"\xa0\x86\x54\x2d",
         algo=Algo.CRC32,
         info=None,
     ),
     FileEntry(
-        path=PurePath("./files/(F1AuIP S)reason(3RDyXXVL)/[O!NKsn9!]collection[5yu 9oBc]/(xrg118hG)form(THgxXePF)"),
+        path=PurePath("./files/(2XVR83rF)environmental[EwI!EhWI]/across.raw"),
+        size=1865,
+        is_dir=False,
+        hash_value=b"\x7b\xb0\x5d\xd4",
+        algo=Algo.CRC32,
+        info=None,
+    ),
+    FileEntry(
+        path=PurePath(
+            "./files/(2XVR83rF)environmental[EwI!EhWI]/(JlDa p9I)worker[DQ UvjJa]/friend.dat"
+        ),
+        size=1337,
+        is_dir=False,
+        hash_value=b"\x96\xa9\xe9\x24",
+        algo=Algo.CRC32,
+        info=None,
+    ),
+    FileEntry(
+        path=PurePath(
+            "./files/(2XVR83rF)environmental[EwI!EhWI]/(JlDa p9I)worker[DQ UvjJa]/later.bin"
+        ),
+        size=1816,
+        is_dir=False,
+        hash_value=b"\x22\x3a\xac\xc9",
+        algo=Algo.CRC32,
+        info=None,
+    ),
+    FileEntry(
+        path=PurePath(
+            "./files/(2XVR83rF)environmental[EwI!EhWI]/(JlDa p9I)worker[DQ UvjJa]/pull.bin"
+        ),
+        size=1759,
+        is_dir=False,
+        hash_value=b"\xac\x44\xaa\x7c",
+        algo=Algo.CRC32,
+        info=None,
+    ),
+    FileEntry(
+        path=PurePath(
+            "./files/(2XVR83rF)environmental[EwI!EhWI]/[2u62YzPk]travel(64PeYN04)/money.dat"
+        ),
+        size=1752,
+        is_dir=False,
+        hash_value=b"\x3f\xcc\x5a\x14",
+        algo=Algo.CRC32,
+        info=None,
+    ),
+    FileEntry(
+        path=PurePath(
+            "./files/(2XVR83rF)environmental[EwI!EhWI]/[2u62YzPk]travel(64PeYN04)/[Glxw7cTt]talk[6n5SFybj]/discover.dat"
+        ),
+        size=1950,
+        is_dir=False,
+        hash_value=b"\xf8\x54\x11\x51",
+        algo=Algo.CRC32,
+        info=None,
+    ),
+    FileEntry(
+        path=PurePath(
+            "./files/(2XVR83rF)environmental[EwI!EhWI]/[2u62YzPk]travel(64PeYN04)/[Glxw7cTt]talk[6n5SFybj]/gun.raw"
+        ),
+        size=1932,
+        is_dir=False,
+        hash_value=b"\x67\x70\xea\x81",
+        algo=Algo.CRC32,
+        info=None,
+    ),
+    FileEntry(
+        path=PurePath(
+            "./files/(2XVR83rF)environmental[EwI!EhWI]/[2u62YzPk]travel(64PeYN04)/[MoXHQ63o]table(6r7vRf0V)/security.raw"
+        ),
+        size=1942,
+        is_dir=False,
+        hash_value=b"\xd5\x2a\xfb\x45",
+        algo=Algo.CRC32,
+        info=None,
+    ),
+    FileEntry(
+        path=PurePath(
+            "./files/(2XVR83rF)environmental[EwI!EhWI]/[sjYDtb_q]life[wr7v_0D0]/specific.raw"
+        ),
+        size=1503,
+        is_dir=False,
+        hash_value=b"\xd2\xd6\x5c\x3e",
+        algo=Algo.CRC32,
+        info=None,
+    ),
+    FileEntry(
+        path=PurePath(
+            "./files/(2XVR83rF)environmental[EwI!EhWI]/[sjYDtb_q]life[wr7v_0D0]/(D9T9jFT2)mind[cVTorH_5]/center.dat"
+        ),
+        size=1840,
+        is_dir=False,
+        hash_value=b"\xdc\x7b\x22\xab",
+        algo=Algo.CRC32,
+        info=None,
+    ),
+    FileEntry(
+        path=PurePath(
+            "./files/(2XVR83rF)environmental[EwI!EhWI]/[sjYDtb_q]life[wr7v_0D0]/(D9T9jFT2)mind[cVTorH_5]/join.raw"
+        ),
+        size=1047,
+        is_dir=False,
+        hash_value=b"\x6c\x15\x99\x20",
+        algo=Algo.CRC32,
+        info=None,
+    ),
+    FileEntry(
+        path=PurePath(
+            "./files/(2XVR83rF)environmental[EwI!EhWI]/[sjYDtb_q]life[wr7v_0D0]/[Nc4Jvep!]while(!JheDpw2)/(n6Wysr57)choice(zJJFVlzT)/measure.raw"
+        ),
+        size=1786,
+        is_dir=False,
+        hash_value=b"\xd7\xbe\xfd\x3e",
+        algo=Algo.CRC32,
+        info=None,
+    ),
+    FileEntry(
+        path=PurePath("./files/(F1AuIP S)reason(3RDyXXVL)/chance.dat"),
+        size=1068,
+        is_dir=False,
+        hash_value=b"\x51\xca\xe7\x3b",
+        algo=Algo.CRC32,
+        info=None,
+    ),
+    FileEntry(
+        path=PurePath("./files/(F1AuIP S)reason(3RDyXXVL)/whatever.bin"),
+        size=1473,
+        is_dir=False,
+        hash_value=b"\x5f\xb9\x9f\xd5",
+        algo=Algo.CRC32,
+        info=None,
+    ),
+    FileEntry(
+        path=PurePath(
+            "./files/(F1AuIP S)reason(3RDyXXVL)/(2s.05hWf)bill(sU R_I6T)/nation.dat"
+        ),
+        size=1452,
+        is_dir=False,
+        hash_value=b"\xe3\x0f\x93\xac",
+        algo=Algo.CRC32,
+        info=None,
+    ),
+    FileEntry(
+        path=PurePath(
+            "./files/(F1AuIP S)reason(3RDyXXVL)/(2s.05hWf)bill(sU R_I6T)/receive.bin"
+        ),
+        size=1542,
+        is_dir=False,
+        hash_value=b"\xb0\x8f\xa9\x08",
+        algo=Algo.CRC32,
+        info=None,
+    ),
+    FileEntry(
+        path=PurePath(
+            "./files/(F1AuIP S)reason(3RDyXXVL)/(2s.05hWf)bill(sU R_I6T)/(z02d8Iu )him[BAx0mnec]/[pt56uDci]show[tgZ96hM8]/career.bin"
+        ),
+        size=1962,
+        is_dir=False,
+        hash_value=b"\x47\x9b\xd4\x22",
+        algo=Algo.CRC32,
+        info=None,
+    ),
+    FileEntry(
+        path=PurePath(
+            "./files/(F1AuIP S)reason(3RDyXXVL)/[O!NKsn9!]collection[5yu 9oBc]/service.bin"
+        ),
+        size=1722,
+        is_dir=False,
+        hash_value=b"\xa0\x50\x7c\xd1",
+        algo=Algo.CRC32,
+        info=None,
+    ),
+    FileEntry(
+        path=PurePath(
+            "./files/(F1AuIP S)reason(3RDyXXVL)/[O!NKsn9!]collection[5yu 9oBc]/small.bin"
+        ),
+        size=1416,
+        is_dir=False,
+        hash_value=b"\x0f\x6b\x9b\x20",
+        algo=Algo.CRC32,
+        info=None,
+    ),
+    FileEntry(
+        path=PurePath(
+            "./files/(F1AuIP S)reason(3RDyXXVL)/[O!NKsn9!]collection[5yu 9oBc]/(xrg118hG)form(THgxXePF)/tonight.raw"
+        ),
+        size=1031,
+        is_dir=False,
+        hash_value=b"\xf5\x7f\x27\xd1",
+        algo=Algo.CRC32,
+        info=None,
+    ),
+    FileEntry(
+        path=PurePath(
+            "./files/(F1AuIP S)reason(3RDyXXVL)/[O!NKsn9!]collection[5yu 9oBc]/(xrg118hG)form(THgxXePF)/[jLEOP5nA]do(onks8SXc)/challenge.raw"
+        ),
+        size=1876,
+        is_dir=False,
+        hash_value=b"\xdc\xcd\x10\xb1",
+        algo=Algo.CRC32,
+        info=None,
+    ),
+    FileEntry(
+        path=PurePath("./files/(qq0wEAwI)admit[VgRSg86a]/debate.dat"),
+        size=1914,
+        is_dir=False,
+        hash_value=b"\xe7\x20\xa2\xc5",
+        algo=Algo.CRC32,
+        info=None,
+    ),
+    FileEntry(
+        path=PurePath(
+            "./files/(qq0wEAwI)admit[VgRSg86a]/(Fq7P.ug0)follow(iHcDMpCN)/[5AjIycF_]international(B..x1.AV)/cause.bin"
+        ),
+        size=1642,
+        is_dir=False,
+        hash_value=b"\xbe\x50\xdc\x23",
+        algo=Algo.CRC32,
+        info=None,
+    ),
+    FileEntry(
+        path=PurePath(
+            "./files/(qq0wEAwI)admit[VgRSg86a]/(Fq7P.ug0)follow(iHcDMpCN)/[5AjIycF_]international(B..x1.AV)/[ _4ugNJ2]page(Hmz0rVlE)/would.dat"
+        ),
+        size=1127,
+        is_dir=False,
+        hash_value=b"\x24\xc1\xa6\x4a",
+        algo=Algo.CRC32,
+        info=None,
+    ),
+    FileEntry(
+        path=PurePath(
+            "./files/(qq0wEAwI)admit[VgRSg86a]/(Fq7P.ug0)follow(iHcDMpCN)/[5Q_uVxwz]institution(rnVc6ciW)/data.dat"
+        ),
+        size=1674,
+        is_dir=False,
+        hash_value=b"\xbb\x35\x64\xdd",
+        algo=Algo.CRC32,
+        info=None,
+    ),
+    FileEntry(
+        path=PurePath(
+            "./files/(qq0wEAwI)admit[VgRSg86a]/(Fq7P.ug0)follow(iHcDMpCN)/[l EyatoF]outside(!4.QZ M_)/center.bin"
+        ),
+        size=1044,
+        is_dir=False,
+        hash_value=b"\x29\x58\x87\xd7",
+        algo=Algo.CRC32,
+        info=None,
+    ),
+    FileEntry(
+        path=PurePath(
+            "./files/(qq0wEAwI)admit[VgRSg86a]/(Fq7P.ug0)follow(iHcDMpCN)/[l EyatoF]outside(!4.QZ M_)/[!LteGMmg]Mrs(Yn pbAtG)/decide.bin"
+        ),
+        size=1693,
+        is_dir=False,
+        hash_value=b"\x80\x81\x11\x69",
+        algo=Algo.CRC32,
+        info=None,
+    ),
+    FileEntry(
+        path=PurePath(
+            "./files/(qq0wEAwI)admit[VgRSg86a]/(SA7foiQ2)apply(y4ZN9hZ6)/security.bin"
+        ),
+        size=1855,
+        is_dir=False,
+        hash_value=b"\xcd\x75\x14\x95",
+        algo=Algo.CRC32,
+        info=None,
+    ),
+    FileEntry(
+        path=PurePath(
+            "./files/(qq0wEAwI)admit[VgRSg86a]/(SA7foiQ2)apply(y4ZN9hZ6)/[dnL5pNhh]suggest[_8xmi1Sj]/should.bin"
+        ),
+        size=1679,
+        is_dir=False,
+        hash_value=b"\x86\x64\xde\x59",
+        algo=Algo.CRC32,
+        info=None,
+    ),
+    FileEntry(
+        path=PurePath(
+            "./files/(qq0wEAwI)admit[VgRSg86a]/(SA7foiQ2)apply(y4ZN9hZ6)/[dnL5pNhh]suggest[_8xmi1Sj]/south.bin"
+        ),
+        size=1361,
+        is_dir=False,
+        hash_value=b"\x80\x2a\x92\xa1",
+        algo=Algo.CRC32,
+        info=None,
+    ),
+    FileEntry(
+        path=PurePath(
+            "./files/(qq0wEAwI)admit[VgRSg86a]/(SA7foiQ2)apply(y4ZN9hZ6)/[lteMTjC!]yeah[jFglBSKa]/(Qc XKSTy)her[1gAMct0 ]/fight.dat"
+        ),
+        size=1788,
+        is_dir=False,
+        hash_value=b"\xe0\x42\x99\xf4",
+        algo=Algo.CRC32,
+        info=None,
+    ),
+    FileEntry(
+        path=PurePath(
+            "./files/(qq0wEAwI)admit[VgRSg86a]/[SBzOxfqB]read[QKE2RAde]/conference.dat"
+        ),
+        size=1932,
+        is_dir=False,
+        hash_value=b"\xac\x4a\xa6\xda",
+        algo=Algo.CRC32,
+        info=None,
+    ),
+    FileEntry(
+        path=PurePath(
+            "./files/(qq0wEAwI)admit[VgRSg86a]/[SBzOxfqB]read[QKE2RAde]/newspaper.dat"
+        ),
+        size=1790,
+        is_dir=False,
+        hash_value=b"\xee\xb4\x15\x03",
+        algo=Algo.CRC32,
+        info=None,
+    ),
+    FileEntry(
+        path=PurePath(
+            "./files/(qq0wEAwI)admit[VgRSg86a]/[SBzOxfqB]read[QKE2RAde]/scientist.dat"
+        ),
+        size=1716,
+        is_dir=False,
+        hash_value=b"\x93\xbb\x27\x59",
+        algo=Algo.CRC32,
+        info=None,
+    ),
+    FileEntry(
+        path=PurePath("./files/(ugjO0h7V)job(WLss1CFo)/state.raw"),
+        size=1708,
+        is_dir=False,
+        hash_value=b"\x6c\xd1\xe8\xe6",
+        algo=Algo.CRC32,
+        info=None,
+    ),
+    FileEntry(
+        path=PurePath(
+            "./files/(ugjO0h7V)job(WLss1CFo)/(P8MG2NGY)stage[2kdHLQ7c]/police.bin"
+        ),
+        size=1754,
+        is_dir=False,
+        hash_value=b"\x5c\xcf\x43\x2f",
+        algo=Algo.CRC32,
+        info=None,
+    ),
+    FileEntry(
+        path=PurePath(
+            "./files/(ugjO0h7V)job(WLss1CFo)/(P8MG2NGY)stage[2kdHLQ7c]/[6RnhJhvv]stock[F8h1FO6V]/item.bin"
+        ),
+        size=1649,
+        is_dir=False,
+        hash_value=b"\x5e\x3d\x67\xc5",
+        algo=Algo.CRC32,
+        info=None,
+    ),
+    FileEntry(
+        path=PurePath(
+            "./files/(ugjO0h7V)job(WLss1CFo)/(P8MG2NGY)stage[2kdHLQ7c]/[VgVNn.vC]third[1s6k8Bl5]/operation.dat"
+        ),
+        size=1220,
+        is_dir=False,
+        hash_value=b"\x6c\x53\x9d\x8b",
+        algo=Algo.CRC32,
+        info=None,
+    ),
+    FileEntry(
+        path=PurePath(
+            "./files/(ugjO0h7V)job(WLss1CFo)/[EOa1DZQe]forward[AlweRhm3]/any.raw"
+        ),
+        size=1465,
+        is_dir=False,
+        hash_value=b"\x0d\x38\x96\x2f",
+        algo=Algo.CRC32,
+        info=None,
+    ),
+    FileEntry(
+        path=PurePath(
+            "./files/(ugjO0h7V)job(WLss1CFo)/[EOa1DZQe]forward[AlweRhm3]/your.dat"
+        ),
+        size=1540,
+        is_dir=False,
+        hash_value=b"\x64\x2e\xdd\xc6",
+        algo=Algo.CRC32,
+        info=None,
+    ),
+    FileEntry(
+        path=PurePath(
+            "./files/(ugjO0h7V)job(WLss1CFo)/[m9Tk6LxN]never[87zRG Z4]/picture.raw"
+        ),
+        size=1419,
+        is_dir=False,
+        hash_value=b"\x34\x71\x61\x8a",
+        algo=Algo.CRC32,
+        info=None,
+    ),
+    FileEntry(
+        path=PurePath(
+            "./files/(ugjO0h7V)job(WLss1CFo)/[m9Tk6LxN]never[87zRG Z4]/tax.dat"
+        ),
+        size=1914,
+        is_dir=False,
+        hash_value=b"\xdc\x14\x7e\x3f",
+        algo=Algo.CRC32,
+        info=None,
+    ),
+    FileEntry(
+        path=PurePath(
+            "./files/(ugjO0h7V)job(WLss1CFo)/[m9Tk6LxN]never[87zRG Z4]/[PV!TfReD]show(KbLJCgZ7)/buy.dat"
+        ),
+        size=1740,
+        is_dir=False,
+        hash_value=b"\xdd\xa0\x4b\x88",
+        algo=Algo.CRC32,
+        info=None,
+    ),
+    FileEntry(
+        path=PurePath(
+            "./files/(ugjO0h7V)job(WLss1CFo)/[m9Tk6LxN]never[87zRG Z4]/[PV!TfReD]show(KbLJCgZ7)/[_7Wb1Zt8]send[BxdYTDT_]/TV.dat"
+        ),
+        size=1997,
+        is_dir=False,
+        hash_value=b"\x28\xf2\xc0\xfe",
+        algo=Algo.CRC32,
+        info=None,
+    ),
+    FileEntry(
+        path=PurePath("./files/(2XVR83rF)environmental[EwI!EhWI]"),
         size=0,
         is_dir=True,
         hash_value=b"\x00\x00\x00\x00",
@@ -591,7 +503,205 @@ TEST_FILES = [
         info=None,
     ),
     FileEntry(
-        path=PurePath("./files/(F1AuIP S)reason(3RDyXXVL)/[O!NKsn9!]collection[5yu 9oBc]/(xrg118hG)form(THgxXePF)/[jLEOP5nA]do(onks8SXc)"),
+        path=PurePath(
+            "./files/(2XVR83rF)environmental[EwI!EhWI]/(JlDa p9I)worker[DQ UvjJa]"
+        ),
+        size=0,
+        is_dir=True,
+        hash_value=b"\x00\x00\x00\x00",
+        algo=Algo.CRC32,
+        info=None,
+    ),
+    FileEntry(
+        path=PurePath(
+            "./files/(2XVR83rF)environmental[EwI!EhWI]/[2u62YzPk]travel(64PeYN04)"
+        ),
+        size=0,
+        is_dir=True,
+        hash_value=b"\x00\x00\x00\x00",
+        algo=Algo.CRC32,
+        info=None,
+    ),
+    FileEntry(
+        path=PurePath(
+            "./files/(2XVR83rF)environmental[EwI!EhWI]/[2u62YzPk]travel(64PeYN04)/[Glxw7cTt]talk[6n5SFybj]"
+        ),
+        size=0,
+        is_dir=True,
+        hash_value=b"\x00\x00\x00\x00",
+        algo=Algo.CRC32,
+        info=None,
+    ),
+    FileEntry(
+        path=PurePath(
+            "./files/(2XVR83rF)environmental[EwI!EhWI]/[2u62YzPk]travel(64PeYN04)/[MoXHQ63o]table(6r7vRf0V)"
+        ),
+        size=0,
+        is_dir=True,
+        hash_value=b"\x00\x00\x00\x00",
+        algo=Algo.CRC32,
+        info=None,
+    ),
+    FileEntry(
+        path=PurePath(
+            "./files/(2XVR83rF)environmental[EwI!EhWI]/[2u62YzPk]travel(64PeYN04)/[MoXHQ63o]table(6r7vRf0V)/(qp9bG.r )probably(WV3!Ul5F)"
+        ),
+        size=0,
+        is_dir=True,
+        hash_value=b"\x00\x00\x00\x00",
+        algo=Algo.CRC32,
+        info=None,
+    ),
+    FileEntry(
+        path=PurePath(
+            "./files/(2XVR83rF)environmental[EwI!EhWI]/[2u62YzPk]travel(64PeYN04)/[MoXHQ63o]table(6r7vRf0V)/(qp9bG.r )probably(WV3!Ul5F)/[_AujWdds]new[IieV24Sf]"
+        ),
+        size=0,
+        is_dir=True,
+        hash_value=b"\x00\x00\x00\x00",
+        algo=Algo.CRC32,
+        info=None,
+    ),
+    FileEntry(
+        path=PurePath(
+            "./files/(2XVR83rF)environmental[EwI!EhWI]/[sjYDtb_q]life[wr7v_0D0]"
+        ),
+        size=0,
+        is_dir=True,
+        hash_value=b"\x00\x00\x00\x00",
+        algo=Algo.CRC32,
+        info=None,
+    ),
+    FileEntry(
+        path=PurePath(
+            "./files/(2XVR83rF)environmental[EwI!EhWI]/[sjYDtb_q]life[wr7v_0D0]/(D9T9jFT2)mind[cVTorH_5]"
+        ),
+        size=0,
+        is_dir=True,
+        hash_value=b"\x00\x00\x00\x00",
+        algo=Algo.CRC32,
+        info=None,
+    ),
+    FileEntry(
+        path=PurePath(
+            "./files/(2XVR83rF)environmental[EwI!EhWI]/[sjYDtb_q]life[wr7v_0D0]/[Nc4Jvep!]while(!JheDpw2)"
+        ),
+        size=0,
+        is_dir=True,
+        hash_value=b"\x00\x00\x00\x00",
+        algo=Algo.CRC32,
+        info=None,
+    ),
+    FileEntry(
+        path=PurePath(
+            "./files/(2XVR83rF)environmental[EwI!EhWI]/[sjYDtb_q]life[wr7v_0D0]/[Nc4Jvep!]while(!JheDpw2)/(n6Wysr57)choice(zJJFVlzT)"
+        ),
+        size=0,
+        is_dir=True,
+        hash_value=b"\x00\x00\x00\x00",
+        algo=Algo.CRC32,
+        info=None,
+    ),
+    FileEntry(
+        path=PurePath(
+            "./files/(2XVR83rF)environmental[EwI!EhWI]/[sjYDtb_q]life[wr7v_0D0]/[Nc4Jvep!]while(!JheDpw2)/(T BaVlQh)them(eZmh9Vvu)"
+        ),
+        size=0,
+        is_dir=True,
+        hash_value=b"\x00\x00\x00\x00",
+        algo=Algo.CRC32,
+        info=None,
+    ),
+    FileEntry(
+        path=PurePath(
+            "./files/(2XVR83rF)environmental[EwI!EhWI]/[sjYDtb_q]life[wr7v_0D0]/[Nc4Jvep!]while(!JheDpw2)/(T BaVlQh)them(eZmh9Vvu)/(4mtmf8g_)building(pK_DZ zD)"
+        ),
+        size=0,
+        is_dir=True,
+        hash_value=b"\x00\x00\x00\x00",
+        algo=Algo.CRC32,
+        info=None,
+    ),
+    FileEntry(
+        path=PurePath("./files/(F1AuIP S)reason(3RDyXXVL)"),
+        size=0,
+        is_dir=True,
+        hash_value=b"\x00\x00\x00\x00",
+        algo=Algo.CRC32,
+        info=None,
+    ),
+    FileEntry(
+        path=PurePath("./files/(F1AuIP S)reason(3RDyXXVL)/(2s.05hWf)bill(sU R_I6T)"),
+        size=0,
+        is_dir=True,
+        hash_value=b"\x00\x00\x00\x00",
+        algo=Algo.CRC32,
+        info=None,
+    ),
+    FileEntry(
+        path=PurePath(
+            "./files/(F1AuIP S)reason(3RDyXXVL)/(2s.05hWf)bill(sU R_I6T)/(z02d8Iu )him[BAx0mnec]"
+        ),
+        size=0,
+        is_dir=True,
+        hash_value=b"\x00\x00\x00\x00",
+        algo=Algo.CRC32,
+        info=None,
+    ),
+    FileEntry(
+        path=PurePath(
+            "./files/(F1AuIP S)reason(3RDyXXVL)/(2s.05hWf)bill(sU R_I6T)/(z02d8Iu )him[BAx0mnec]/[pt56uDci]show[tgZ96hM8]"
+        ),
+        size=0,
+        is_dir=True,
+        hash_value=b"\x00\x00\x00\x00",
+        algo=Algo.CRC32,
+        info=None,
+    ),
+    FileEntry(
+        path=PurePath(
+            "./files/(F1AuIP S)reason(3RDyXXVL)/(2s.05hWf)bill(sU R_I6T)/(z02d8Iu )him[BAx0mnec]/[qYwWCzYT]development(DtTbp8oo)"
+        ),
+        size=0,
+        is_dir=True,
+        hash_value=b"\x00\x00\x00\x00",
+        algo=Algo.CRC32,
+        info=None,
+    ),
+    FileEntry(
+        path=PurePath(
+            "./files/(F1AuIP S)reason(3RDyXXVL)/(2s.05hWf)bill(sU R_I6T)/(z02d8Iu )him[BAx0mnec]/[qYwWCzYT]development(DtTbp8oo)/(AQwUZgUf)girl[mfFVHI0Z]"
+        ),
+        size=0,
+        is_dir=True,
+        hash_value=b"\x00\x00\x00\x00",
+        algo=Algo.CRC32,
+        info=None,
+    ),
+    FileEntry(
+        path=PurePath(
+            "./files/(F1AuIP S)reason(3RDyXXVL)/[O!NKsn9!]collection[5yu 9oBc]"
+        ),
+        size=0,
+        is_dir=True,
+        hash_value=b"\x00\x00\x00\x00",
+        algo=Algo.CRC32,
+        info=None,
+    ),
+    FileEntry(
+        path=PurePath(
+            "./files/(F1AuIP S)reason(3RDyXXVL)/[O!NKsn9!]collection[5yu 9oBc]/(xrg118hG)form(THgxXePF)"
+        ),
+        size=0,
+        is_dir=True,
+        hash_value=b"\x00\x00\x00\x00",
+        algo=Algo.CRC32,
+        info=None,
+    ),
+    FileEntry(
+        path=PurePath(
+            "./files/(F1AuIP S)reason(3RDyXXVL)/[O!NKsn9!]collection[5yu 9oBc]/(xrg118hG)form(THgxXePF)/[jLEOP5nA]do(onks8SXc)"
+        ),
         size=0,
         is_dir=True,
         hash_value=b"\x00\x00\x00\x00",
@@ -615,7 +725,9 @@ TEST_FILES = [
         info=None,
     ),
     FileEntry(
-        path=PurePath("./files/(qq0wEAwI)admit[VgRSg86a]/(Fq7P.ug0)follow(iHcDMpCN)/[5AjIycF_]international(B..x1.AV)"),
+        path=PurePath(
+            "./files/(qq0wEAwI)admit[VgRSg86a]/(Fq7P.ug0)follow(iHcDMpCN)/[5AjIycF_]international(B..x1.AV)"
+        ),
         size=0,
         is_dir=True,
         hash_value=b"\x00\x00\x00\x00",
@@ -623,7 +735,9 @@ TEST_FILES = [
         info=None,
     ),
     FileEntry(
-        path=PurePath("./files/(qq0wEAwI)admit[VgRSg86a]/(Fq7P.ug0)follow(iHcDMpCN)/[5AjIycF_]international(B..x1.AV)/[ _4ugNJ2]page(Hmz0rVlE)"),
+        path=PurePath(
+            "./files/(qq0wEAwI)admit[VgRSg86a]/(Fq7P.ug0)follow(iHcDMpCN)/[5AjIycF_]international(B..x1.AV)/[ _4ugNJ2]page(Hmz0rVlE)"
+        ),
         size=0,
         is_dir=True,
         hash_value=b"\x00\x00\x00\x00",
@@ -631,7 +745,9 @@ TEST_FILES = [
         info=None,
     ),
     FileEntry(
-        path=PurePath("./files/(qq0wEAwI)admit[VgRSg86a]/(Fq7P.ug0)follow(iHcDMpCN)/[5Q_uVxwz]institution(rnVc6ciW)"),
+        path=PurePath(
+            "./files/(qq0wEAwI)admit[VgRSg86a]/(Fq7P.ug0)follow(iHcDMpCN)/[5Q_uVxwz]institution(rnVc6ciW)"
+        ),
         size=0,
         is_dir=True,
         hash_value=b"\x00\x00\x00\x00",
@@ -639,7 +755,9 @@ TEST_FILES = [
         info=None,
     ),
     FileEntry(
-        path=PurePath("./files/(qq0wEAwI)admit[VgRSg86a]/(Fq7P.ug0)follow(iHcDMpCN)/[5Q_uVxwz]institution(rnVc6ciW)/(2dogn w )ten(6K7WLwYW)"),
+        path=PurePath(
+            "./files/(qq0wEAwI)admit[VgRSg86a]/(Fq7P.ug0)follow(iHcDMpCN)/[5Q_uVxwz]institution(rnVc6ciW)/(2dogn w )ten(6K7WLwYW)"
+        ),
         size=0,
         is_dir=True,
         hash_value=b"\x00\x00\x00\x00",
@@ -647,7 +765,9 @@ TEST_FILES = [
         info=None,
     ),
     FileEntry(
-        path=PurePath("./files/(qq0wEAwI)admit[VgRSg86a]/(Fq7P.ug0)follow(iHcDMpCN)/[5Q_uVxwz]institution(rnVc6ciW)/(2dogn w )ten(6K7WLwYW)/(9wWRAGku)central(TOobEdyK)"),
+        path=PurePath(
+            "./files/(qq0wEAwI)admit[VgRSg86a]/(Fq7P.ug0)follow(iHcDMpCN)/[5Q_uVxwz]institution(rnVc6ciW)/(2dogn w )ten(6K7WLwYW)/(9wWRAGku)central(TOobEdyK)"
+        ),
         size=0,
         is_dir=True,
         hash_value=b"\x00\x00\x00\x00",
@@ -655,7 +775,9 @@ TEST_FILES = [
         info=None,
     ),
     FileEntry(
-        path=PurePath("./files/(qq0wEAwI)admit[VgRSg86a]/(Fq7P.ug0)follow(iHcDMpCN)/[l EyatoF]outside(!4.QZ M_)"),
+        path=PurePath(
+            "./files/(qq0wEAwI)admit[VgRSg86a]/(Fq7P.ug0)follow(iHcDMpCN)/[l EyatoF]outside(!4.QZ M_)"
+        ),
         size=0,
         is_dir=True,
         hash_value=b"\x00\x00\x00\x00",
@@ -663,7 +785,9 @@ TEST_FILES = [
         info=None,
     ),
     FileEntry(
-        path=PurePath("./files/(qq0wEAwI)admit[VgRSg86a]/(Fq7P.ug0)follow(iHcDMpCN)/[l EyatoF]outside(!4.QZ M_)/[!LteGMmg]Mrs(Yn pbAtG)"),
+        path=PurePath(
+            "./files/(qq0wEAwI)admit[VgRSg86a]/(Fq7P.ug0)follow(iHcDMpCN)/[l EyatoF]outside(!4.QZ M_)/[!LteGMmg]Mrs(Yn pbAtG)"
+        ),
         size=0,
         is_dir=True,
         hash_value=b"\x00\x00\x00\x00",
@@ -679,7 +803,9 @@ TEST_FILES = [
         info=None,
     ),
     FileEntry(
-        path=PurePath("./files/(qq0wEAwI)admit[VgRSg86a]/(SA7foiQ2)apply(y4ZN9hZ6)/[dnL5pNhh]suggest[_8xmi1Sj]"),
+        path=PurePath(
+            "./files/(qq0wEAwI)admit[VgRSg86a]/(SA7foiQ2)apply(y4ZN9hZ6)/[dnL5pNhh]suggest[_8xmi1Sj]"
+        ),
         size=0,
         is_dir=True,
         hash_value=b"\x00\x00\x00\x00",
@@ -687,7 +813,9 @@ TEST_FILES = [
         info=None,
     ),
     FileEntry(
-        path=PurePath("./files/(qq0wEAwI)admit[VgRSg86a]/(SA7foiQ2)apply(y4ZN9hZ6)/[lteMTjC!]yeah[jFglBSKa]"),
+        path=PurePath(
+            "./files/(qq0wEAwI)admit[VgRSg86a]/(SA7foiQ2)apply(y4ZN9hZ6)/[lteMTjC!]yeah[jFglBSKa]"
+        ),
         size=0,
         is_dir=True,
         hash_value=b"\x00\x00\x00\x00",
@@ -695,7 +823,9 @@ TEST_FILES = [
         info=None,
     ),
     FileEntry(
-        path=PurePath("./files/(qq0wEAwI)admit[VgRSg86a]/(SA7foiQ2)apply(y4ZN9hZ6)/[lteMTjC!]yeah[jFglBSKa]/(Qc XKSTy)her[1gAMct0 ]"),
+        path=PurePath(
+            "./files/(qq0wEAwI)admit[VgRSg86a]/(SA7foiQ2)apply(y4ZN9hZ6)/[lteMTjC!]yeah[jFglBSKa]/(Qc XKSTy)her[1gAMct0 ]"
+        ),
         size=0,
         is_dir=True,
         hash_value=b"\x00\x00\x00\x00",
@@ -703,7 +833,9 @@ TEST_FILES = [
         info=None,
     ),
     FileEntry(
-        path=PurePath("./files/(qq0wEAwI)admit[VgRSg86a]/(SA7foiQ2)apply(y4ZN9hZ6)/[lteMTjC!]yeah[jFglBSKa]/[Hn5lqr2n]current(cVMZRac2)"),
+        path=PurePath(
+            "./files/(qq0wEAwI)admit[VgRSg86a]/(SA7foiQ2)apply(y4ZN9hZ6)/[lteMTjC!]yeah[jFglBSKa]/[Hn5lqr2n]current(cVMZRac2)"
+        ),
         size=0,
         is_dir=True,
         hash_value=b"\x00\x00\x00\x00",
@@ -711,7 +843,9 @@ TEST_FILES = [
         info=None,
     ),
     FileEntry(
-        path=PurePath("./files/(qq0wEAwI)admit[VgRSg86a]/(SA7foiQ2)apply(y4ZN9hZ6)/[lteMTjC!]yeah[jFglBSKa]/[Hn5lqr2n]current(cVMZRac2)/(8ktH!KMa)along(b7h17pGD)"),
+        path=PurePath(
+            "./files/(qq0wEAwI)admit[VgRSg86a]/(SA7foiQ2)apply(y4ZN9hZ6)/[lteMTjC!]yeah[jFglBSKa]/[Hn5lqr2n]current(cVMZRac2)/(8ktH!KMa)along(b7h17pGD)"
+        ),
         size=0,
         is_dir=True,
         hash_value=b"\x00\x00\x00\x00",
@@ -743,7 +877,9 @@ TEST_FILES = [
         info=None,
     ),
     FileEntry(
-        path=PurePath("./files/(ugjO0h7V)job(WLss1CFo)/(P8MG2NGY)stage[2kdHLQ7c]/[6RnhJhvv]stock[F8h1FO6V]"),
+        path=PurePath(
+            "./files/(ugjO0h7V)job(WLss1CFo)/(P8MG2NGY)stage[2kdHLQ7c]/[6RnhJhvv]stock[F8h1FO6V]"
+        ),
         size=0,
         is_dir=True,
         hash_value=b"\x00\x00\x00\x00",
@@ -751,7 +887,9 @@ TEST_FILES = [
         info=None,
     ),
     FileEntry(
-        path=PurePath("./files/(ugjO0h7V)job(WLss1CFo)/(P8MG2NGY)stage[2kdHLQ7c]/[6RnhJhvv]stock[F8h1FO6V]/(leZO!QLx)run[Lhc3ptHU]"),
+        path=PurePath(
+            "./files/(ugjO0h7V)job(WLss1CFo)/(P8MG2NGY)stage[2kdHLQ7c]/[6RnhJhvv]stock[F8h1FO6V]/(leZO!QLx)run[Lhc3ptHU]"
+        ),
         size=0,
         is_dir=True,
         hash_value=b"\x00\x00\x00\x00",
@@ -759,7 +897,9 @@ TEST_FILES = [
         info=None,
     ),
     FileEntry(
-        path=PurePath("./files/(ugjO0h7V)job(WLss1CFo)/(P8MG2NGY)stage[2kdHLQ7c]/[6RnhJhvv]stock[F8h1FO6V]/(leZO!QLx)run[Lhc3ptHU]/(_fopKWyF)third(1m2VbVK6)"),
+        path=PurePath(
+            "./files/(ugjO0h7V)job(WLss1CFo)/(P8MG2NGY)stage[2kdHLQ7c]/[6RnhJhvv]stock[F8h1FO6V]/(leZO!QLx)run[Lhc3ptHU]/(_fopKWyF)third(1m2VbVK6)"
+        ),
         size=0,
         is_dir=True,
         hash_value=b"\x00\x00\x00\x00",
@@ -767,7 +907,9 @@ TEST_FILES = [
         info=None,
     ),
     FileEntry(
-        path=PurePath("./files/(ugjO0h7V)job(WLss1CFo)/(P8MG2NGY)stage[2kdHLQ7c]/[VgVNn.vC]third[1s6k8Bl5]"),
+        path=PurePath(
+            "./files/(ugjO0h7V)job(WLss1CFo)/(P8MG2NGY)stage[2kdHLQ7c]/[VgVNn.vC]third[1s6k8Bl5]"
+        ),
         size=0,
         is_dir=True,
         hash_value=b"\x00\x00\x00\x00",
@@ -775,7 +917,9 @@ TEST_FILES = [
         info=None,
     ),
     FileEntry(
-        path=PurePath("./files/(ugjO0h7V)job(WLss1CFo)/(P8MG2NGY)stage[2kdHLQ7c]/[VgVNn.vC]third[1s6k8Bl5]/(iqnSEzl )table[SLys9D_6]"),
+        path=PurePath(
+            "./files/(ugjO0h7V)job(WLss1CFo)/(P8MG2NGY)stage[2kdHLQ7c]/[VgVNn.vC]third[1s6k8Bl5]/(iqnSEzl )table[SLys9D_6]"
+        ),
         size=0,
         is_dir=True,
         hash_value=b"\x00\x00\x00\x00",
@@ -783,7 +927,9 @@ TEST_FILES = [
         info=None,
     ),
     FileEntry(
-        path=PurePath("./files/(ugjO0h7V)job(WLss1CFo)/(P8MG2NGY)stage[2kdHLQ7c]/[VgVNn.vC]third[1s6k8Bl5]/(iqnSEzl )table[SLys9D_6]/[3jJwQ0EB]event(whk3sEVk)"),
+        path=PurePath(
+            "./files/(ugjO0h7V)job(WLss1CFo)/(P8MG2NGY)stage[2kdHLQ7c]/[VgVNn.vC]third[1s6k8Bl5]/(iqnSEzl )table[SLys9D_6]/[3jJwQ0EB]event(whk3sEVk)"
+        ),
         size=0,
         is_dir=True,
         hash_value=b"\x00\x00\x00\x00",
@@ -799,7 +945,9 @@ TEST_FILES = [
         info=None,
     ),
     FileEntry(
-        path=PurePath("./files/(ugjO0h7V)job(WLss1CFo)/[EOa1DZQe]forward[AlweRhm3]/[x9LaRdSy]production[TlW!TDk.]"),
+        path=PurePath(
+            "./files/(ugjO0h7V)job(WLss1CFo)/[EOa1DZQe]forward[AlweRhm3]/[x9LaRdSy]production[TlW!TDk.]"
+        ),
         size=0,
         is_dir=True,
         hash_value=b"\x00\x00\x00\x00",
@@ -807,7 +955,9 @@ TEST_FILES = [
         info=None,
     ),
     FileEntry(
-        path=PurePath("./files/(ugjO0h7V)job(WLss1CFo)/[EOa1DZQe]forward[AlweRhm3]/[x9LaRdSy]production[TlW!TDk.]/[3JGIqnSn]will[sDMNqM1Q]"),
+        path=PurePath(
+            "./files/(ugjO0h7V)job(WLss1CFo)/[EOa1DZQe]forward[AlweRhm3]/[x9LaRdSy]production[TlW!TDk.]/[3JGIqnSn]will[sDMNqM1Q]"
+        ),
         size=0,
         is_dir=True,
         hash_value=b"\x00\x00\x00\x00",
@@ -815,7 +965,9 @@ TEST_FILES = [
         info=None,
     ),
     FileEntry(
-        path=PurePath("./files/(ugjO0h7V)job(WLss1CFo)/[EOa1DZQe]forward[AlweRhm3]/[x9LaRdSy]production[TlW!TDk.]/[3JGIqnSn]will[sDMNqM1Q]/(EY.rfHtv)sense(v9pQ W3.)"),
+        path=PurePath(
+            "./files/(ugjO0h7V)job(WLss1CFo)/[EOa1DZQe]forward[AlweRhm3]/[x9LaRdSy]production[TlW!TDk.]/[3JGIqnSn]will[sDMNqM1Q]/(EY.rfHtv)sense(v9pQ W3.)"
+        ),
         size=0,
         is_dir=True,
         hash_value=b"\x00\x00\x00\x00",
@@ -823,7 +975,9 @@ TEST_FILES = [
         info=None,
     ),
     FileEntry(
-        path=PurePath("./files/(ugjO0h7V)job(WLss1CFo)/[EOa1DZQe]forward[AlweRhm3]/[x9LaRdSy]production[TlW!TDk.]/[gZnCvF.p]growth[T9TrxF78]"),
+        path=PurePath(
+            "./files/(ugjO0h7V)job(WLss1CFo)/[EOa1DZQe]forward[AlweRhm3]/[x9LaRdSy]production[TlW!TDk.]/[gZnCvF.p]growth[T9TrxF78]"
+        ),
         size=0,
         is_dir=True,
         hash_value=b"\x00\x00\x00\x00",
@@ -831,7 +985,9 @@ TEST_FILES = [
         info=None,
     ),
     FileEntry(
-        path=PurePath("./files/(ugjO0h7V)job(WLss1CFo)/[EOa1DZQe]forward[AlweRhm3]/[x9LaRdSy]production[TlW!TDk.]/[gZnCvF.p]growth[T9TrxF78]/(3VqL_w4e)often[4beGB.1.]"),
+        path=PurePath(
+            "./files/(ugjO0h7V)job(WLss1CFo)/[EOa1DZQe]forward[AlweRhm3]/[x9LaRdSy]production[TlW!TDk.]/[gZnCvF.p]growth[T9TrxF78]/(3VqL_w4e)often[4beGB.1.]"
+        ),
         size=0,
         is_dir=True,
         hash_value=b"\x00\x00\x00\x00",
@@ -847,7 +1003,9 @@ TEST_FILES = [
         info=None,
     ),
     FileEntry(
-        path=PurePath("./files/(ugjO0h7V)job(WLss1CFo)/[m9Tk6LxN]never[87zRG Z4]/[PV!TfReD]show(KbLJCgZ7)"),
+        path=PurePath(
+            "./files/(ugjO0h7V)job(WLss1CFo)/[m9Tk6LxN]never[87zRG Z4]/[PV!TfReD]show(KbLJCgZ7)"
+        ),
         size=0,
         is_dir=True,
         hash_value=b"\x00\x00\x00\x00",
@@ -855,11 +1013,13 @@ TEST_FILES = [
         info=None,
     ),
     FileEntry(
-        path=PurePath("./files/(ugjO0h7V)job(WLss1CFo)/[m9Tk6LxN]never[87zRG Z4]/[PV!TfReD]show(KbLJCgZ7)/[_7Wb1Zt8]send[BxdYTDT_]"),
+        path=PurePath(
+            "./files/(ugjO0h7V)job(WLss1CFo)/[m9Tk6LxN]never[87zRG Z4]/[PV!TfReD]show(KbLJCgZ7)/[_7Wb1Zt8]send[BxdYTDT_]"
+        ),
         size=0,
         is_dir=True,
         hash_value=b"\x00\x00\x00\x00",
         algo=Algo.CRC32,
         info=None,
-    )
+    ),
 ]

@@ -9,8 +9,7 @@ import hoarder
 SFV_TUPLES = [
     (
         pathlib.Path("./test_files/sfv/files.sfv"),
-        filter(lambda x: not x.is_dir,
-            tests.test_case_file_info.TEST_FILES)
+        filter(lambda x: not x.is_dir, tests.test_case_file_info.TEST_FILES),
     )
 ]
 

@@ -40,59 +40,51 @@ RAR_TEST_ARCHIVE_DEFS = [
         hoarder.RarScheme.DOT_RNN,
         tests.test_case_file_info.TEST_FILES,
     ),
-   (
+    (
         pathlib.Path("./test_files/rar/v5_split_headers_encrypted.part01.rar"),
         "ninja",
         101,
         21,
         hoarder.RarScheme.PART_N,
-        tests.test_case_file_info.TEST_FILES + [tests.test_case_file_info.TEST_FILES_MAIN_DIR]
+        tests.test_case_file_info.TEST_FILES
+        + [tests.test_case_file_info.TEST_FILES_MAIN_DIR],
     ),
-   (
+    (
         pathlib.Path("./test_files/rar/v5_split_headers_unencrypted.part01.rar"),
         None,
         101,
         18,
         hoarder.RarScheme.PART_N,
-        tests.test_case_file_info.TEST_FILES + [tests.test_case_file_info.TEST_FILES_MAIN_DIR]
+        tests.test_case_file_info.TEST_FILES
+        + [tests.test_case_file_info.TEST_FILES_MAIN_DIR],
     ),
-   (
+    (
         pathlib.Path("./test_files/rar/v5_headers_encrypted.rar"),
         "dragon",
         101,
         1,
         hoarder.RarScheme.DOT_RNN,
-        tests.test_case_file_info.TEST_FILES + [tests.test_case_file_info.TEST_FILES_MAIN_DIR]
+        tests.test_case_file_info.TEST_FILES
+        + [tests.test_case_file_info.TEST_FILES_MAIN_DIR],
     ),
-#(
-#       pathlib.Path("./test_files/rar/v5_split_encrypted.part01.rar"),
-#       "swordfish",
-#       4,
-#       17,
-#       hoarder.RarScheme.PART_N,
-#       tests.test_case_file_info.TEST_FILES,
-#   ),
-#   (
-#       pathlib.Path("./test_files/rar/v5_split_unencrypted.rar"),
-#       None,
-#       4,
-#       1,
-#       hoarder.RarScheme.DOT_RNN,
-#       tests.test_case_file_info.HNF_FILES,
-#   ),
-#   (
-#       pathlib.Path("./test_files/rar/v5_unencrypted_dir.rar"),
-#       None,
-#       2,
-#       1,
-#       hoarder.RarScheme.DOT_RNN,
-#       tests.test_case_file_info.TEST_FILES
-#   )
+    (
+        pathlib.Path("./test_files/rar/v5_headers_unencrypted.rar"),
+        None,
+        101,
+        1,
+        hoarder.RarScheme.DOT_RNN,
+        tests.test_case_file_info.TEST_FILES
+        + [tests.test_case_file_info.TEST_FILES_MAIN_DIR],
+    ),
 ]
 
 
 @pytest.mark.parametrize("rar_data_tuple", RAR_TEST_ARCHIVE_DEFS)
-def test_rar_archives_set(rar_data_tuple: tuple[pathlib.Path, str, int, int, hoarder.RarScheme, list[hoarder.FileEntry]]) -> None:
+def test_rar_archives_set(
+    rar_data_tuple: tuple[
+        pathlib.Path, str, int, int, hoarder.RarScheme, list[hoarder.FileEntry]
+    ]
+) -> None:
     (
         main_archive_path,
         password,
