@@ -13,11 +13,11 @@ fk.add_provider(faker.providers.file.BaseProvider)
 parens = ["[]", "()"]
 
 
-def weird_string(l: int) -> str:
+def weird_string(str_len: int) -> str:
     p: str = "".join(
         fk.random_choices(
             string.ascii_uppercase + string.ascii_lowercase + string.digits + "_!. ",
-            length=l,
+            length=str_len,
         )
     )
     return p

@@ -1,4 +1,5 @@
 from pathlib import PurePath
+
 from hoarder.hash_archive import Algo, FileEntry
 
 
@@ -560,7 +561,8 @@ TEST_FILES = [
     FileEntry(
         path=PurePath(
             "./files/(2XVR83rF)environmental[EwI!EhWI]/"
-            + "[2u62YzPk]travel(64PeYN04)/[MoXHQ63o]table(6r7vRf0V)/(qp9bG.r )probably(WV3!Ul5F)/[_AujWdds]new[IieV24Sf]"
+            + "[2u62YzPk]travel(64PeYN04)/[MoXHQ63o]table(6r7vRf0V)/"
+            + "(qp9bG.r )probably(WV3!Ul5F)/[_AujWdds]new[IieV24Sf]"
         ),
         size=0,
         is_dir=True,
