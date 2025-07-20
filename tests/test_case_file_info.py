@@ -130,8 +130,8 @@ TEST_FILES = [
     ),
     FileEntry(
         path=PurePath(
-            "./files/(2XVR83rF)environmental[EwI!EhWI]/" +
-            "[2u62YzPk]travel(64PeYN04)/[MoXHQ63o]table(6r7vRf0V)/security.raw"
+            "./files/(2XVR83rF)environmental[EwI!EhWI]/"
+            + "[2u62YzPk]travel(64PeYN04)/[MoXHQ63o]table(6r7vRf0V)/security.raw"
         ),
         size=1942,
         is_dir=False,
@@ -171,8 +171,8 @@ TEST_FILES = [
     ),
     FileEntry(
         path=PurePath(
-            "./files/(2XVR83rF)environmental[EwI!EhWI]/" +
-            "[sjYDtb_q]life[wr7v_0D0]/[Nc4Jvep!]while(!JheDpw2)/(n6Wysr57)choice(zJJFVlzT)/measure.raw"
+            "./files/(2XVR83rF)environmental[EwI!EhWI]/"
+            + "[sjYDtb_q]life[wr7v_0D0]/[Nc4Jvep!]while(!JheDpw2)/(n6Wysr57)choice(zJJFVlzT)/measure.raw"
         ),
         size=1786,
         is_dir=False,
@@ -218,8 +218,8 @@ TEST_FILES = [
     ),
     FileEntry(
         path=PurePath(
-            "./files/(F1AuIP S)reason(3RDyXXVL)/" +
-            "(2s.05hWf)bill(sU R_I6T)/(z02d8Iu )him[BAx0mnec]/[pt56uDci]show[tgZ96hM8]/career.bin"
+            "./files/(F1AuIP S)reason(3RDyXXVL)/"
+            + "(2s.05hWf)bill(sU R_I6T)/(z02d8Iu )him[BAx0mnec]/[pt56uDci]show[tgZ96hM8]/career.bin"
         ),
         size=1962,
         is_dir=False,
@@ -259,8 +259,8 @@ TEST_FILES = [
     ),
     FileEntry(
         path=PurePath(
-            "./files/(F1AuIP S)reason(3RDyXXVL)/[O!NKsn9!]collection[5yu 9oBc]/" +
-            "(xrg118hG)form(THgxXePF)/[jLEOP5nA]do(onks8SXc)/challenge.raw"
+            "./files/(F1AuIP S)reason(3RDyXXVL)/[O!NKsn9!]collection[5yu 9oBc]/"
+            + "(xrg118hG)form(THgxXePF)/[jLEOP5nA]do(onks8SXc)/challenge.raw"
         ),
         size=1876,
         is_dir=False,
@@ -288,8 +288,8 @@ TEST_FILES = [
     ),
     FileEntry(
         path=PurePath(
-            "./files/(qq0wEAwI)admit[VgRSg86a]/" +
-            "(Fq7P.ug0)follow(iHcDMpCN)/[5AjIycF_]international(B..x1.AV)/[ _4ugNJ2]page(Hmz0rVlE)/would.dat"
+            "./files/(qq0wEAwI)admit[VgRSg86a]/"
+            + "(Fq7P.ug0)follow(iHcDMpCN)/[5AjIycF_]international(B..x1.AV)/[ _4ugNJ2]page(Hmz0rVlE)/would.dat"
         ),
         size=1127,
         is_dir=False,
@@ -319,8 +319,8 @@ TEST_FILES = [
     ),
     FileEntry(
         path=PurePath(
-            "./files/(qq0wEAwI)admit[VgRSg86a]/(Fq7P.ug0)follow(iHcDMpCN)/" +
-            "[l EyatoF]outside(!4.QZ M_)/[!LteGMmg]Mrs(Yn pbAtG)/decide.bin"
+            "./files/(qq0wEAwI)admit[VgRSg86a]/(Fq7P.ug0)follow(iHcDMpCN)/"
+            + "[l EyatoF]outside(!4.QZ M_)/[!LteGMmg]Mrs(Yn pbAtG)/decide.bin"
         ),
         size=1693,
         is_dir=False,
@@ -360,8 +360,8 @@ TEST_FILES = [
     ),
     FileEntry(
         path=PurePath(
-            "./files/(qq0wEAwI)admit[VgRSg86a]/(SA7foiQ2)apply(y4ZN9hZ6)/" +
-            "[lteMTjC!]yeah[jFglBSKa]/(Qc XKSTy)her[1gAMct0 ]/fight.dat"
+            "./files/(qq0wEAwI)admit[VgRSg86a]/(SA7foiQ2)apply(y4ZN9hZ6)/"
+            + "[lteMTjC!]yeah[jFglBSKa]/(Qc XKSTy)her[1gAMct0 ]/fight.dat"
         ),
         size=1788,
         is_dir=False,
@@ -489,8 +489,8 @@ TEST_FILES = [
     ),
     FileEntry(
         path=PurePath(
-            "./files/(ugjO0h7V)job(WLss1CFo)/[m9Tk6LxN]never[87zRG Z4]/" +
-            "[PV!TfReD]show(KbLJCgZ7)/[_7Wb1Zt8]send[BxdYTDT_]/TV.dat"
+            "./files/(ugjO0h7V)job(WLss1CFo)/[m9Tk6LxN]never[87zRG Z4]/"
+            + "[PV!TfReD]show(KbLJCgZ7)/[_7Wb1Zt8]send[BxdYTDT_]/TV.dat"
         ),
         size=1997,
         is_dir=False,
@@ -548,8 +548,8 @@ TEST_FILES = [
     ),
     FileEntry(
         path=PurePath(
-            "./files/(2XVR83rF)environmental[EwI!EhWI]/" +
-            "[2u62YzPk]travel(64PeYN04)/[MoXHQ63o]table(6r7vRf0V)/(qp9bG.r )probably(WV3!Ul5F)"
+            "./files/(2XVR83rF)environmental[EwI!EhWI]/"
+            + "[2u62YzPk]travel(64PeYN04)/[MoXHQ63o]table(6r7vRf0V)/(qp9bG.r )probably(WV3!Ul5F)"
         ),
         size=0,
         is_dir=True,
@@ -559,8 +559,8 @@ TEST_FILES = [
     ),
     FileEntry(
         path=PurePath(
-            "./files/(2XVR83rF)environmental[EwI!EhWI]/" +
-            "[2u62YzPk]travel(64PeYN04)/[MoXHQ63o]table(6r7vRf0V)/(qp9bG.r )probably(WV3!Ul5F)/[_AujWdds]new[IieV24Sf]"
+            "./files/(2XVR83rF)environmental[EwI!EhWI]/"
+            + "[2u62YzPk]travel(64PeYN04)/[MoXHQ63o]table(6r7vRf0V)/(qp9bG.r )probably(WV3!Ul5F)/[_AujWdds]new[IieV24Sf]"
         ),
         size=0,
         is_dir=True,
@@ -600,8 +600,8 @@ TEST_FILES = [
     ),
     FileEntry(
         path=PurePath(
-            "./files/(2XVR83rF)environmental[EwI!EhWI]/" +
-            "[sjYDtb_q]life[wr7v_0D0]/[Nc4Jvep!]while(!JheDpw2)/(n6Wysr57)choice(zJJFVlzT)"
+            "./files/(2XVR83rF)environmental[EwI!EhWI]/"
+            + "[sjYDtb_q]life[wr7v_0D0]/[Nc4Jvep!]while(!JheDpw2)/(n6Wysr57)choice(zJJFVlzT)"
         ),
         size=0,
         is_dir=True,
@@ -611,8 +611,8 @@ TEST_FILES = [
     ),
     FileEntry(
         path=PurePath(
-            "./files/(2XVR83rF)environmental[EwI!EhWI]/" + 
-            "[sjYDtb_q]life[wr7v_0D0]/[Nc4Jvep!]while(!JheDpw2)/(T BaVlQh)them(eZmh9Vvu)"
+            "./files/(2XVR83rF)environmental[EwI!EhWI]/"
+            + "[sjYDtb_q]life[wr7v_0D0]/[Nc4Jvep!]while(!JheDpw2)/(T BaVlQh)them(eZmh9Vvu)"
         ),
         size=0,
         is_dir=True,
@@ -622,8 +622,8 @@ TEST_FILES = [
     ),
     FileEntry(
         path=PurePath(
-            "./files/(2XVR83rF)environmental[EwI!EhWI]/" +
-            "[sjYDtb_q]life[wr7v_0D0]/[Nc4Jvep!]while(!JheDpw2)/(T BaVlQh)them(eZmh9Vvu)/(4mtmf8g_)building(pK_DZ zD)"
+            "./files/(2XVR83rF)environmental[EwI!EhWI]/"
+            + "[sjYDtb_q]life[wr7v_0D0]/[Nc4Jvep!]while(!JheDpw2)/(T BaVlQh)them(eZmh9Vvu)/(4mtmf8g_)building(pK_DZ zD)"
         ),
         size=0,
         is_dir=True,
@@ -679,8 +679,8 @@ TEST_FILES = [
     ),
     FileEntry(
         path=PurePath(
-            "./files/(F1AuIP S)reason(3RDyXXVL)/(2s.05hWf)bill(sU R_I6T)/" +
-            "(z02d8Iu )him[BAx0mnec]/[qYwWCzYT]development(DtTbp8oo)/(AQwUZgUf)girl[mfFVHI0Z]"
+            "./files/(F1AuIP S)reason(3RDyXXVL)/(2s.05hWf)bill(sU R_I6T)/"
+            + "(z02d8Iu )him[BAx0mnec]/[qYwWCzYT]development(DtTbp8oo)/(AQwUZgUf)girl[mfFVHI0Z]"
         ),
         size=0,
         is_dir=True,
@@ -746,8 +746,8 @@ TEST_FILES = [
     ),
     FileEntry(
         path=PurePath(
-            "./files/(qq0wEAwI)admit[VgRSg86a]/(Fq7P.ug0)follow(iHcDMpCN)/" +
-            "[5AjIycF_]international(B..x1.AV)/[ _4ugNJ2]page(Hmz0rVlE)"
+            "./files/(qq0wEAwI)admit[VgRSg86a]/(Fq7P.ug0)follow(iHcDMpCN)/"
+            + "[5AjIycF_]international(B..x1.AV)/[ _4ugNJ2]page(Hmz0rVlE)"
         ),
         size=0,
         is_dir=True,
@@ -777,8 +777,8 @@ TEST_FILES = [
     ),
     FileEntry(
         path=PurePath(
-            "./files/(qq0wEAwI)admit[VgRSg86a]/(Fq7P.ug0)follow(iHcDMpCN)/" +
-            "[5Q_uVxwz]institution(rnVc6ciW)/(2dogn w )ten(6K7WLwYW)/(9wWRAGku)central(TOobEdyK)"
+            "./files/(qq0wEAwI)admit[VgRSg86a]/(Fq7P.ug0)follow(iHcDMpCN)/"
+            + "[5Q_uVxwz]institution(rnVc6ciW)/(2dogn w )ten(6K7WLwYW)/(9wWRAGku)central(TOobEdyK)"
         ),
         size=0,
         is_dir=True,
@@ -856,8 +856,8 @@ TEST_FILES = [
     ),
     FileEntry(
         path=PurePath(
-            "./files/(qq0wEAwI)admit[VgRSg86a]/(SA7foiQ2)apply(y4ZN9hZ6)/[lteMTjC!]yeah[jFglBSKa]/" +
-            "[Hn5lqr2n]current(cVMZRac2)/(8ktH!KMa)along(b7h17pGD)"
+            "./files/(qq0wEAwI)admit[VgRSg86a]/(SA7foiQ2)apply(y4ZN9hZ6)/[lteMTjC!]yeah[jFglBSKa]/"
+            + "[Hn5lqr2n]current(cVMZRac2)/(8ktH!KMa)along(b7h17pGD)"
         ),
         size=0,
         is_dir=True,
@@ -911,8 +911,8 @@ TEST_FILES = [
     ),
     FileEntry(
         path=PurePath(
-            "./files/(ugjO0h7V)job(WLss1CFo)/(P8MG2NGY)stage[2kdHLQ7c]/" + 
-            "[6RnhJhvv]stock[F8h1FO6V]/(leZO!QLx)run[Lhc3ptHU]/(_fopKWyF)third(1m2VbVK6)"
+            "./files/(ugjO0h7V)job(WLss1CFo)/(P8MG2NGY)stage[2kdHLQ7c]/"
+            + "[6RnhJhvv]stock[F8h1FO6V]/(leZO!QLx)run[Lhc3ptHU]/(_fopKWyF)third(1m2VbVK6)"
         ),
         size=0,
         is_dir=True,
@@ -942,8 +942,8 @@ TEST_FILES = [
     ),
     FileEntry(
         path=PurePath(
-            "./files/(ugjO0h7V)job(WLss1CFo)/(P8MG2NGY)stage[2kdHLQ7c]/" +
-            "[VgVNn.vC]third[1s6k8Bl5]/(iqnSEzl )table[SLys9D_6]/[3jJwQ0EB]event(whk3sEVk)"
+            "./files/(ugjO0h7V)job(WLss1CFo)/(P8MG2NGY)stage[2kdHLQ7c]/"
+            + "[VgVNn.vC]third[1s6k8Bl5]/(iqnSEzl )table[SLys9D_6]/[3jJwQ0EB]event(whk3sEVk)"
         ),
         size=0,
         is_dir=True,
@@ -981,8 +981,8 @@ TEST_FILES = [
     ),
     FileEntry(
         path=PurePath(
-            "./files/(ugjO0h7V)job(WLss1CFo)/[EOa1DZQe]forward[AlweRhm3]/" +
-            "[x9LaRdSy]production[TlW!TDk.]/[3JGIqnSn]will[sDMNqM1Q]/(EY.rfHtv)sense(v9pQ W3.)"
+            "./files/(ugjO0h7V)job(WLss1CFo)/[EOa1DZQe]forward[AlweRhm3]/"
+            + "[x9LaRdSy]production[TlW!TDk.]/[3JGIqnSn]will[sDMNqM1Q]/(EY.rfHtv)sense(v9pQ W3.)"
         ),
         size=0,
         is_dir=True,
@@ -992,8 +992,8 @@ TEST_FILES = [
     ),
     FileEntry(
         path=PurePath(
-            "./files/(ugjO0h7V)job(WLss1CFo)/[EOa1DZQe]forward[AlweRhm3]/" +
-            "[x9LaRdSy]production[TlW!TDk.]/[gZnCvF.p]growth[T9TrxF78]"
+            "./files/(ugjO0h7V)job(WLss1CFo)/[EOa1DZQe]forward[AlweRhm3]/"
+            + "[x9LaRdSy]production[TlW!TDk.]/[gZnCvF.p]growth[T9TrxF78]"
         ),
         size=0,
         is_dir=True,
@@ -1003,8 +1003,8 @@ TEST_FILES = [
     ),
     FileEntry(
         path=PurePath(
-            "./files/(ugjO0h7V)job(WLss1CFo)/[EOa1DZQe]forward[AlweRhm3]/" +
-            "[x9LaRdSy]production[TlW!TDk.]/[gZnCvF.p]growth[T9TrxF78]/(3VqL_w4e)often[4beGB.1.]"
+            "./files/(ugjO0h7V)job(WLss1CFo)/[EOa1DZQe]forward[AlweRhm3]/"
+            + "[x9LaRdSy]production[TlW!TDk.]/[gZnCvF.p]growth[T9TrxF78]/(3VqL_w4e)often[4beGB.1.]"
         ),
         size=0,
         is_dir=True,
