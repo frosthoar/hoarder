@@ -125,7 +125,6 @@ class HashArchiveRepository:
             con.row_factory = sqlite3.Row
             cur = con.cursor()
 
-            print("###---", path)
             arc_row = cast(
                 None | sqlite3.Row,
                 cur.execute(
@@ -160,7 +159,6 @@ class HashArchiveRepository:
 
     def _create_tables(self) -> None:
         with Sqlite3FK(self._db_path) as con:
-            print("creating tables")
             cur = con.cursor()
             _ = cur.execute(HashArchiveRepository._CREATE_HASH_ARCHIVES)
             _ = cur.execute(HashArchiveRepository._CREATE_FILE_ENTRIES)
