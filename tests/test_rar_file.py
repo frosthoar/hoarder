@@ -48,6 +48,14 @@ RAR_TEST_ARCHIVE_DEFS = [
         hoarder.RarScheme.PART_N,
         tests.test_case_file_info.TEST_FILES + [tests.test_case_file_info.TEST_FILES_MAIN_DIR]
     ),
+   (
+        pathlib.Path("./test_files/rar/v5_split_headers_unencrypted.part01.rar"),
+        None,
+        101,
+        18,
+        hoarder.RarScheme.PART_N,
+        tests.test_case_file_info.TEST_FILES + [tests.test_case_file_info.TEST_FILES_MAIN_DIR]
+    ),
 #(
 #       pathlib.Path("./test_files/rar/v5_split_encrypted.part01.rar"),
 #       "swordfish",
