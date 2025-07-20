@@ -1,8 +1,8 @@
 import logging
 import pathlib
 
-import pytest
 import hoarder
+import pytest
 import tests.test_case_file_info
 
 logger = logging.getLogger("hoarder.test_rar_file")
@@ -99,7 +99,7 @@ def test_rar_archives_set(
     logger.debug(f"== Listing {main_archive_path}")
     for f in rar_archive.files:
         logger.debug(f)
-    logger.debug(f"==============================")
+    logger.debug("==============================")
     assert len(rar_archive.files) == n_contained_files
     rar_archive.update_hash_values()
     logger.info(f"+ {list(map(lambda x: x.path,rar_archive))}")

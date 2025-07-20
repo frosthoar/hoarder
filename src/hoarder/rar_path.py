@@ -1,12 +1,10 @@
+import collections.abc
 import enum
 import re
 import typing
-import collections.abc
 from pathlib import Path
-try:
-    from typing import override
-except ImportError:
-    from typing_extensions import override
+from typing_extensions import override
+
 
 class RarScheme(enum.IntEnum):
     AMBIGUOUS = 0
@@ -63,7 +61,9 @@ class RARPath(typing.NamedTuple):
         if match is None:
             raise ValueError("match is None")
         return cls(
-            volume_index=-1 if match["volume_index"] is None else int(match["volume_index"]),
+            volume_index=-1
+            if match["volume_index"] is None
+            else int(match["volume_index"]),
             path=match.string,
             stem=match["stem"],
             suffix=match["suffix"],

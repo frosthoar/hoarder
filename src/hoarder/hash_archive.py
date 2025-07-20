@@ -45,13 +45,6 @@ class FileEntry:
     def __hash__(self: Self) -> int:
         return hash(self.path)
 
-    def pretty_print(self: Self) -> str:
-        str_list = [f"{self.path}", f"{self.size}", f"{self.is_dir}", f"{self.hash_value.hex()}", f"{self.algo.name if self.algo else None}", f"{self.info}"]
-        w = max([len(s) for s in str_list]) + 3
-        str_list = ["{{self.path" + ">}", "{self.size}", "{self.is_dir}", "{self.hash_value.hex()}", "{self.algo.name if self.algo else None}", "{self.info}"]
-        
-
-
 
 T = typing.TypeVar("T", bound="HashArchive")
 

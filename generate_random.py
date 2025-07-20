@@ -1,11 +1,10 @@
 import faker
+import os
 import pathlib
 import string
-import os
 
-import faker_file
-import faker.providers.python
 import faker.providers.file
+import faker.providers.python
 
 fk = faker.Faker()
 fk.add_provider(faker.providers.python.BaseProvider)
@@ -39,7 +38,7 @@ def generate_random_tree(max_items: int, root: str | pathlib.Path, max_depth: in
         else:
             suffix = fk.random_element(["bin", "dat", "raw"])
             fname = fk.file_name(extension=suffix)
-            blob = fk.binary(length=fk.pyint(1000,2000))
+            blob = fk.binary(length=fk.pyint(1000, 2000))
             with open(root / fname, "wb") as f:
                 f.write(blob)
 

@@ -1,7 +1,6 @@
 from pathlib import PurePath
 from hoarder.hash_archive import FileEntry
 from hoarder.hash_archive import Algo
-import pytest
 
 
 HNF_FILES = [

@@ -1,6 +1,4 @@
-import logging
 import pathlib
-import sys
 import pytest
 
 import tests.test_case_file_info
