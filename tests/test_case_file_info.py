@@ -49,6 +49,18 @@ HNF_FILES = [
 
 from pathlib import PurePath
 
+TEST_FILES_MAIN_DIR = FileEntry(
+            path=PurePath("./files"),
+            size=0,
+            is_dir=True,
+            hash_value=b"\x00\x00\x00\x00",
+            algo=Algo.CRC32,
+            info=None,
+            )
+
+
+        
+
 TEST_FILES = [
         FileEntry(
             path=PurePath("./files/stock.raw"),
