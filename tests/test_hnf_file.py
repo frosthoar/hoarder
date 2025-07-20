@@ -2,7 +2,6 @@ import itertools
 import logging
 import os
 import pathlib
-import sys
 
 import hoarder
 import pytest

@@ -1,5 +1,5 @@
-import pathlib
 import enum
+import pathlib
 
 
 class PathType(enum.IntEnum):

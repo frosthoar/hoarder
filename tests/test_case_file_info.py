@@ -1,5 +1,5 @@
 from pathlib import PurePath
-from hoarder.hash_archive import FileEntry, Algo
+from hoarder.hash_archive import Algo, FileEntry
 
 
 HNF_FILES = [
@@ -659,7 +659,8 @@ TEST_FILES = [
     ),
     FileEntry(
         path=PurePath(
-            "./files/(F1AuIP S)reason(3RDyXXVL)/(2s.05hWf)bill(sU R_I6T)/(z02d8Iu )him[BAx0mnec]/[pt56uDci]show[tgZ96hM8]"
+            "./files/(F1AuIP S)reason(3RDyXXVL)/(2s.05hWf)bill(sU R_I6T)/"
+            + "(z02d8Iu )him[BAx0mnec]/[pt56uDci]show[tgZ96hM8]"
         ),
         size=0,
         is_dir=True,
@@ -669,7 +670,8 @@ TEST_FILES = [
     ),
     FileEntry(
         path=PurePath(
-            "./files/(F1AuIP S)reason(3RDyXXVL)/(2s.05hWf)bill(sU R_I6T)/(z02d8Iu )him[BAx0mnec]/[qYwWCzYT]development(DtTbp8oo)"
+            "./files/(F1AuIP S)reason(3RDyXXVL)/(2s.05hWf)bill(sU R_I6T)/"
+            + "(z02d8Iu )him[BAx0mnec]/[qYwWCzYT]development(DtTbp8oo)"
         ),
         size=0,
         is_dir=True,
@@ -710,7 +712,8 @@ TEST_FILES = [
     ),
     FileEntry(
         path=PurePath(
-            "./files/(F1AuIP S)reason(3RDyXXVL)/[O!NKsn9!]collection[5yu 9oBc]/(xrg118hG)form(THgxXePF)/[jLEOP5nA]do(onks8SXc)"
+            "./files/(F1AuIP S)reason(3RDyXXVL)/"
+            + "[O!NKsn9!]collection[5yu 9oBc]/(xrg118hG)form(THgxXePF)/[jLEOP5nA]do(onks8SXc)"
         ),
         size=0,
         is_dir=True,
@@ -767,7 +770,8 @@ TEST_FILES = [
     ),
     FileEntry(
         path=PurePath(
-            "./files/(qq0wEAwI)admit[VgRSg86a]/(Fq7P.ug0)follow(iHcDMpCN)/[5Q_uVxwz]institution(rnVc6ciW)/(2dogn w )ten(6K7WLwYW)"
+            "./files/(qq0wEAwI)admit[VgRSg86a]/(Fq7P.ug0)follow(iHcDMpCN)/"
+            + "[5Q_uVxwz]institution(rnVc6ciW)/(2dogn w )ten(6K7WLwYW)"
         ),
         size=0,
         is_dir=True,
@@ -798,7 +802,8 @@ TEST_FILES = [
     ),
     FileEntry(
         path=PurePath(
-            "./files/(qq0wEAwI)admit[VgRSg86a]/(Fq7P.ug0)follow(iHcDMpCN)/[l EyatoF]outside(!4.QZ M_)/[!LteGMmg]Mrs(Yn pbAtG)"
+            "./files/(qq0wEAwI)admit[VgRSg86a]/(Fq7P.ug0)follow(iHcDMpCN)/"
+            + "[l EyatoF]outside(!4.QZ M_)/[!LteGMmg]Mrs(Yn pbAtG)"
         ),
         size=0,
         is_dir=True,
@@ -836,7 +841,8 @@ TEST_FILES = [
     ),
     FileEntry(
         path=PurePath(
-            "./files/(qq0wEAwI)admit[VgRSg86a]/(SA7foiQ2)apply(y4ZN9hZ6)/[lteMTjC!]yeah[jFglBSKa]/(Qc XKSTy)her[1gAMct0 ]"
+            "./files/(qq0wEAwI)admit[VgRSg86a]/(SA7foiQ2)apply(y4ZN9hZ6)/"
+            + "[lteMTjC!]yeah[jFglBSKa]/(Qc XKSTy)her[1gAMct0 ]"
         ),
         size=0,
         is_dir=True,
@@ -846,7 +852,8 @@ TEST_FILES = [
     ),
     FileEntry(
         path=PurePath(
-            "./files/(qq0wEAwI)admit[VgRSg86a]/(SA7foiQ2)apply(y4ZN9hZ6)/[lteMTjC!]yeah[jFglBSKa]/[Hn5lqr2n]current(cVMZRac2)"
+            "./files/(qq0wEAwI)admit[VgRSg86a]/(SA7foiQ2)apply(y4ZN9hZ6)/"
+            + "[lteMTjC!]yeah[jFglBSKa]/[Hn5lqr2n]current(cVMZRac2)"
         ),
         size=0,
         is_dir=True,
@@ -901,7 +908,8 @@ TEST_FILES = [
     ),
     FileEntry(
         path=PurePath(
-            "./files/(ugjO0h7V)job(WLss1CFo)/(P8MG2NGY)stage[2kdHLQ7c]/[6RnhJhvv]stock[F8h1FO6V]/(leZO!QLx)run[Lhc3ptHU]"
+            "./files/(ugjO0h7V)job(WLss1CFo)/(P8MG2NGY)stage[2kdHLQ7c]/"
+            + "[6RnhJhvv]stock[F8h1FO6V]/(leZO!QLx)run[Lhc3ptHU]"
         ),
         size=0,
         is_dir=True,
@@ -932,7 +940,8 @@ TEST_FILES = [
     ),
     FileEntry(
         path=PurePath(
-            "./files/(ugjO0h7V)job(WLss1CFo)/(P8MG2NGY)stage[2kdHLQ7c]/[VgVNn.vC]third[1s6k8Bl5]/(iqnSEzl )table[SLys9D_6]"
+            "./files/(ugjO0h7V)job(WLss1CFo)/(P8MG2NGY)stage[2kdHLQ7c]/"
+            + "[VgVNn.vC]third[1s6k8Bl5]/(iqnSEzl )table[SLys9D_6]"
         ),
         size=0,
         is_dir=True,
@@ -971,7 +980,8 @@ TEST_FILES = [
     ),
     FileEntry(
         path=PurePath(
-            "./files/(ugjO0h7V)job(WLss1CFo)/[EOa1DZQe]forward[AlweRhm3]/[x9LaRdSy]production[TlW!TDk.]/[3JGIqnSn]will[sDMNqM1Q]"
+            "./files/(ugjO0h7V)job(WLss1CFo)/[EOa1DZQe]forward[AlweRhm3]/"
+            + "[x9LaRdSy]production[TlW!TDk.]/[3JGIqnSn]will[sDMNqM1Q]"
         ),
         size=0,
         is_dir=True,
@@ -1032,7 +1042,8 @@ TEST_FILES = [
     ),
     FileEntry(
         path=PurePath(
-            "./files/(ugjO0h7V)job(WLss1CFo)/[m9Tk6LxN]never[87zRG Z4]/[PV!TfReD]show(KbLJCgZ7)/[_7Wb1Zt8]send[BxdYTDT_]"
+            "./files/(ugjO0h7V)job(WLss1CFo)/[m9Tk6LxN]never[87zRG Z4]/"
+            + "[PV!TfReD]show(KbLJCgZ7)/[_7Wb1Zt8]send[BxdYTDT_]"
         ),
         size=0,
         is_dir=True,

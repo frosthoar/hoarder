@@ -1,9 +1,9 @@
 import pathlib
 
+import hoarder
 import pytest
 
 import tests.test_case_file_info
-import hoarder
 
 SFV_TUPLES = [
     (
