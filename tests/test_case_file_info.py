@@ -2,7 +2,6 @@ from pathlib import PurePath
 
 from hoarder.hash_archive import Algo, FileEntry
 
-
 HNF_FILES = [
     FileEntry(
         path=PurePath("[ABC] 05. Lowercase and Brackets [x265][1080p][8714c76f].mkv"),
