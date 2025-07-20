@@ -12,7 +12,7 @@ import hoarder.rar_path as rar_path
 from hoarder.shared import SEVENZIP
 
 try:
-    from typing import override
+    from typing import override  # type: ignore [attr-defined]
 except ImportError:
     from typing_extensions import override
 

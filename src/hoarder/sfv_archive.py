@@ -5,8 +5,8 @@ import os
 import pathlib
 import typing
 
-import hoarder.path_utils as path_utils
 import hoarder.hash_archive as hash_archive
+import hoarder.path_utils as path_utils
 
 logger = logging.getLogger("hoarder.sfv_file")
 
@@ -48,11 +48,14 @@ class SfvArchive(hash_archive.HashArchive):
                             {"entry_path_str": entry_path_str},
                         )
 
+                    entry_path: pathlib.PurePath
                     if (
                         path_utils.determine_path_type(entry_path_str)
                         == path_utils.PathType.WINDOWS
                     ):
-                        entry_path = pathlib.PureWindowsPath(entry_path_str).as_posix()
+                        entry_path = pathlib.PurePath(
+                            pathlib.PureWindowsPath(entry_path_str).as_posix()
+                        )
                     elif (
                         path_utils.determine_path_type(entry_path_str)
                         == path_utils.PathType.UNRESOLVABLE

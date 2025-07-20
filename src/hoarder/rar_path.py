@@ -3,8 +3,13 @@ import enum
 import re
 import typing
 from pathlib import Path
+
 from typing_extensions import override
 
+try:
+    from typing import override # type: ignore [attr-defined]
+except ImportError:
+    from typing_extensions import override
 
 class RarScheme(enum.IntEnum):
     AMBIGUOUS = 0

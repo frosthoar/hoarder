@@ -1,8 +1,8 @@
-import faker
 import os
 import pathlib
 import string
 
+import faker
 import faker.providers.file
 import faker.providers.python
 
