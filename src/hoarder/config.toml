@@ -1,2 +1,2 @@
 [executables]
-sevenzip = "C:/ProgramData/chocolatey/tools/7z.exe"
+sevenzip = "C:/Program Files/7-Zip/7z.exe"

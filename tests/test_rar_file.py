@@ -42,7 +42,7 @@ RAR_TEST_ARCHIVE_DEFS = [
     ),
    (
         pathlib.Path("./test_files/rar/v5_split_headers_encrypted.part01.rar"),
-        "dragon",
+        "ninja",
         101,
         21,
         hoarder.RarScheme.PART_N,
@@ -54,6 +54,14 @@ RAR_TEST_ARCHIVE_DEFS = [
         101,
         18,
         hoarder.RarScheme.PART_N,
+        tests.test_case_file_info.TEST_FILES + [tests.test_case_file_info.TEST_FILES_MAIN_DIR]
+    ),
+   (
+        pathlib.Path("./test_files/rar/v5_headers_encrypted.rar"),
+        "dragon",
+        101,
+        1,
+        hoarder.RarScheme.DOT_RNN,
         tests.test_case_file_info.TEST_FILES + [tests.test_case_file_info.TEST_FILES_MAIN_DIR]
     ),
 #(
