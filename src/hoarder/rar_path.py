@@ -1,7 +1,13 @@
+import collections.abc
 import enum
 import re
 import typing
 from pathlib import Path
+
+try:
+    from typing import override  # type: ignore [attr-defined]
+except ImportError:
+    from typing_extensions import override
 
 
 class RarScheme(enum.IntEnum):
@@ -19,8 +25,8 @@ DOT_RNN_PAT = re.compile(
     \.      # suffix separator dot
     (?P<suffix>
         rar |  # first literal 'rar' suffix
-        r(?P<index>
-            \d\d  # two-digit index
+        r(?P<volume_index>
+            \d\d  # two-digit volume index
         )
     )
     $  # end
@@ -34,7 +40,7 @@ PART_N_PAT = re.compile(
         .+  # require a stem of at least one character
     )
     \.part   # beginning of first suffix component
-    (?P<index>
+    (?P<volume_index>
         \d+  # at least one digit
     )
     \.       # beginning of last suffix component
@@ -49,28 +55,31 @@ T = typing.TypeVar("T", bound="RARPath")
 
 
 class RARPath(typing.NamedTuple):
-    index: int  # type: ignore[assignment]
+    volume_index: int  # type: ignore[assignment]
     path: str
     stem: str
     suffix: str
 
     @classmethod
-    def from_match(cls: typing.Type[T], match: re.Match | None) -> T:
+    def from_match(cls: type[T], match: re.Match[str] | None) -> T:
         if match is None:
             raise ValueError("match is None")
         return cls(
-            index=-1 if match["index"] is None else int(match["index"]),
+            volume_index=-1
+            if match["volume_index"] is None
+            else int(match["volume_index"]),
             path=match.string,
             stem=match["stem"],
             suffix=match["suffix"],
         )
 
+    @override
     def __str__(self) -> str:
         return self.path
 
 
 def parse_rar_list(
-    paths: typing.Sequence[str | Path],
+    paths: collections.abc.Sequence[str | Path],
 ) -> tuple[RarScheme, list[RARPath]]:
     if len(paths) == 0:
         # Since there is no non-indexed .rar, this must be interpreted as an "empty PART_N"
@@ -97,7 +106,7 @@ def parse_rar_list(
         if getattr(rp, "stem", None) != stem:
             raise ValueError(f"{rp} has an inconsistent stem")
 
-    actual = {match.index for match in parsed}
+    actual = {match.volume_index for match in parsed}
 
     match scheme:
         case RarScheme.DOT_RNN:
@@ -105,14 +114,14 @@ def parse_rar_list(
         case RarScheme.PART_N:
             base = 1
         case RarScheme.AMBIGUOUS:
-            # It's only possible for this to be a valid PART_N if the only index is 1
+            # It's only possible for this to be a valid PART_N if the only volume index is 1
             if actual == {1}:
                 return scheme, parsed
             scheme = RarScheme.DOT_RNN
             base = -1
 
-            # This started as an ambiguous case where the index might have been part of a PART_N suffix.
-            # Since we've ruled that out, the actual index set is reinterpreted as the base only (-1).
+            # This started as an ambiguous case where the volume index might have been part of a PART_N suffix.
+            # Since we've ruled that out, the actual volume index set is reinterpreted as the base only (-1).
             actual = {-1}
 
     if scheme == RarScheme.DOT_RNN:

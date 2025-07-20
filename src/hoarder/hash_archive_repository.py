@@ -56,7 +56,7 @@ class HashArchiveRepository:
         id             INTEGER  PRIMARY KEY AUTOINCREMENT,
         type           TEXT     NOT NULL,
         path           TEXT     NOT NULL UNIQUE,
-        present        INTEGER,
+        deleted        INTEGER,
         timestamp      TEXT     DEFAULT CURRENT_TIMESTAMP,
         -- HashNameArchive
         hash_enclosure TEXT,
@@ -174,7 +174,7 @@ class HashArchiveRepository:
         base: dict[str, str | int | None] = {
             "type": type(arch).__name__,
             "path": str(arch.path),
-            "present": int(arch.present),
+            "deleted": int(arch.deleted),
             "hash_enclosure": None,
             "password": None,
             "rar_scheme": None,
@@ -242,5 +242,5 @@ class HashArchiveRepository:
         else:
             raise ValueError(f"Unknown archive type in databaase: {archive_type}")
 
-        arch.present = bool(cast(int, row["present"]))
+        arch.deleted = bool(cast(int, row["deleted"]))
         return arch

@@ -6,6 +6,7 @@ import pathlib
 import typing
 
 import hoarder.hash_archive as hash_archive
+import hoarder.path_utils as path_utils
 
 logger = logging.getLogger("hoarder.sfv_file")
 
@@ -27,7 +28,7 @@ class SfvArchive(hash_archive.HashArchive):
                     logger.debug("Skipping line: %s", line)
                     continue
                 try:
-                    entry_path, crc = line.rsplit(
+                    entry_path_str, crc = line.rsplit(
                         " ", maxsplit=1
                     )  # split on the last space, in case the filename contains spaces
                 except ValueError:
@@ -37,15 +38,33 @@ class SfvArchive(hash_archive.HashArchive):
                     continue
                 try:
                     file_size = None
-                    if (path.parent / entry_path).exists():
+                    if (path.parent / entry_path_str).exists():
                         # SFV files are placed in the same directory as the files they reference
                         # so we should be able to get the size of the file
-                        file_size = os.path.getsize(path.parent / entry_path)
+                        file_size = os.path.getsize(path.parent / entry_path_str)
                     else:
                         logger.warning(
-                            "File '%(entry_path)s' does not exist",
-                            {"entry_path": entry_path},
+                            "File '%(entry_path_str)s' does not exist",
+                            {"entry_path_str": entry_path_str},
                         )
+
+                    entry_path: pathlib.PurePath
+                    if (
+                        path_utils.determine_path_type(entry_path_str)
+                        == path_utils.PathType.WINDOWS
+                    ):
+                        entry_path = pathlib.PurePath(
+                            pathlib.PureWindowsPath(entry_path_str).as_posix()
+                        )
+                    elif (
+                        path_utils.determine_path_type(entry_path_str)
+                        == path_utils.PathType.UNRESOLVABLE
+                    ):
+                        raise ValueError(
+                            f"Could not determine path type of {entry_path_str}"
+                        )
+                    else:
+                        entry_path = pathlib.PurePosixPath(entry_path_str)
 
                     files.append(
                         hash_archive.FileEntry(

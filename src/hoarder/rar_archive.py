@@ -11,6 +11,11 @@ import hoarder.hash_archive as hash_archive
 import hoarder.rar_path as rar_path
 from hoarder.shared import SEVENZIP
 
+try:
+    from typing import override  # type: ignore [attr-defined]
+except ImportError:
+    from typing_extensions import override
+
 logger = logging.getLogger("hoarder.rar_file")
 
 T = typing.TypeVar("T", bound="RarArchive")
@@ -67,6 +72,7 @@ class RarArchive(hash_archive.HashArchive):
         )
 
     @classmethod
+    @override
     def from_path(cls: type[T], path: pathlib.Path, password: str | None = None) -> T:
         """Create a RarArchive object by reading information from a (main) RAR file given its path."""
 
@@ -85,10 +91,12 @@ class RarArchive(hash_archive.HashArchive):
             logger.debug("Found %d volumes in %s", n_volumes, path)
         elif path.is_file():
             logger.debug("A file %s was given, trying to find RAR files", path)
-            if match := (
-                rar_path.DOT_RNN_PAT.match(str(path.name))
-                or rar_path.PART_N_PAT.match(str(path.name))
-            ):
+            if match := rar_path.PART_N_PAT.match(str(path.name)):
+                logger.debug("Path %s matches a PART_N_PAT pattern", path)
+            elif match := rar_path.DOT_RNN_PAT.match(str(path.name)):
+                logger.debug("Path %s matches a DOT_RNN_PAT pattern", path)
+
+            if match:
                 seek_stem = match["stem"]
                 logger.debug("Path %s matches a RAR pattern", path)
                 logger.debug(
