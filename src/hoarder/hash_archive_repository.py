@@ -19,7 +19,7 @@ class Sqlite3FK:
     Does not suppress any encountered exceptions.
     """
 
-    _db_path: str | pathlib.Path
+    _db_path: pathlib.Path
     _conn: sqlite3.Connection | None
 
     def __init__(self, _db_path: str | pathlib.Path):
@@ -56,7 +56,7 @@ class HashArchiveRepository:
         id             INTEGER  PRIMARY KEY AUTOINCREMENT,
         type           TEXT     NOT NULL,
         path           TEXT     NOT NULL UNIQUE,
-        deleted        INTEGER,
+        is_deleted        INTEGER,
         timestamp      TEXT     DEFAULT CURRENT_TIMESTAMP,
         -- HashNameArchive
         hash_enclosure TEXT,
@@ -106,7 +106,7 @@ class HashArchiveRepository:
             )
 
             if archive.files:
-                fe_rows = list(
+                %zfe_rows = list(
                     self._build_fileentry_rows(archive.files, archive_path=archive.path)
                 )
                 _ = cur.executemany(
@@ -167,14 +167,15 @@ class HashArchiveRepository:
 
     @staticmethod
     def _now() -> str:
-        return datetime.datetime.strftime(datetime.datetime.now(), "%Y-%m-%d %H:%M:%S")
+        return datetime.datetime.strftime(datetime.datetime.now().astimezone(),
+                                          "%Y-%m-%d %H:%M:%S%z")
 
     def _build_archive_row(self, arch: HashArchive) -> dict[str, str | int | None]:
         """Return a dict used directly with named-parameter SQL."""
         base: dict[str, str | int | None] = {
             "type": type(arch).__name__,
             "path": str(arch.path),
-            "deleted": int(arch.deleted),
+            "is_deleted": int(arch.is_deleted),
             "hash_enclosure": None,
             "password": None,
             "rar_scheme": None,
@@ -242,5 +243,5 @@ class HashArchiveRepository:
         else:
             raise ValueError(f"Unknown archive type in databaase: {archive_type}")
 
-        arch.deleted = bool(cast(int, row["deleted"]))
+        arch.is_deleted = bool(cast(int, row["is_deleted"]))
         return arch

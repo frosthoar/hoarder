@@ -54,7 +54,7 @@ class HashArchive(abc.ABC):
 
     path: pathlib.Path
     files: set[FileEntry]
-    deleted: bool
+    is_deleted: bool
     info: str | None = None
 
     # Indicates whether the archive file itself (e.g., .sfv, .rar) can safely be deleted after processing.
