@@ -66,7 +66,7 @@ class HashArchive(abc.ABC):
         """Create a HashArchive object by reading information from an hash file given its path."""
         self.files: set[FileEntry] = files or set()
         self.path: pathlib.Path = path
-        self.deleted: bool = True
+        self.is_deleted: bool = True
 
     @classmethod
     @abc.abstractmethod

@@ -106,7 +106,7 @@ class HashArchiveRepository:
             )
 
             if archive.files:
-                %zfe_rows = list(
+                fe_rows = list(
                     self._build_fileentry_rows(archive.files, archive_path=archive.path)
                 )
                 _ = cur.executemany(
