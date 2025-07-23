@@ -1,7 +1,7 @@
 import collections.abc
 import datetime
-import pathlib
 import sqlite3
+from pathlib import Path, PurePath
 from types import TracebackType
 from typing import cast
 
@@ -19,11 +19,11 @@ class Sqlite3FK:
     Does not suppress any encountered exceptions.
     """
 
-    _db_path: str | pathlib.Path
+    _db_path: Path
     _conn: sqlite3.Connection | None
 
-    def __init__(self, _db_path: str | pathlib.Path):
-        self._db_path = pathlib.Path(_db_path)
+    def __init__(self, _db_path: str | Path):
+        self._db_path = Path(_db_path)
         self._conn = None
 
     def __enter__(self) -> sqlite3.Connection:
@@ -49,14 +49,14 @@ class Sqlite3FK:
 class HashArchiveRepository:
     """Repository for any HashArchive subclass."""
 
-    _db_path: str | pathlib.Path
+    _db_path: str | Path
 
     _CREATE_HASH_ARCHIVES: str = """
     CREATE TABLE IF NOT EXISTS hash_archives (
         id             INTEGER  PRIMARY KEY AUTOINCREMENT,
         type           TEXT     NOT NULL,
         path           TEXT     NOT NULL UNIQUE,
-        deleted        INTEGER,
+        is_deleted        INTEGER,
         timestamp      TEXT     DEFAULT CURRENT_TIMESTAMP,
         -- HashNameArchive
         hash_enclosure TEXT,
@@ -83,7 +83,7 @@ class HashArchiveRepository:
     );
     """
 
-    def __init__(self, db_path: str | pathlib.Path) -> None:
+    def __init__(self, db_path: str | Path) -> None:
         self._db_path = db_path
         self._create_tables()
 
@@ -119,7 +119,7 @@ class HashArchiveRepository:
                 )
             con.commit()
 
-    def load(self, path: pathlib.Path | str) -> HashArchive | None:
+    def load(self, path: Path | str) -> HashArchive | None:
         """Return the archive (plus its FileEntry set) previously stored."""
         with Sqlite3FK(self._db_path) as con:
             con.row_factory = sqlite3.Row
@@ -147,7 +147,7 @@ class HashArchiveRepository:
 
             archive.files = {
                 FileEntry(
-                    path=pathlib.PurePath(cast(str, r["path"])),
+                    path=PurePath(cast(str, r["path"])),
                     size=cast(int, r["size"]),
                     is_dir=bool(cast(int, r["is_dir"])),
                     hash_value=cast(bytes, r["hash_value"]),
@@ -165,14 +165,16 @@ class HashArchiveRepository:
 
     @staticmethod
     def _now() -> str:
-        return datetime.datetime.strftime(datetime.datetime.now(), "%Y-%m-%d %H:%M:%S")
+        return datetime.datetime.strftime(
+            datetime.datetime.now().astimezone(), "%Y-%m-%d %H:%M:%S%z"
+        )
 
     def _build_archive_row(self, arch: HashArchive) -> dict[str, str | int | None]:
         """Return a dict used directly with named-parameter SQL."""
         base: dict[str, str | int | None] = {
             "type": type(arch).__name__,
             "path": str(arch.path),
-            "deleted": int(arch.deleted),
+            "is_deleted": int(arch.is_deleted),
             "hash_enclosure": None,
             "password": None,
             "rar_scheme": None,
@@ -197,7 +199,7 @@ class HashArchiveRepository:
     @staticmethod
     def _build_fileentry_rows(
         entries: collections.abc.Iterable[FileEntry],
-        archive_path: str | pathlib.Path | None = None,
+        archive_path: str | Path | None = None,
     ) -> collections.abc.Iterable[dict[str, str | int | None | bytes]]:
         for fe in entries:
             ret_dict: dict[str, str | int | None | bytes] = {
@@ -218,13 +220,13 @@ class HashArchiveRepository:
         arch: HashArchive | None = None
         if archive_type == "HashNameArchive":
             arch = HashNameArchive(
-                pathlib.Path(archive_path),
+                Path(archive_path),
                 files=None,
                 enc=HashEnclosure(row["hash_enclosure"]),
             )
         elif archive_type == "RarArchive":
             arch = RarArchive(
-                pathlib.Path(archive_path),
+                Path(archive_path),
                 files=None,
                 password=cast(str, row["password"]),
                 version=cast(str, row["rar_version"]),
@@ -236,9 +238,9 @@ class HashArchiveRepository:
                 n_volumes=cast(int, row["n_volumes"]),
             )
         elif archive_type == "SfvArchive":
-            arch = SfvArchive(pathlib.Path(archive_path), files=set())
+            arch = SfvArchive(Path(archive_path), files=set())
         else:
             raise ValueError(f"Unknown archive type in databaase: {archive_type}")
 
-        arch.deleted = bool(cast(int, row["deleted"]))
+        arch.is_deleted = bool(cast(int, row["is_deleted"]))
         return arch
