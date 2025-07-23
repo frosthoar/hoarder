@@ -1,9 +1,8 @@
 import logging
 import pathlib
 
-import pytest
-
 import hoarder
+import pytest
 
 logger = logging.getLogger()
 
