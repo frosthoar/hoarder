@@ -11,12 +11,12 @@ Hoarder is a Python library for handling hash-based archives and file collection
 The codebase follows a modular design centered around hash archives:
 
 - **Core Abstraction**: `HashArchive` (src/hoarder/hash_archive.py) is the base abstract class that all archive types inherit from
-- **Archive Implementations**: 
+- **Archive Implementations**:
   - `SfvArchive` - handles Simple File Verification (.sfv) files
   - `RarArchive` - processes RAR archive metadata using 7-zip
   - `HashNameArchive` - works with hash-based filename collections
 - **Repository Layer**: `HashArchiveRepository` provides SQLite-based persistence for all archive types
-- **Supporting Modules**: 
+- **Supporting Modules**:
   - `FileEntry` represents individual files with hash/metadata
   - `RarPath`/`RarScheme` handle RAR-specific path parsing
   - `path_utils` and `shared` provide common utilities
