@@ -263,3 +263,21 @@ class RarArchive(hash_archive.HashArchive):
                         "Failed to get CRC32 for %(entry_path)s",
                         {"entry_path": entry.path},
                     )
+
+    def read_file(self, path: pathlib.PurePath) -> bytes:
+        paths: set[pathlib.PurePath] = set([file.path for file in self.files])
+        if path not in paths:
+            raise FileNotFoundError(f"Could not find {path}")
+
+        command_line: list[str] = [
+            str(SEVENZIP),
+            "x",
+            "-so",
+            "-scsUTF-8",
+            "-sccUTF-8",
+            "-p" + (self.password if self.password else ""),
+            str(path),
+        ]
+
+        sub = subprocess.run(command_line, capture_output=True, check=True)
+        return sub.stdout
