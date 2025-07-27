@@ -1,28 +1,21 @@
-from abc import ABC, abstractmethod
-import os
 import typing
+import zlib
+from abc import ABC, abstractmethod
 from pathlib import Path
+
 
 class ContentsHasher(ABC):
     def __init__(self, path: str | Path):
-        """Appropriate docstring."""
-        
         self._path: Path = Path(path)
- 
-    def hash_dir_contents(self) -> dict[str, bytes]:
-        """Appropriate docstring."""
 
-        ret: dict[str, bytes] = {}
-        for dirpath, _ , filenames in os.walk(self._path):
-            for filename in filenames:
-                filepath = os.path.join(dirpath, filename)
-                with open(filepath, "rb") as f:
-                    ret[filepath] = self._hash_file(f)
-        return ret
-    
-    def _file_chunks(self, file: typing.IO[bytes], chunksize:int=2**16):
-        """Appropriate docstring."""
+    def hash_contents(self) -> bytes:
+        if self._path.is_dir():
+            return self.empty_hash()
+        else:
+            with open(self._path, "rb") as f:
+                return self._hash_file(f)
 
+    def _file_chunks(self, file: typing.IO[bytes], chunksize: int = 2**16):
         with file:
             chunk = file.read(chunksize)
             while len(chunk) > 0:
@@ -30,16 +23,38 @@ class ContentsHasher(ABC):
                 chunk = file.read(chunksize)
 
     def _hash_file(self, file: typing.IO[bytes]) -> bytes:
-        """Appropriate docstring."""
-        
         for chunk in self._file_chunks(file):
             self.update(chunk)
         return self.digest()
 
     @abstractmethod
     def update(self, chunk: bytes) -> None:
-        """Appropriate docstring."""
+        pass
 
     @abstractmethod
     def digest(self) -> bytes:
-        """Appropriate docstring."""
+        pass
+
+    @abstractmethod
+    def empty_hash(self) -> bytes:
+        pass
+
+
+class CRC32Hasher(ContentsHasher):
+    crc32: int
+
+    def __init__(self, path: str | Path):
+        super().__init__(path)
+        self.crc32 = 0
+
+    @typing.override
+    def update(self, chunk: bytes) -> None:
+        self.crc32 = zlib.crc32(chunk, self.crc32)
+
+    @typing.override
+    def digest(self) -> bytes:
+        return self.crc32.to_bytes(4, "big")
+
+    @typing.override
+    def empty_hash(self) -> bytes:
+        return (0).to_bytes(4, "big")
