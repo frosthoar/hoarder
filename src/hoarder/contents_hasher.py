@@ -3,6 +3,11 @@ import zlib
 from abc import ABC, abstractmethod
 from pathlib import Path
 
+try:
+    from typing import override  # type: ignore [attr-defined]
+except ImportError:
+    from typing_extensions import override
+
 
 class ContentsHasher(ABC):
     def __init__(self, path: str | Path):
@@ -47,14 +52,14 @@ class CRC32Hasher(ContentsHasher):
         super().__init__(path)
         self.crc32 = 0
 
-    @typing.override
+    @override
     def update(self, chunk: bytes) -> None:
         self.crc32 = zlib.crc32(chunk, self.crc32)
 
-    @typing.override
+    @override
     def digest(self) -> bytes:
         return self.crc32.to_bytes(4, "big")
 
-    @typing.override
+    @override
     def empty_hash(self) -> bytes:
         return (0).to_bytes(4, "big")
