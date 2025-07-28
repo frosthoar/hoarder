@@ -4,7 +4,6 @@ import typing
 
 import hoarder
 import pytest
-
 from tests.test_case_file_info import RAR_TEST_ARCHIVE_DEFS
 
 logger = logging.getLogger()

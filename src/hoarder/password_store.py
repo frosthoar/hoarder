@@ -1,6 +1,5 @@
 """Password store module for managing title-password associations."""
 
-import typing
 from collections import defaultdict
 
 

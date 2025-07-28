@@ -3,9 +3,8 @@ import subprocess
 import typing
 
 import pytest
-from hoarder.rar_archive import RarArchive
-
 import tests.test_case_file_info
+from hoarder.rar_archive import RarArchive
 
 
 @pytest.mark.parametrize(
@@ -56,9 +55,9 @@ def test_read_file_content_validation(
                     # Compare contents
                     assert (
                         archive_content == original_content
-                    ), f"Content mismatch for {file_path} in {rar_file}"
+                    ), f"Content mismatch for {file_path} in {rar_path}"
 
     except subprocess.CalledProcessError:
-        pytest.skip(f"7zip not available or archive {rar_file} cannot be processed")
+        pytest.skip(f"7zip not available or archive {rar_path} cannot be processed")
     except FileNotFoundError as e:
         pytest.skip(f"Required file not found: {e}")
