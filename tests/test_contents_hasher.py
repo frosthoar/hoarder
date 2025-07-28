@@ -1,8 +1,9 @@
-import pytest
 from pathlib import Path
-import hoarder
 
+import hoarder
+import pytest
 from hoarder.contents_hasher import CRC32Hasher
+
 import tests.test_case_file_info
 
 

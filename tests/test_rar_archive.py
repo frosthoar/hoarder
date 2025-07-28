@@ -1,9 +1,10 @@
 import pathlib
-import pytest
 import subprocess
 
-from tests.test_case_file_info import RAR_FILES
+import pytest
 from hoarder.rar_archive import RarArchive
+
+from tests.test_case_file_info import RAR_FILES
 
 
 @pytest.mark.parametrize("rar_file, password", RAR_FILES)

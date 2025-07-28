@@ -3,6 +3,7 @@ import pathlib
 
 import hoarder
 import pytest
+
 import tests.test_case_file_info
 
 logger = logging.getLogger("hoarder.test_rar_file")
