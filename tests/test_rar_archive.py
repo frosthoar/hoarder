@@ -1,16 +1,18 @@
 import pathlib
 import subprocess
+import typing
 
 import pytest
 from hoarder.rar_archive import RarArchive
 
-from tests.test_case_file_info import RAR_FILES
 
+import tests.test_case_file_info
 
-@pytest.mark.parametrize("rar_file, password", RAR_FILES)
-def test_read_file_content_validation(rar_file: str, password: str | None):
+@pytest.mark.parametrize("rar_file_entry", tests.test_case_file_info.RAR_TEST_ARCHIVE_DEFS)
+def test_read_file_content_validation(rar_file_entry: tuple[pathlib.Path, str | None, typing.Any, typing.Any, typing.Any, typing.Any]):
     """Test that read_file returns correct content matching original files."""
-    rar_path = pathlib.Path("test_files/rar") / rar_file
+    rar_path = rar_file_entry[0]
+    password = rar_file_entry[1]
     compare_base = pathlib.Path("test_files/compare/files")
 
     if not rar_path.exists():

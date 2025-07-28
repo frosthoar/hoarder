@@ -1,10 +1,11 @@
 import logging
 import pathlib
+import typing
 
 import hoarder
 import pytest
 
-from tests.test_case_file_info import RAR_FILES
+from tests.test_case_file_info import RAR_TEST_ARCHIVE_DEFS
 
 logger = logging.getLogger()
 
@@ -32,11 +33,13 @@ def test_sfv_repositories(create_test_repo):
         assert repr(saved_sfv_file) == repr(retrieved_sfv_file)
 
 
-@pytest.mark.parametrize("rar_file, password", RAR_FILES)
-def test_rar_repositories(create_test_repo, rar_file: str, password: str):
+@pytest.mark.parametrize("rar_file_tuple", RAR_TEST_ARCHIVE_DEFS)
+def test_rar_repositories(create_test_repo, rar_file_tuple: tuple[pathlib.Path, str | None, typing.Any, typing.Any, typing.Any, typing.Any]):
+    rar_file = rar_file_tuple[0]
     logger.debug(f"Now processing {rar_file}")
+    password = rar_file_tuple[1]
     saved_rar_file = hoarder.RarArchive.from_path(
-        pathlib.Path("./test_files/rar/") / rar_file,
+        rar_file,
         password=password,
     )
     saved_rar_file_path = saved_rar_file.path
