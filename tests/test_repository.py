@@ -4,6 +4,8 @@ import pathlib
 import hoarder
 import pytest
 
+from tests.test_case_file_info import RAR_FILES
+
 logger = logging.getLogger()
 
 
@@ -30,27 +32,18 @@ def test_sfv_repositories(create_test_repo):
         assert repr(saved_sfv_file) == repr(retrieved_sfv_file)
 
 
-def test_rar_repositories(create_test_repo):
-    for rar_fn, password in [
-        ("v4_split_headers_encrypted.rar", "password"),
-        ("v4_split_headers_unencrypted.rar", None),
-        ("v4_unencrypted.rar", None),
-        ("v4_encrypted.rar", "secret"),
-        ("v5_split_headers_encrypted.part01.rar", "ninja"),
-        ("v5_split_headers_unencrypted.part01.rar", None),
-        ("v5_headers_encrypted.rar", "dragon"),
-        ("v5_headers_unencrypted.rar", None),
-    ]:
-        logger.debug(rar_fn)
-        saved_rar_file = hoarder.RarArchive.from_path(
-            pathlib.Path("./test_files/rar/") / rar_fn,
-            password=password,
-        )
-        saved_rar_file_path = saved_rar_file.path
-        create_test_repo.save(saved_rar_file)
-        retrieved_rar_file = create_test_repo.load(saved_rar_file_path)
+@pytest.mark.parametrize("rar_file, password", RAR_FILES)
+def test_rar_repositories(create_test_repo, rar_file: str, password: str):
+    logger.debug(f"Now processing {rar_file}")
+    saved_rar_file = hoarder.RarArchive.from_path(
+        pathlib.Path("./test_files/rar/") / rar_file,
+        password=password,
+    )
+    saved_rar_file_path = saved_rar_file.path
+    create_test_repo.save(saved_rar_file)
+    retrieved_rar_file = create_test_repo.load(saved_rar_file_path)
 
-        assert repr(saved_rar_file) == repr(retrieved_rar_file)
+    assert repr(saved_rar_file) == repr(retrieved_rar_file)
 
 
 def test_hnf_repositories(create_test_repo):
