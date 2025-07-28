@@ -1,4 +1,4 @@
-from pathlib import PurePath, Path
+from pathlib import Path, PurePath
 
 import hoarder
 from hoarder.hash_archive import Algo, FileEntry
@@ -1094,8 +1094,7 @@ RAR_TEST_ARCHIVE_DEFS = [
         101,
         21,
         hoarder.RarScheme.PART_N,
-        TEST_FILES
-        + [TEST_FILES_MAIN_DIR],
+        TEST_FILES + [TEST_FILES_MAIN_DIR],
     ),
     (
         Path("./test_files/rar/v5_split_headers_unencrypted.part01.rar"),
@@ -1103,8 +1102,7 @@ RAR_TEST_ARCHIVE_DEFS = [
         101,
         18,
         hoarder.RarScheme.PART_N,
-        TEST_FILES
-        + [TEST_FILES_MAIN_DIR],
+        TEST_FILES + [TEST_FILES_MAIN_DIR],
     ),
     (
         Path("./test_files/rar/v5_headers_encrypted.rar"),
@@ -1112,8 +1110,7 @@ RAR_TEST_ARCHIVE_DEFS = [
         101,
         1,
         hoarder.RarScheme.DOT_RNN,
-        TEST_FILES
-        + [TEST_FILES_MAIN_DIR],
+        TEST_FILES + [TEST_FILES_MAIN_DIR],
     ),
     (
         Path("./test_files/rar/v5_headers_unencrypted.rar"),
@@ -1121,7 +1118,6 @@ RAR_TEST_ARCHIVE_DEFS = [
         101,
         1,
         hoarder.RarScheme.DOT_RNN,
-        TEST_FILES
-        + [TEST_FILES_MAIN_DIR],
+        TEST_FILES + [TEST_FILES_MAIN_DIR],
     ),
 ]

@@ -34,7 +34,12 @@ def test_sfv_repositories(create_test_repo):
 
 
 @pytest.mark.parametrize("rar_file_tuple", RAR_TEST_ARCHIVE_DEFS)
-def test_rar_repositories(create_test_repo, rar_file_tuple: tuple[pathlib.Path, str | None, typing.Any, typing.Any, typing.Any, typing.Any]):
+def test_rar_repositories(
+    create_test_repo,
+    rar_file_tuple: tuple[
+        pathlib.Path, str | None, typing.Any, typing.Any, typing.Any, typing.Any
+    ],
+):
     rar_file = rar_file_tuple[0]
     logger.debug(f"Now processing {rar_file}")
     password = rar_file_tuple[1]

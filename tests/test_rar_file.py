@@ -9,7 +9,9 @@ import tests.test_case_file_info
 logger = logging.getLogger("hoarder.test_rar_file")
 
 
-@pytest.mark.parametrize("rar_data_tuple", tests.test_case_file_info.RAR_TEST_ARCHIVE_DEFS)
+@pytest.mark.parametrize(
+    "rar_data_tuple", tests.test_case_file_info.RAR_TEST_ARCHIVE_DEFS
+)
 def test_rar_archives_set(
     rar_data_tuple: tuple[
         pathlib.Path, str, int, int, hoarder.RarScheme, list[hoarder.FileEntry]
