@@ -3,5 +3,5 @@
 typeguard-packages = "hoarder"
 pythonpath = "src"
 # optional extras:
-# typeguard-collection-check-strategy = "ALL_ITEMS"
-# typeguard-debug-instrumentation    = true
+typeguard-collection-check-strategy = "ALL_ITEMS"
+typeguard-debug-instrumentation    = true

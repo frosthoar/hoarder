@@ -1,5 +1,6 @@
-from pathlib import PurePath
+from pathlib import Path, PurePath
 
+import hoarder
 from hoarder.hash_archive import Algo, FileEntry
 
 HNF_FILES = [
@@ -1051,5 +1052,72 @@ TEST_FILES = [
         hash_value=b"\x00\x00\x00\x00",
         algo=Algo.CRC32,
         info=None,
+    ),
+]
+
+RAR_TEST_ARCHIVE_DEFS = [
+    (
+        Path("./test_files/rar/v4_split_headers_encrypted.rar"),
+        "password",
+        100,
+        19,
+        hoarder.RarScheme.DOT_RNN,
+        TEST_FILES,
+    ),
+    (
+        Path("./test_files/rar/v4_split_headers_unencrypted.rar"),
+        None,
+        100,
+        18,
+        hoarder.RarScheme.DOT_RNN,
+        TEST_FILES,
+    ),
+    (
+        Path("./test_files/rar/v4_unencrypted.rar"),
+        None,
+        100,
+        1,
+        hoarder.RarScheme.DOT_RNN,
+        TEST_FILES,
+    ),
+    (
+        Path("./test_files/rar/v4_encrypted.rar"),
+        "secret",
+        100,
+        1,
+        hoarder.RarScheme.DOT_RNN,
+        TEST_FILES,
+    ),
+    (
+        Path("./test_files/rar/v5_split_headers_encrypted.part01.rar"),
+        "ninja",
+        101,
+        21,
+        hoarder.RarScheme.PART_N,
+        TEST_FILES + [TEST_FILES_MAIN_DIR],
+    ),
+    (
+        Path("./test_files/rar/v5_split_headers_unencrypted.part01.rar"),
+        None,
+        101,
+        18,
+        hoarder.RarScheme.PART_N,
+        TEST_FILES + [TEST_FILES_MAIN_DIR],
+    ),
+    (
+        Path("./test_files/rar/v5_headers_encrypted.rar"),
+        "dragon",
+        101,
+        1,
+        hoarder.RarScheme.DOT_RNN,
+        TEST_FILES + [TEST_FILES_MAIN_DIR],
+    ),
+    (
+        Path("./test_files/rar/v5_headers_unencrypted.rar"),
+        None,
+        101,
+        1,
+        hoarder.RarScheme.DOT_RNN,
+        TEST_FILES + [TEST_FILES_MAIN_DIR],
     ),
 ]
