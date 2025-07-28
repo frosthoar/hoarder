@@ -1,8 +1,8 @@
 """Password store module for managing title-password associations."""
-import copy
-
-from collections import defaultdict
 from __future__ import annotations
+
+import copy
+from collections import defaultdict
 
 
 class PasswordStore:
@@ -17,6 +17,11 @@ class PasswordStore:
 
     def add_password(self, title: str, password: str) -> None:
         """Add a password to the specified title."""
+        if title == "":
+            raise ValueError("Empty title")
+        if password == "":
+            raise ValueError("Empty password")
+
         self._store[title].add(password)
 
     def remove_password(self, title: str, password: str) -> bool:
