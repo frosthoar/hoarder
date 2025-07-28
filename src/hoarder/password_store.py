@@ -1,6 +1,8 @@
 """Password store module for managing title-password associations."""
+import copy
 
 from collections import defaultdict
+from __future__ import annotations
 
 
 class PasswordStore:
@@ -25,6 +27,17 @@ class PasswordStore:
                 del self._store[title]
             return True
         return False
+
+    def __iter__(self):
+        for title, passwords in self._store.items():
+            yield title, passwords
+
+    def __or__(self, p: PasswordStore) -> PasswordStore:
+        self_copy = copy.deepcopy(self)
+        for title, passwords in p:
+            for password in passwords:
+                self_copy.add_password(title, password)
+        return self_copy
 
     def clear_passwords(self, title: str) -> None:
         """Clear all passwords for the specified title."""
