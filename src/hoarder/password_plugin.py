@@ -1,18 +1,17 @@
 """Abstract base class for password extraction plugins."""
 
 import abc
-import pathlib
+import typing
 
+import hoarder.password_store
 
 class PasswordPlugin(abc.ABC):
     """Abstract base class for password extraction plugins."""
-
     @abc.abstractmethod
-    def can_handle(self, file_path: pathlib.Path) -> bool:
-        """Check if this plugin can handle the given file type."""
+    def __init__(self, config: dict[str, typing.Any]):
         pass
 
     @abc.abstractmethod
-    def extract_passwords(self, file_path: pathlib.Path) -> dict[str, set[str]]:
+    def extract_passwords(self) -> hoarder.password_store.PasswordStore:
         """Extract passwords from the file, returning a mapping of title -> passwords."""
         pass

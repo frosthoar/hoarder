@@ -21,7 +21,6 @@ class PasswordStore:
             raise ValueError("Empty title")
         if password == "":
             raise ValueError("Empty password")
-
         self._store[title].add(password)
 
     def remove_password(self, title: str, password: str) -> bool:
@@ -48,3 +47,10 @@ class PasswordStore:
         """Clear all passwords for the specified title."""
         if title in self._store:
             del self._store[title]
+
+    def pretty_print(self) -> str:
+        ret = ""
+        for title in self._store:
+            for password in self._store[title]:
+                ret = ret + "\n" + f"{title}      {password}"
+        return ret

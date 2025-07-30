@@ -2,86 +2,106 @@
 
 import logging
 import pathlib
+import os
 import re
 import traceback
 import xml.etree.ElementTree as ET
 import hoarder
-from .password_plugin import PasswordPlugin
+import collections.abc
+import typing
+from hoarder.password_plugin import PasswordPlugin
 
 try:
     from typing import override  # type: ignore [attr-defined]
 except ImportError:
     from typing_extensions import override
 
-logger = logging.getLogger("hoarder.contents_hasher")
-
-def extract_pw_from_filename(file_path: pathlib.Path) -> dict[str, set[str]]:
-    filename = file_path.stem
-    # Extract the password from title{{password}}.nzb pattern
-    filename_passwords = re.findall(r"\{\{(.+?)\}\}", filename)
-    if len(filename_passwords) >= 2:
-        logger.error(f"Error when extracting password from {file_path}")
-        raise ValueError("Ambiguous passwords")
-    title = re.sub(r"\{\{.+?\}\}", "", filename).strip()
-    return {title: set(filename_passwords)}
-
-def extract_pw_from_file_content(file_path: pathlib.Path) -> set[str]:
-    passwords: set[str] = set()
-    try:
-        logger.debug(f"Reading {file_path}, extracting password from content")
-        with open(file_path, "r", encoding="utf-8") as f:
-            content = f.read()
-
-        root = ET.fromstring(content)
-        ns = {"nzb": "http://www.newzbin.com/DTD/2003/nzb"}
-
-        for meta in root.findall('.//nzb:meta[@type="password"]', ns):
-            if meta.text:
-                passwords.add(meta.text.strip())
-    except (ET.ParseError, OSError, UnicodeDecodeError):
-        logger.debug(f"Failure extracting password from content of {file_path}")
-        print(traceback.format_exc())
-        pass
-    return passwords
+logger = logging.getLogger("hoarder.nzb_password_plugin")
 
 
 class NzbPasswordPlugin(PasswordPlugin):
     """Plugin to extract passwords from NZB filenames with {{password}} format."""
+    _nzb_paths: list[pathlib.Path]
 
     @override
-    def can_handle(self, path: pathlib.Path) -> bool:
-        """Check if this is directory"""
-        return path.is_dir()
+    def __init__(self, config: dict[str, list[str]]):
+        if "nzb_paths" in config:
+            paths = [pathlib.Path(p) for p in config["nzb_paths"]]
+            invalid_paths = [p for p in paths if not p.is_dir()]
+            if len(invalid_paths) > 0:
+                raise FileNotFoundError(f"No directory at {invalid_paths[0]}" + (f" and {len(invalid_paths) - 1} other invalid paths" if len(invalid_paths) > 1 else ""))
+            else:
+                self._nzb_paths = paths
 
-    @override
-    def extract_passwords(self, path: pathlib.Path) -> dict[str, set[str]]:
-        passwords = {}
-        for root, _, files in os.walk(path):
+    @staticmethod
+    def _extract_pw_from_nzb_filename(file_path: pathlib.PurePath) -> tuple[str, str | None]:
+        filename = file_path.stem
+        # Extract the password from title{{password}}.nzb pattern
+        filename_passwords = re.findall(r"\{\{(.+?)\}\}", filename)
+        title = re.sub(r"\{\{.+?\}\}", "", filename).strip()
+        if len(filename_passwords) >= 2:
+            logger.error(f"Error when extracting password from {file_path}")
+            raise ValueError("Ambiguous passwords")
+        if len(filename_passwords) == 0:
+            return (title, None)
+        return (title, filename_passwords[0])
+
+    @staticmethod
+    def _extract_pw_from_nzb_file_content(content: bytes | str) -> str | None:
+        password: str | None = None
+        try:
+            logger.debug(f"Extracting password from file content")
+
+            root = ET.fromstring(content)
+            ns = {"nzb": "http://www.newzbin.com/DTD/2003/nzb"}
+
+            for meta in root.findall('.//nzb:meta[@type="password"]', ns):
+                if meta.text:
+                    password = meta.text.strip()
+                    break
+        except (ET.ParseError, OSError, UnicodeDecodeError):
+            logger.debug(f"Failure extracting password from content")
+            print(traceback.format_exc())
+            pass
+        return password
+
+    @staticmethod
+    def _process_directory(nzb_directory: pathlib.Path) -> hoarder.password_store.PasswordStore:
+        dir_store = hoarder.password_store.PasswordStore()
+        for root, _, files in  os.walk(nzb_directory):
             for file in files:
-                full_path: pathlib.Path = path / root / file
-                if full_path.suffix == "nzb":
-                    passwords.update(extract_pw_from_filename(file_path: pathlib.Path))
-                elif full_path.suffix == rar:
-                    rar_file: hoarder.RarArchive = hoarder.RarArchive.from_path(file_path)
-                    ret = {}
+                title = password = None
+                full_path: pathlib.Path = nzb_directory / root / file
+                if full_path.suffix == ".nzb":
+                    title, password = NzbPasswordPlugin._extract_pw_from_nzb_filename(full_path)
+                    if not password:
+                        with open(full_path) as f:
+                            content = f.read()
+                            password = NzbPasswordPlugin._extract_pw_from_nzb_file_content(content)
+                    if password:
+                        dir_store.add_password(title, password)
+                elif full_path.suffix == "rar":
+                    rar_file: hoarder.RarArchive = hoarder.RarArchive.from_path(full_path)
                     for file_entry in rar_file.files:
                         if file_entry.path.suffix == ".nzb":
-
-
-
-
-
-
-class RarNzbPasswordPlugin(PasswordPlugin):
-    @override
-    def can_handle(self, file_path: pathlib.Path) -> bool:
-        """Check if this is an NZB file."""
-        return file_path.suffix.lower() == ".rar"
+                            title, password = NzbPasswordPlugin._extract_pw_from_nzb_filename(file_entry.path)
+                            if not password:
+                                content = rar_file.read_file(file_entry.path)
+                                password = NzbPasswordPlugin._extract_pw_from_nzb_file_content(content)
+                            if password:
+                                dir_store.add_password(title, password)
+        return dir_store
 
     @override
-    def extract_passwords(self, file_path: pathlib.Path) -> dict[str, set[str]]:
-        rar_file: hoarder.RarArchive = hoarder.RarArchive.from_path(file_path)
-        ret = {}
-        for file_entry in rar_file.files:
-            if file_entry.path.suffix == ".nzb":
-                
+    def extract_passwords(self) -> hoarder.password_store.PasswordStore:
+        password_store = hoarder.password_store.PasswordStore()
+        for p in self._nzb_paths:
+            password_store = password_store | NzbPasswordPlugin._process_directory(p)
+        return password_store
+
+if __name__ == "__main__":
+    config = {"nzb_paths": [r"D:\nzbs"]}
+    plug_instance = NzbPasswordPlugin(config)
+    password_store = plug_instance.extract_passwords()
+    print(password_store.pretty_print())
+
