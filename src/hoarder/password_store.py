@@ -15,6 +15,12 @@ class PasswordStore:
         """Get all passwords for the specified title."""
         return self._store[title].copy()
 
+    def __contains__(self, title: str) -> bool:
+        return title in self._store
+
+    def __len__(self) -> int:
+        return len(self._store)
+
     def add_password(self, title: str, password: str) -> None:
         """Add a password to the specified title."""
         if title == "":

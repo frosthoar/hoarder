@@ -100,7 +100,7 @@ class NzbPasswordPlugin(PasswordPlugin):
                             )
                     if password:
                         dir_store.add_password(title, password)
-                elif full_path.suffix == "rar":
+                elif full_path.suffix == ".rar":
                     logger.debug(f"Processing RARed NZB(s) {full_path}")
                     rar_file: hoarder.RarArchive = hoarder.RarArchive.from_path(
                         full_path
