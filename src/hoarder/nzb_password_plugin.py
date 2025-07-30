@@ -79,6 +79,7 @@ class NzbPasswordPlugin(PasswordPlugin):
         nzb_directory: pathlib.Path,
     ) -> hoarder.password_store.PasswordStore:
         dir_store = hoarder.password_store.PasswordStore()
+        content: str | bytes
         for root, _, files in os.walk(nzb_directory):
             for file in files:
                 title = password = None
