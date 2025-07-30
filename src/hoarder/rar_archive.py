@@ -276,6 +276,7 @@ class RarArchive(hash_archive.HashArchive):
             "-scsUTF-8",
             "-sccUTF-8",
             "-p" + (self.password if self.password else ""),
+            str(self.path),
             str(path),
         ]
 

@@ -12,8 +12,8 @@ def password_store():
 def test_init(password_store: PasswordStore):
     """Test initialization and default value"""
     assert isinstance(
-        password_store._store, dict
-    )  # pyright: ignore[reportPrivateUsage]
+        password_store._store, dict  # pyright: ignore[reportPrivateUsage]
+    )
     assert password_store["nonexistent"] == set()
 
 
