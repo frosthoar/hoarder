@@ -1,3 +1,4 @@
+import logging
 import typing
 import zlib
 from abc import ABC, abstractmethod
@@ -8,6 +9,8 @@ try:
 except ImportError:
     from typing_extensions import override
 
+logger = logging.getLogger("hoarder.contents_hasher")
+
 
 class ContentsHasher(ABC):
     def __init__(self, path: str | Path):
@@ -15,8 +18,10 @@ class ContentsHasher(ABC):
 
     def hash_contents(self) -> bytes:
         if self._path.is_dir():
+            logger.debug("Hashing directory yields empty hash")
             return self.empty_hash()
         else:
+            logger.debug(f"Opening {self._path}")
             with open(self._path, "rb") as f:
                 return self._hash_file(f)
 
