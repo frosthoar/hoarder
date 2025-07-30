@@ -11,6 +11,7 @@ except ImportError:
 
 logger = logging.getLogger("hoarder.contents_hasher")
 
+
 class ContentsHasher(ABC):
     def __init__(self, path: str | Path):
         self._path: Path = Path(path)
