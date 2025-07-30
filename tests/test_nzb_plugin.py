@@ -1,11 +1,12 @@
 """Tests for the NZB password plugin."""
 
-import os
-import pytest
 import logging
+import os
 import pathlib
-from hoarder.password_store import PasswordStore
+
+import pytest
 from hoarder.nzb_password_plugin import NzbPasswordPlugin
+from hoarder.password_store import PasswordStore
 
 logger = logging.getLogger("hoarder.tests.test_nzb_plugin")
 
