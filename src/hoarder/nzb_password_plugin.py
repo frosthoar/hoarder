@@ -73,16 +73,20 @@ class NzbPasswordPlugin(PasswordPlugin):
                 title = password = None
                 full_path: pathlib.Path = nzb_directory / root / file
                 if full_path.suffix == ".nzb":
+                    logger.debug(f"Processing NZB {full_path}")
                     title, password = NzbPasswordPlugin._extract_pw_from_nzb_filename(full_path)
                     if not password:
+                        logger.debug(f"No password in filename, opening NZB file...")
                         with open(full_path) as f:
                             content = f.read()
                             password = NzbPasswordPlugin._extract_pw_from_nzb_file_content(content)
                     if password:
                         dir_store.add_password(title, password)
                 elif full_path.suffix == "rar":
+                    logger.debug(f"Processing RARed NZB(s) {full_path}")
                     rar_file: hoarder.RarArchive = hoarder.RarArchive.from_path(full_path)
                     for file_entry in rar_file.files:
+                        logger.debug(f"Read {file_entry.path}... extracting passwords")
                         if file_entry.path.suffix == ".nzb":
                             title, password = NzbPasswordPlugin._extract_pw_from_nzb_filename(file_entry.path)
                             if not password:

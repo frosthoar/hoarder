@@ -47,10 +47,3 @@ class PasswordStore:
         """Clear all passwords for the specified title."""
         if title in self._store:
             del self._store[title]
-
-    def pretty_print(self) -> str:
-        ret = ""
-        for title in self._store:
-            for password in self._store[title]:
-                ret = ret + "\n" + f"{title}      {password}"
-        return ret
