@@ -23,6 +23,8 @@ class PasswordStore:
 
     def add_password(self, title: str, password: str) -> None:
         """Add a password to the specified title."""
+        assert isinstance(title, str)
+        assert isinstance(password, str)
         if title == "":
             raise ValueError("Empty title")
         if password == "":
@@ -41,13 +43,17 @@ class PasswordStore:
 
     def __iter__(self):
         for title, passwords in self._store.items():
-            yield title, passwords
+            yield title, passwords.copy()
+
+    def __ior__(self, p: PasswordStore) -> PasswordStore:
+        for title, passwords in p:
+            for password in passwords:
+                self.add_password(title, password)
+        return self
 
     def __or__(self, p: PasswordStore) -> PasswordStore:
         self_copy = copy.deepcopy(self)
-        for title, passwords in p:
-            for password in passwords:
-                self_copy.add_password(title, password)
+        self_copy |= p
         return self_copy
 
     def clear_passwords(self, title: str) -> None:
