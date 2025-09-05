@@ -3,6 +3,8 @@ from __future__ import annotations
 
 import copy
 from collections import defaultdict
+from collections.abc import Iterator
+from typing import cast
 
 
 class PasswordStore:
@@ -41,7 +43,7 @@ class PasswordStore:
             return True
         return False
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[tuple[str, set[str]]]:
         for title, passwords in self._store.items():
             yield title, passwords.copy()
 
@@ -70,11 +72,10 @@ class PasswordStore:
 
         # Calculate column widths
         max_title_length = min(
-            MAX_COL_WIDTH, max(len(title) for title in self._store.keys())
+            MAX_COL_WIDTH, len(max(self._store.keys(), key=len))
         )
         max_password_length = max(
-            max(len(password) for password in passwords)
-            for passwords in self._store.values()
+            len(max(passwords, key=len)) for passwords in self._store.values()
         )
 
         title_width = max(max_title_length, len("Title"))

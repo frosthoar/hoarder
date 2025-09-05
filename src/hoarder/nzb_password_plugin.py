@@ -6,6 +6,7 @@ import pathlib
 import re
 import traceback
 import xml.etree.ElementTree as ET
+from typing import Callable
 
 import hoarder
 from hoarder.password_plugin import PasswordPlugin
@@ -25,24 +26,26 @@ class NzbPasswordPlugin(PasswordPlugin):
 
     @override
     def __init__(self, config: dict[str, list[str]]):
-        if config.get("nzb_paths", []):
-            paths = [pathlib.Path(p) for p in config["nzb_paths"]]
-            invalid_paths = [p for p in paths if not p.is_dir()]
-            if invalid_paths:
-                raise FileNotFoundError(
-                    f"No directory at {invalid_paths[0]}"
-                    + (
-                        f" and {len(invalid_paths) - 1} other invalid paths"
-                        if len(invalid_paths) > 1
-                        else ""
-                    )
+        if "nzb_paths" not in config:
+            raise KeyError("nzb_paths not set")
+        if not isinstance(config["nzb_paths"], list):
+            raise ValueError("nzb_paths must map to a list")
+        if not config["nzb_paths"]:
+            raise ValueError("nzb_paths must map to a list")
+        paths = [pathlib.Path(p) for p in config["nzb_paths"]]
+        invalid_paths = [p for p in paths if not p.is_dir()]
+        if invalid_paths:
+            raise NotADirectoryError(
+                f"No directory at {invalid_paths[0]}"
+                + (
+                    f" and {len(invalid_paths) - 1} other invalid paths"
+                    if len(invalid_paths) > 1
+                    else ""
                 )
-            elif len(paths) == 0:
-                raise ValueError("nzb_paths empty")
-            else:
-                self._nzb_paths = paths
-        else:
-            raise ValueError("nzb_paths not set")
+            )
+        if len(paths) == 0:
+            raise ValueError("nzb_paths empty")
+        self._nzb_paths = paths
 
     @staticmethod
     def _extract_pw_from_nzb_filename(
@@ -79,32 +82,45 @@ class NzbPasswordPlugin(PasswordPlugin):
             pass
         return password
 
+
+    @staticmethod
+    def _process_file(p: pathlib.PurePath, read_file_content: Callable[[pathlib.PurePath], bytes | str]) -> tuple[str, str] | None:
+        logger.debug(f"Read {p}... extracting passwords")
+        title: str | None = None
+        password: str | None = None
+        if p.suffix == ".nzb":
+            (
+                title,
+                password,
+            ) = NzbPasswordPlugin._extract_pw_from_nzb_filename(
+                p
+            )
+            if not password:
+                content = read_file_content(p)
+                password = (
+                    NzbPasswordPlugin._extract_pw_from_nzb_file_content(
+                        content
+                    )
+                )
+        if title and password:
+            return title, password
+
+
     @staticmethod
     def _process_directory(
         nzb_directory: pathlib.Path,
     ) -> hoarder.password_store.PasswordStore:
         dir_store = hoarder.password_store.PasswordStore()
-        content: str | bytes
         for root, _, files in os.walk(nzb_directory):
             for file in files:
-                title = password = None
                 full_path: pathlib.Path = nzb_directory / root / file
                 if full_path.suffix == ".nzb":
-                    logger.debug(f"Processing NZB {full_path}")
-                    title, password = NzbPasswordPlugin._extract_pw_from_nzb_filename(
-                        full_path
-                    )
-                    if not password:
-                        logger.debug("No password in filename, opening NZB file...")
-                        with open(full_path) as f:
-                            content = f.read()
-                            password = (
-                                NzbPasswordPlugin._extract_pw_from_nzb_file_content(
-                                    content
-                                )
+                    title_password = NzbPasswordPlugin._process_file(
+                            full_path,
+                            read_file_content=lambda fp: open(fp, "r").read()
                             )
-                    if password:
-                        dir_store.add_password(title, password)
+                    if title_password:
+                        dir_store.add_password(*title_password)
                 elif full_path.suffix == ".rar":
                     logger.debug(f"Processing RARed NZB(s) {full_path}")
                     rar_file: hoarder.RarArchive = hoarder.RarArchive.from_path(
@@ -112,22 +128,12 @@ class NzbPasswordPlugin(PasswordPlugin):
                     )
                     for file_entry in rar_file.files:
                         logger.debug(f"Read {file_entry.path}... extracting passwords")
-                        if file_entry.path.suffix == ".nzb":
-                            (
-                                title,
-                                password,
-                            ) = NzbPasswordPlugin._extract_pw_from_nzb_filename(
-                                file_entry.path
-                            )
-                            if not password:
-                                content = rar_file.read_file(file_entry.path)
-                                password = (
-                                    NzbPasswordPlugin._extract_pw_from_nzb_file_content(
-                                        content
-                                    )
+                        title_password = NzbPasswordPlugin._process_file(
+                                file_entry.path,
+                                read_file_content=lambda fp: rar_file.read_file(file_entry.path)
                                 )
-                            if password:
-                                dir_store.add_password(title, password)
+                        if title_password:
+                            dir_store.add_password(*title_password)
         return dir_store
 
     @override
@@ -136,3 +142,9 @@ class NzbPasswordPlugin(PasswordPlugin):
         for p in self._nzb_paths:
             password_store = password_store | NzbPasswordPlugin._process_directory(p)
         return password_store
+
+if __name__ == "__main__":
+    config = {"nzb_paths": [r"D:\nzbs"]}
+    plug_instance = NzbPasswordPlugin(config)
+    password_store = plug_instance.extract_passwords()
+    print(password_store.pretty_print())
