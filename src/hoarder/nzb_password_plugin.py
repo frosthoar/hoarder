@@ -25,10 +25,10 @@ class NzbPasswordPlugin(PasswordPlugin):
 
     @override
     def __init__(self, config: dict[str, list[str]]):
-        if "nzb_paths" in config:
+        if config.get("nzb_paths", []):
             paths = [pathlib.Path(p) for p in config["nzb_paths"]]
             invalid_paths = [p for p in paths if not p.is_dir()]
-            if len(invalid_paths) > 0:
+            if invalid_paths:
                 raise FileNotFoundError(
                     f"No directory at {invalid_paths[0]}"
                     + (
@@ -37,15 +37,19 @@ class NzbPasswordPlugin(PasswordPlugin):
                         else ""
                     )
                 )
+            elif len(paths) == 0:
+                raise ValueError("nzb_paths empty")
             else:
                 self._nzb_paths = paths
+        else:
+            raise ValueError("nzb_paths not set")
 
     @staticmethod
     def _extract_pw_from_nzb_filename(
         file_path: pathlib.PurePath,
     ) -> tuple[str, str | None]:
+        """Extract the password from title{{password}}.nzb pattern"""
         filename = file_path.stem
-        # Extract the password from title{{password}}.nzb pattern
         filename_passwords = re.findall(r"\{\{(.+?)\}\}", filename)
         title = re.sub(r"\{\{.+?\}\}", "", filename).strip()
         if len(filename_passwords) >= 2:
@@ -57,6 +61,7 @@ class NzbPasswordPlugin(PasswordPlugin):
 
     @staticmethod
     def _extract_pw_from_nzb_file_content(content: bytes | str) -> str | None:
+        """Extract password from <header><meta type="password">password</meta></header>"""
         password: str | None = None
         try:
             logger.debug("Extracting password from file content")
@@ -131,10 +136,3 @@ class NzbPasswordPlugin(PasswordPlugin):
         for p in self._nzb_paths:
             password_store = password_store | NzbPasswordPlugin._process_directory(p)
         return password_store
-
-
-if __name__ == "__main__":
-    config = {"nzb_paths": [r"D:\nzbs"]}
-    plug_instance = NzbPasswordPlugin(config)
-    password_store = plug_instance.extract_passwords()
-    print(password_store.pretty_print())
