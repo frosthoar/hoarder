@@ -6,7 +6,7 @@ import pathlib
 import re
 import traceback
 import xml.etree.ElementTree as ET
-from typing import Callable
+from typing import Callable, NamedTuple
 
 import hoarder
 from hoarder.password_plugin import PasswordPlugin
@@ -17,6 +17,16 @@ except ImportError:
     from typing_extensions import override
 
 logger = logging.getLogger("hoarder.nzb_password_plugin")
+
+
+class ArchiveEntry(NamedTuple):
+    title: str
+    password: str | None
+
+
+class SecureArchiveEntry(NamedTuple):
+    title: str
+    password: str
 
 
 class NzbPasswordPlugin(PasswordPlugin):
@@ -56,14 +66,14 @@ class NzbPasswordPlugin(PasswordPlugin):
     @staticmethod
     def _extract_pw_from_nzb_filename(
         file_path: pathlib.PurePath,
-    ) -> tuple[str, str | None]:
+    ) -> ArchiveEntry:
         """Extract the password from an NZB filename using the {{password}} pattern.
 
         Args:
             file_path (pathlib.PurePath): Path to the NZB file.
 
         Returns:
-            tuple[str, str | None]: A tuple containing the cleaned title and the extracted password, or None if no password is found.
+            ArchiveEntry: title and password (password may be empty if extraction was unsuccesful)
 
         Raises:
             ValueError: If multiple passwords are found in the filename, indicating ambiguity.
@@ -75,8 +85,8 @@ class NzbPasswordPlugin(PasswordPlugin):
             logger.error(f"Error when extracting password from {file_path}")
             raise ValueError("Ambiguous passwords")
         if len(filename_passwords) == 0:
-            return (title, None)
-        return (title, filename_passwords[0])
+            return ArchiveEntry(title=title, password=None)
+        return ArchiveEntry(title=title, password=filename_passwords[0])
 
     @staticmethod
     def _extract_pw_from_nzb_file_content(content: bytes | str) -> str | None:
@@ -102,14 +112,13 @@ class NzbPasswordPlugin(PasswordPlugin):
         except (ET.ParseError, OSError, UnicodeDecodeError):
             logger.debug("Failure extracting password from content")
             print(traceback.format_exc())
-            pass
         return password
 
     @staticmethod
     def _process_file(
         p: pathlib.PurePath,
         read_file_content: Callable[[pathlib.PurePath], bytes | str],
-    ) -> tuple[str, str] | None:
+    ) -> SecureArchiveEntry | None:
         """Process an NZB file to extract its title and password.
 
         Args:
@@ -117,7 +126,7 @@ class NzbPasswordPlugin(PasswordPlugin):
             read_file_content (Callable[[pathlib.PurePath], bytes | str]): Function to read the file content.
 
         Returns:
-            tuple[str, str] | None: A tuple of title and password if both are found, otherwise None.
+            SecureArchiveEntry: contains title and password if both are found, otherwise None.
         """
         logger.debug(f"Read {p}... extracting passwords")
         title: str | None = None
@@ -131,7 +140,9 @@ class NzbPasswordPlugin(PasswordPlugin):
                 content = read_file_content(p)
                 password = NzbPasswordPlugin._extract_pw_from_nzb_file_content(content)
         if title and password:
-            return title, password
+            return SecureArchiveEntry(title=title, password=password)
+        else:
+            return None
 
     @staticmethod
     def _process_directory(

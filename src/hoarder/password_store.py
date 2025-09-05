@@ -4,7 +4,6 @@ from __future__ import annotations
 import copy
 from collections import defaultdict
 from collections.abc import Iterator
-from typing import cast
 
 
 class PasswordStore:
