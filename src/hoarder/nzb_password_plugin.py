@@ -106,7 +106,10 @@ class NzbPasswordPlugin(PasswordPlugin):
         return password
 
     @staticmethod
-    def _process_file(p: pathlib.PurePath, read_file_content: Callable[[pathlib.PurePath], bytes | str]) -> tuple[str, str] | None:
+    def _process_file(
+        p: pathlib.PurePath,
+        read_file_content: Callable[[pathlib.PurePath], bytes | str],
+    ) -> tuple[str, str] | None:
         """Process an NZB file to extract its title and password.
 
         Args:
@@ -123,16 +126,10 @@ class NzbPasswordPlugin(PasswordPlugin):
             (
                 title,
                 password,
-            ) = NzbPasswordPlugin._extract_pw_from_nzb_filename(
-                p
-            )
+            ) = NzbPasswordPlugin._extract_pw_from_nzb_filename(p)
             if not password:
                 content = read_file_content(p)
-                password = (
-                    NzbPasswordPlugin._extract_pw_from_nzb_file_content(
-                        content
-                    )
-                )
+                password = NzbPasswordPlugin._extract_pw_from_nzb_file_content(content)
         if title and password:
             return title, password
 
@@ -154,9 +151,8 @@ class NzbPasswordPlugin(PasswordPlugin):
                 full_path: pathlib.Path = nzb_directory / root / file
                 if full_path.suffix == ".nzb":
                     title_password = NzbPasswordPlugin._process_file(
-                            full_path,
-                            read_file_content=lambda fp: open(fp, "r").read()
-                            )
+                        full_path, read_file_content=lambda fp: open(fp, "r").read()
+                    )
                     if title_password:
                         dir_store.add_password(*title_password)
                 elif full_path.suffix == ".rar":
@@ -167,9 +163,11 @@ class NzbPasswordPlugin(PasswordPlugin):
                     for file_entry in rar_file.files:
                         logger.debug(f"Read {file_entry.path}... extracting passwords")
                         title_password = NzbPasswordPlugin._process_file(
-                                file_entry.path,
-                                read_file_content=lambda fp: rar_file.read_file(file_entry.path)
-                                )
+                            file_entry.path,
+                            read_file_content=lambda fp: rar_file.read_file(
+                                file_entry.path
+                            ),
+                        )
                         if title_password:
                             dir_store.add_password(*title_password)
         return dir_store
@@ -185,6 +183,7 @@ class NzbPasswordPlugin(PasswordPlugin):
         for p in self._nzb_paths:
             password_store = password_store | NzbPasswordPlugin._process_directory(p)
         return password_store
+
 
 if __name__ == "__main__":
     config = {"nzb_paths": [r"D:\nzbs"]}

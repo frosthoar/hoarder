@@ -71,9 +71,7 @@ class PasswordStore:
         MAX_COL_WIDTH: int = 83
 
         # Calculate column widths
-        max_title_length = min(
-            MAX_COL_WIDTH, len(max(self._store.keys(), key=len))
-        )
+        max_title_length = min(MAX_COL_WIDTH, len(max(self._store.keys(), key=len)))
         max_password_length = max(
             len(max(passwords, key=len)) for passwords in self._store.values()
         )
