@@ -157,7 +157,10 @@ def test_or_operator_one_empty(
     password_store_2.add_password("title1", "password1")
 
     combined = password_store | password_store_2
+    assert len(combined["title1"]) == 1
     assert combined["title1"] == {"password1"}
+    assert len(password_store_2) == 1
+    assert password_store_2["title1"] == {"password1"}
 
     # Test reverse combination
     combined_reverse = password_store_2 | password_store

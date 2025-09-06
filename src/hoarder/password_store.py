@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import copy
 from collections import defaultdict
+from collections.abc import Iterator
 
 
 class PasswordStore:
@@ -23,6 +24,8 @@ class PasswordStore:
 
     def add_password(self, title: str, password: str) -> None:
         """Add a password to the specified title."""
+        assert isinstance(title, str)
+        assert isinstance(password, str)
         if title == "":
             raise ValueError("Empty title")
         if password == "":
@@ -39,15 +42,19 @@ class PasswordStore:
             return True
         return False
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[tuple[str, set[str]]]:
         for title, passwords in self._store.items():
-            yield title, passwords
+            yield title, passwords.copy()
+
+    def __ior__(self, p: PasswordStore) -> PasswordStore:
+        for title, passwords in p:
+            for password in passwords:
+                self.add_password(title, password)
+        return self
 
     def __or__(self, p: PasswordStore) -> PasswordStore:
         self_copy = copy.deepcopy(self)
-        for title, passwords in p:
-            for password in passwords:
-                self_copy.add_password(title, password)
+        self_copy |= p
         return self_copy
 
     def clear_passwords(self, title: str) -> None:
@@ -63,12 +70,9 @@ class PasswordStore:
         MAX_COL_WIDTH: int = 83
 
         # Calculate column widths
-        max_title_length = min(
-            MAX_COL_WIDTH, max(len(title) for title in self._store.keys())
-        )
+        max_title_length = min(MAX_COL_WIDTH, len(max(self._store.keys(), key=len)))
         max_password_length = max(
-            max(len(password) for password in passwords)
-            for passwords in self._store.values()
+            len(max(passwords, key=len)) for passwords in self._store.values()
         )
 
         title_width = max(max_title_length, len("Title"))
