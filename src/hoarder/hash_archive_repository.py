@@ -1,5 +1,4 @@
 import collections.abc
-import datetime
 import sqlite3
 from pathlib import Path, PurePath
 from typing import cast
@@ -10,6 +9,7 @@ from hoarder.rar_archive import RarArchive
 from hoarder.rar_path import RarScheme
 from hoarder.sfv_archive import SfvArchive
 from hoarder.sql3_fk import Sqlite3FK
+from hoarder.db_utils import now_str
 
 
 class HashArchiveRepository:
@@ -128,12 +128,6 @@ class HashArchiveRepository:
             cur = con.cursor()
             _ = cur.execute(HashArchiveRepository._CREATE_HASH_ARCHIVES)
             _ = cur.execute(HashArchiveRepository._CREATE_FILE_ENTRIES)
-
-    @staticmethod
-    def _now() -> str:
-        return datetime.datetime.strftime(
-            datetime.datetime.now().astimezone(), "%Y-%m-%d %H:%M:%S%z"
-        )
 
     def _build_archive_row(self, arch: HashArchive) -> dict[str, str | int | None]:
         """Return a dict used directly with named-parameter SQL."""
