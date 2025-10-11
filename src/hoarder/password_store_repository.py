@@ -1,8 +1,11 @@
 import collections.abc
 import datetime
 import sqlite3
+
 from pathlib import Path, PurePath
 from typing import cast
+
+from hoarder.sql3_fk import Sqlite3FK
 
 class PasswordStoreRepository:
     """Repository for PasswordStore."""
@@ -20,10 +23,10 @@ class PasswordStoreRepository:
     _CREATE_PASSWORDS: str = """
     CREATE TABLE IF NOT EXISTS passwords (
         id             INTEGER  PRIMARY KEY AUTOINCREMENT,
-        title          TEXT     NOT NULL UNIQUE,
+        password       TEXT     NOT NULL UNIQUE,
         timestamp      TEXT     DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (archive_id)
-          REFERENCES hash_archives(id)
+        FOREIGN KEY (title_id)
+          REFERENCES password_titles(id)
           ON DELETE CASCADE
     );
     """
@@ -32,8 +35,8 @@ class PasswordStoreRepository:
         self._db_path = db_path
         self._create_tables()
 
-    def save(self, archive: HashArchive) -> None:
-        """Insert or replace one archive and all its FileEntry rows."""
+    def save(self, title: str, password: str) -> None:
+        """Insert a password entry for a specific title."""
         archive_row = self._build_archive_row(archive)
 
         with Sqlite3FK(self._db_path) as con:
@@ -105,8 +108,8 @@ class PasswordStoreRepository:
     def _create_tables(self) -> None:
         with Sqlite3FK(self._db_path) as con:
             cur = con.cursor()
-            _ = cur.execute(HashArchiveRepository._CREATE_HASH_ARCHIVES)
-            _ = cur.execute(HashArchiveRepository._CREATE_FILE_ENTRIES)
+            _ = cur.execute(PasswordStoreRepository._CREATE_PASSWORD_TITLES)
+            _ = cur.execute(PasswordStoreRepository._CREATE_PASSWORDS)
 
     @staticmethod
     def _now() -> str:
