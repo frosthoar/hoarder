@@ -13,6 +13,7 @@ from .password_store import PasswordStore as PasswordStore
 from .rar_archive import RarArchive
 from .rar_path import RarScheme
 from .sfv_archive import SfvArchive
+from .password_store_repository import PasswordSqlite3Repository
 
 __all__ = [
     "shared",
@@ -29,4 +30,5 @@ __all__ = [
     "FileEntry",
     "HashArchiveRepository",
     "PasswordStore",
+    "PasswordSqlite3Repository",
 ]
