@@ -1,11 +1,10 @@
 import pathlib
 import subprocess
+import tests.test_case_file_info
 import typing
 
 import pytest
 from hoarder.archives import RarArchive
-
-import tests.test_case_file_info
 
 
 @pytest.mark.parametrize(

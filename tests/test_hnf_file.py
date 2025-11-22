@@ -1,12 +1,11 @@
 import itertools
 import logging
 import os
+import tests.test_case_file_info
 import pathlib
 
 import pytest
 from hoarder.archives import HashNameArchive
-
-import tests.test_case_file_info
 
 logger = logging.getLogger("hoarder.test_hnf_file")
 
