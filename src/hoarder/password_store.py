@@ -11,7 +11,7 @@ class PasswordStore:
 
     def __init__(self, data: dict[str, set[str]] | None = None) -> None:
         """Initialize the password store, optionally from existing data.
-        
+
         Args:
             data: Optional dictionary mapping titles to sets of passwords.
         """

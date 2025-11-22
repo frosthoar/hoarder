@@ -15,7 +15,7 @@ class PasswordRepository(abc.ABC):
     """Abstract base class for a password storage backend."""
 
     @abc.abstractmethod
-    def load_all(self) -> PasswordStore:
+    def load(self) -> PasswordStore:
         """Load all passwords and return them as a PasswordStore."""
         raise NotImplementedError
 
@@ -76,17 +76,19 @@ class PasswordSqlite3Repository(PasswordRepository):
                 )
                 for password in passwords:
                     _ = cur.execute(
-                        "INSERT INTO passwords(title_id, password) SELECT id AS title_id, :password AS password FROM titles WHERE title = :title",
+                        "INSERT INTO passwords(title_id, password) SELECT id AS title_id, :password AS password "
+                        "FROM titles WHERE title = :title",
                         {"password": password, "title": title},
                     )
 
     @override
-    def load_all(self) -> PasswordStore:
+    def load(self) -> PasswordStore:
         """Load all passwords and return them as a PasswordStore."""
         with Sqlite3FK(self._db_path) as con:
             cur = con.cursor()
             _ = cur.execute(
-                "SELECT title, json_group_array(password) FROM titles JOIN passwords ON titles.id = passwords.title_id GROUP BY title ORDER BY title;"
+                "SELECT title, json_group_array(password) FROM titles JOIN passwords ON titles.id = passwords.title_id "
+                "GROUP BY title ORDER BY title;"
             )
             ret = cur.fetchall()
         data = {title: set(json.loads(passwords)) for title, passwords in ret}

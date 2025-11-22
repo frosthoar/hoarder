@@ -10,10 +10,10 @@ from .hash_archive import FileEntry, HashArchive
 from .hash_archive_repository import HashArchiveRepository
 from .hash_name_archive import HashNameArchive
 from .password_store import PasswordStore as PasswordStore
+from .password_store_repository import PasswordSqlite3Repository
 from .rar_archive import RarArchive
 from .rar_path import RarScheme
 from .sfv_archive import SfvArchive
-from .password_store_repository import PasswordSqlite3Repository
 
 __all__ = [
     "shared",
