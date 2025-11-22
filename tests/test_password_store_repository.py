@@ -3,7 +3,7 @@
 import pathlib
 
 import pytest
-from hoarder.passwords import PasswordStore, PasswordSqlite3Repository
+from hoarder.passwords import PasswordSqlite3Repository, PasswordStore
 
 
 @pytest.fixture(scope="function")

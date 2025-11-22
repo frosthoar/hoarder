@@ -1,9 +1,8 @@
 """Tests for the PasswordStore module."""
 
 import pytest
-from typeguard import suppress_type_checks
-
 from hoarder.passwords import PasswordStore
+from typeguard import suppress_type_checks
 
 
 @pytest.fixture(scope="function")
