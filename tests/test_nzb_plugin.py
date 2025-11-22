@@ -5,8 +5,7 @@ import os
 import pathlib
 
 import pytest
-from hoarder.passwords import NzbPasswordPlugin
-from hoarder.passwords import PasswordStore
+from hoarder.passwords import NzbPasswordPlugin, PasswordStore
 
 logger = logging.getLogger("hoarder.tests.test_nzb_plugin")
 

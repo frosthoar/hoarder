@@ -4,9 +4,9 @@ import os
 import pathlib
 
 import pytest
-import tests.test_case_file_info
-
 from hoarder.archives import HashNameArchive
+
+import tests.test_case_file_info
 
 logger = logging.getLogger("hoarder.test_hnf_file")
 

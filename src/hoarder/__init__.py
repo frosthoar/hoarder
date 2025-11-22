@@ -1,9 +1,4 @@
-from . import (
-    archives,
-    passwords,
-    utils,
-    contents_hasher,
-)
+from . import archives, contents_hasher, passwords, utils
 
 __all__ = [
     "utils",

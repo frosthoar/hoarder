@@ -3,8 +3,9 @@ import subprocess
 import typing
 
 import pytest
-import tests.test_case_file_info
 from hoarder.archives import RarArchive
+
+import tests.test_case_file_info
 
 
 @pytest.mark.parametrize(

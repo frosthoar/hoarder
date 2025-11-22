@@ -8,9 +8,9 @@ import traceback
 import xml.etree.ElementTree as ET
 from typing import Callable, NamedTuple
 
+from ..archives.rar_archive import RarArchive
 from .password_plugin import PasswordPlugin
 from .password_store import PasswordStore
-from ..archives.rar_archive import RarArchive
 
 try:
     from typing import override  # type: ignore [attr-defined]

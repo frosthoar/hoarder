@@ -7,9 +7,9 @@ import re
 import subprocess
 import typing
 
-from .hash_archive import Algo, FileEntry, HashArchive
-from .rar_path import RarScheme, find_rar_files, PART_N_PAT, DOT_RNN_PAT
 from ..utils import SEVENZIP
+from .hash_archive import Algo, FileEntry, HashArchive
+from .rar_path import DOT_RNN_PAT, PART_N_PAT, RarScheme, find_rar_files
 
 try:
     from typing import override  # type: ignore [attr-defined]

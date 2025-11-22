@@ -3,13 +3,10 @@ import pathlib
 import typing
 
 import pytest
+from hoarder.archives import (HashArchiveRepository, HashNameArchive,
+                              RarArchive, SfvArchive)
+
 from tests.test_case_file_info import RAR_TEST_ARCHIVE_DEFS
-from hoarder.archives import (
-    RarArchive,
-    SfvArchive,
-    HashArchiveRepository,
-    HashNameArchive,
-)
 
 logger = logging.getLogger()
 
