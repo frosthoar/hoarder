@@ -1,7 +1,6 @@
 from pathlib import Path, PurePath
 
-import hoarder
-from hoarder.hash_archive import Algo, FileEntry
+from hoarder.archives import Algo, FileEntry, RarScheme
 
 HNF_FILES = [
     FileEntry(
@@ -1061,7 +1060,7 @@ RAR_TEST_ARCHIVE_DEFS = [
         "password",
         100,
         19,
-        hoarder.RarScheme.DOT_RNN,
+        RarScheme.DOT_RNN,
         TEST_FILES,
     ),
     (
@@ -1069,7 +1068,7 @@ RAR_TEST_ARCHIVE_DEFS = [
         None,
         100,
         18,
-        hoarder.RarScheme.DOT_RNN,
+        RarScheme.DOT_RNN,
         TEST_FILES,
     ),
     (
@@ -1077,7 +1076,7 @@ RAR_TEST_ARCHIVE_DEFS = [
         None,
         100,
         1,
-        hoarder.RarScheme.DOT_RNN,
+        RarScheme.DOT_RNN,
         TEST_FILES,
     ),
     (
@@ -1085,7 +1084,7 @@ RAR_TEST_ARCHIVE_DEFS = [
         "secret",
         100,
         1,
-        hoarder.RarScheme.DOT_RNN,
+        RarScheme.DOT_RNN,
         TEST_FILES,
     ),
     (
@@ -1093,7 +1092,7 @@ RAR_TEST_ARCHIVE_DEFS = [
         "ninja",
         101,
         21,
-        hoarder.RarScheme.PART_N,
+        RarScheme.PART_N,
         TEST_FILES + [TEST_FILES_MAIN_DIR],
     ),
     (
@@ -1101,7 +1100,7 @@ RAR_TEST_ARCHIVE_DEFS = [
         None,
         101,
         18,
-        hoarder.RarScheme.PART_N,
+        RarScheme.PART_N,
         TEST_FILES + [TEST_FILES_MAIN_DIR],
     ),
     (
@@ -1109,7 +1108,7 @@ RAR_TEST_ARCHIVE_DEFS = [
         "dragon",
         101,
         1,
-        hoarder.RarScheme.DOT_RNN,
+        RarScheme.DOT_RNN,
         TEST_FILES + [TEST_FILES_MAIN_DIR],
     ),
     (
@@ -1117,7 +1116,7 @@ RAR_TEST_ARCHIVE_DEFS = [
         None,
         101,
         1,
-        hoarder.RarScheme.DOT_RNN,
+        RarScheme.DOT_RNN,
         TEST_FILES + [TEST_FILES_MAIN_DIR],
     ),
 ]

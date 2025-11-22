@@ -1,9 +1,9 @@
 from pathlib import Path
 
-import hoarder
 import pytest
 import tests.test_case_file_info
 from hoarder.contents_hasher import CRC32Hasher
+from hoarder.archives import FileEntry
 
 
 def test_crc32_hasher_nonexistent_file():
@@ -23,7 +23,7 @@ def test_hashes_present():
 
 
 @pytest.mark.parametrize("test_files", tests.test_case_file_info.TEST_FILES)
-def test_crc32_hasher_parametrized(test_files: hoarder.hash_archive.FileEntry) -> None:
+def test_crc32_hasher_parametrized(test_files: FileEntry) -> None:
     file_path = Path("test_files/compare") / test_files.path
     if file_path.exists():
         if test_files.hash_value is None:

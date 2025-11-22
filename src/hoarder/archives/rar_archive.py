@@ -8,7 +8,7 @@ import subprocess
 import typing
 
 from .hash_archive import Algo, FileEntry, HashArchive
-from .rar_path import RarScheme
+from .rar_path import RarScheme, find_rar_files, PART_N_PAT, DOT_RNN_PAT
 from ..utils import SEVENZIP
 
 try:
@@ -80,7 +80,7 @@ class RarArchive(HashArchive):
             logger.debug("A directory %s was given, trying to find RAR files", path)
             rar_dict: dict[
                 str, tuple[RarScheme, list[pathlib.Path]]
-            ] = rar_path.find_rar_files(path)
+            ] = find_rar_files(path)
             if len(rar_dict) != 1:
                 raise ValueError(
                     f"Directory {path} contains multiple non-indexed RAR files"
@@ -91,9 +91,9 @@ class RarArchive(HashArchive):
             logger.debug("Found %d volumes in %s", n_volumes, path)
         elif path.is_file():
             logger.debug("A file %s was given, trying to find RAR files", path)
-            if match := rar_path.PART_N_PAT.match(str(path.name)):
+            if match := PART_N_PAT.match(str(path.name)):
                 logger.debug("Path %s matches a PART_N_PAT pattern", path)
-            elif match := rar_path.DOT_RNN_PAT.match(str(path.name)):
+            elif match := DOT_RNN_PAT.match(str(path.name)):
                 logger.debug("Path %s matches a DOT_RNN_PAT pattern", path)
 
             if match:
@@ -104,7 +104,7 @@ class RarArchive(HashArchive):
                     seek_stem,
                     path.parent,
                 )
-                rar_dict = rar_path.find_rar_files(path.parent, seek_stem)
+                rar_dict = find_rar_files(path.parent, seek_stem)
                 if rar_dict:
                     logger.info(rar_dict)
                     scheme, rar_volumes = rar_dict[seek_stem]

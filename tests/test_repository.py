@@ -2,9 +2,9 @@ import logging
 import pathlib
 import typing
 
-import hoarder
 import pytest
 from tests.test_case_file_info import RAR_TEST_ARCHIVE_DEFS
+from hoarder.archives import RarArchive, SfvArchive, HashArchiveRepository, HashNameArchive
 
 logger = logging.getLogger()
 
@@ -12,7 +12,7 @@ logger = logging.getLogger()
 @pytest.fixture(scope="session")
 def create_test_repo(tmpdir_factory):
     p = tmpdir_factory.mktemp("db")
-    ha_repo = hoarder.HashArchiveRepository(pathlib.Path(p / "hoarder.db"))
+    ha_repo = HashArchiveRepository(pathlib.Path(p / "hoarder.db"))
     return ha_repo
 
 
@@ -24,7 +24,7 @@ def test_sfv_repositories(create_test_repo):
 
         print(p.is_file())
 
-        saved_sfv_file = hoarder.SfvArchive.from_path(pathlib.Path(p))
+        saved_sfv_file = SfvArchive.from_path(pathlib.Path(p))
         saved_sfv_file_path = saved_sfv_file.path
         create_test_repo.save(saved_sfv_file)
         retrieved_sfv_file = create_test_repo.load(saved_sfv_file_path)
@@ -42,7 +42,7 @@ def test_rar_repositories(
     rar_file = rar_file_tuple[0]
     logger.debug(f"Now processing {rar_file}")
     password = rar_file_tuple[1]
-    saved_rar_file = hoarder.RarArchive.from_path(
+    saved_rar_file = RarArchive.from_path(
         rar_file,
         password=password,
     )
@@ -60,7 +60,7 @@ def test_hnf_repositories(create_test_repo):
         "[Foobar] Lowercase and Parens - 11 (x264-AC3)(d74b7612).mkv",
         "[Test] Uppercase and Parens! S02E080 (WEB 1080p x264 10-bit AAC) (5A365C81).mkv",
     ]:
-        saved_hnf_file = hoarder.HashNameArchive.from_path(
+        saved_hnf_file = HashNameArchive.from_path(
             pathlib.Path("./test_files/hnf/") / hnf_fn
         )
         saved_hnf_file_path = saved_hnf_file.path

@@ -1,9 +1,10 @@
 import logging
 import pathlib
 
-import hoarder
 import pytest
 import tests.test_case_file_info
+
+from hoarder.archives import FileEntry, RarArchive, RarScheme 
 
 logger = logging.getLogger("hoarder.test_rar_file")
 
@@ -13,7 +14,7 @@ logger = logging.getLogger("hoarder.test_rar_file")
 )
 def test_rar_archives_set(
     rar_data_tuple: tuple[
-        pathlib.Path, str, int, int, hoarder.RarScheme, list[hoarder.FileEntry]
+        pathlib.Path, str, int, int, RarScheme, list[FileEntry]
     ]
 ) -> None:
     (
@@ -26,7 +27,7 @@ def test_rar_archives_set(
     ) = rar_data_tuple
 
     main_archive_path = main_archive_path.resolve()
-    rar_archive = hoarder.RarArchive.from_path(main_archive_path, password=password)
+    rar_archive = RarArchive.from_path(main_archive_path, password=password)
     logger.debug(f"== Listing {main_archive_path}")
     for f in rar_archive.files:
         logger.debug(f)
