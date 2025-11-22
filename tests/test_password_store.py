@@ -1,6 +1,8 @@
 """Tests for the PasswordStore module."""
 
 import pytest
+from typeguard import suppress_type_checks
+
 from hoarder.passwords import PasswordStore
 
 
@@ -425,6 +427,7 @@ def test_ior_operator_does_not_modify_right_operand(
     assert password_store_2["title2"] == {"password2"}
 
 
+@suppress_type_checks
 def test_add_password_type_error_title(password_store: PasswordStore):
     """Test that add_password raises TypeError for non-string title."""
     with pytest.raises(TypeError, match="title must be str"):
@@ -437,6 +440,7 @@ def test_add_password_type_error_title(password_store: PasswordStore):
         password_store.add_password(["title"], "password1")  # pyright: ignore[reportArgumentType]
 
 
+@suppress_type_checks
 def test_add_password_type_error_password(password_store: PasswordStore):
     """Test that add_password raises TypeError for non-string password."""
     with pytest.raises(TypeError, match="password must be str"):
