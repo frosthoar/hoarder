@@ -4,7 +4,12 @@ import typing
 
 import pytest
 from tests.test_case_file_info import RAR_TEST_ARCHIVE_DEFS
-from hoarder.archives import RarArchive, SfvArchive, HashArchiveRepository, HashNameArchive
+from hoarder.archives import (
+    RarArchive,
+    SfvArchive,
+    HashArchiveRepository,
+    HashNameArchive,
+)
 
 logger = logging.getLogger()
 
