@@ -265,7 +265,7 @@ def test_init_with_data():
         "title2": {"password3"},
     }
     store = PasswordStore(data)
-    
+
     assert store["title1"] == {"password1", "password2"}
     assert store["title2"] == {"password3"}
     assert len(store) == 2
@@ -276,7 +276,7 @@ def test_init_with_data_creates_copies():
     original_passwords = {"password1", "password2"}
     data = {"title1": original_passwords}
     store = PasswordStore(data)
-    
+
     # Modifying original shouldn't affect store
     original_passwords.add("password3")
     assert store["title1"] == {"password1", "password2"}
@@ -305,7 +305,7 @@ def test_contains_after_removal(password_store: PasswordStore):
     """Test __contains__ after removing all passwords for a title."""
     password_store.add_password("title1", "password1")
     assert "title1" in password_store
-    
+
     password_store.remove_password("title1", "password1")
     assert "title1" not in password_store
 
@@ -319,10 +319,10 @@ def test_len_with_data(password_store: PasswordStore):
     """Test __len__ with data."""
     password_store.add_password("title1", "password1")
     assert len(password_store) == 1
-    
+
     password_store.add_password("title2", "password2")
     assert len(password_store) == 2
-    
+
     password_store.add_password("title1", "password3")  # Same title
     assert len(password_store) == 2  # Should still be 2 titles
 
@@ -332,7 +332,7 @@ def test_len_after_removal(password_store: PasswordStore):
     password_store.add_password("title1", "password1")
     password_store.add_password("title2", "password2")
     assert len(password_store) == 2
-    
+
     password_store.remove_password("title1", "password1")
     assert len(password_store) == 1
 
@@ -340,10 +340,10 @@ def test_len_after_removal(password_store: PasswordStore):
 def test_iteration_returns_copies(password_store: PasswordStore):
     """Test that iteration returns copies, not references."""
     password_store.add_password("title1", "password1")
-    
+
     items = list(password_store)
     assert len(items) == 1
-    
+
     title, passwords = items[0]
     # Modifying returned set shouldn't affect store
     passwords.add("new_password")
@@ -364,7 +364,7 @@ def test_ior_operator_one_empty(
 ):
     """Test in-place union with one empty store."""
     password_store_2.add_password("title1", "password1")
-    
+
     password_store |= password_store_2
     assert password_store["title1"] == {"password1"}
     assert len(password_store) == 1
@@ -376,7 +376,7 @@ def test_ior_operator_non_overlapping(
     """Test in-place union with non-overlapping titles."""
     password_store.add_password("title1", "password1")
     password_store_2.add_password("title2", "password2")
-    
+
     password_store |= password_store_2
     assert password_store["title1"] == {"password1"}
     assert password_store["title2"] == {"password2"}
@@ -389,10 +389,10 @@ def test_ior_operator_overlapping_titles(
     """Test in-place union with overlapping titles."""
     password_store.add_password("title1", "password1")
     password_store.add_password("title1", "password2")
-    
+
     password_store_2.add_password("title1", "password2")  # Duplicate
     password_store_2.add_password("title1", "password3")  # New
-    
+
     password_store |= password_store_2
     assert password_store["title1"] == {"password1", "password2", "password3"}
 
@@ -403,10 +403,10 @@ def test_ior_operator_modifies_original(
     """Test that |= operator modifies the left operand."""
     password_store.add_password("title1", "password1")
     password_store_2.add_password("title2", "password2")
-    
+
     original_id = id(password_store)
     password_store |= password_store_2
-    
+
     # Should be same object (modified in place)
     assert id(password_store) == original_id
     assert password_store["title1"] == {"password1"}
@@ -419,9 +419,9 @@ def test_ior_operator_does_not_modify_right_operand(
     """Test that |= operator doesn't modify the right operand."""
     password_store.add_password("title1", "password1")
     password_store_2.add_password("title2", "password2")
-    
+
     password_store |= password_store_2
-    
+
     # Right operand should be unchanged
     assert password_store_2["title1"] == set()
     assert password_store_2["title2"] == {"password2"}
@@ -431,33 +431,45 @@ def test_ior_operator_does_not_modify_right_operand(
 def test_add_password_type_error_title(password_store: PasswordStore):
     """Test that add_password raises TypeError for non-string title."""
     with pytest.raises(TypeError, match="title must be str"):
-        password_store.add_password(123, "password1")  # pyright: ignore[reportArgumentType]
-    
+        password_store.add_password(
+            123, "password1"
+        )  # pyright: ignore[reportArgumentType]
+
     with pytest.raises(TypeError, match="title must be str"):
-        password_store.add_password(None, "password1")  # pyright: ignore[reportArgumentType]
-    
+        password_store.add_password(
+            None, "password1"
+        )  # pyright: ignore[reportArgumentType]
+
     with pytest.raises(TypeError, match="title must be str"):
-        password_store.add_password(["title"], "password1")  # pyright: ignore[reportArgumentType]
+        password_store.add_password(
+            ["title"], "password1"
+        )  # pyright: ignore[reportArgumentType]
 
 
 @suppress_type_checks
 def test_add_password_type_error_password(password_store: PasswordStore):
     """Test that add_password raises TypeError for non-string password."""
     with pytest.raises(TypeError, match="password must be str"):
-        password_store.add_password("title1", 123)  # pyright: ignore[reportArgumentType]
-    
+        password_store.add_password(
+            "title1", 123
+        )  # pyright: ignore[reportArgumentType]
+
     with pytest.raises(TypeError, match="password must be str"):
-        password_store.add_password("title1", None)  # pyright: ignore[reportArgumentType]
-    
+        password_store.add_password(
+            "title1", None
+        )  # pyright: ignore[reportArgumentType]
+
     with pytest.raises(TypeError, match="password must be str"):
-        password_store.add_password("title1", ["password"])  # pyright: ignore[reportArgumentType]
+        password_store.add_password(
+            "title1", ["password"]
+        )  # pyright: ignore[reportArgumentType]
 
 
 def test_clear_passwords_removes_from_store(password_store: PasswordStore):
     """Test that clear_passwords actually removes the title from internal store."""
     password_store.add_password("title1", "password1")
     password_store.add_password("title1", "password2")
-    
+
     assert "title1" in password_store._store  # pyright: ignore[reportPrivateUsage]
     password_store.clear_passwords("title1")
     assert "title1" not in password_store._store  # pyright: ignore[reportPrivateUsage]
