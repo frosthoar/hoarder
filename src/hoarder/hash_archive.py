@@ -6,7 +6,6 @@ import dataclasses
 import enum
 import pathlib
 import typing
-
 from abc import abstractmethod
 
 try:
