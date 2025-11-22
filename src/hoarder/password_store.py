@@ -9,8 +9,16 @@ from collections.abc import Iterator
 class PasswordStore:
     """A store that associates titles with multiple passwords using sets."""
 
-    def __init__(self) -> None:
+    def __init__(self, data: dict[str, set[str]] | None = None) -> None:
+        """Initialize the password store, optionally from existing data.
+
+        Args:
+            data: Optional dictionary mapping titles to sets of passwords.
+        """
         self._store: dict[str, set[str]] = defaultdict(set)
+        if data is not None:
+            for title, passwords in data.items():
+                self._store[title] = set(passwords)
 
     def __getitem__(self, title: str) -> set[str]:
         """Get all passwords for the specified title."""
@@ -24,8 +32,10 @@ class PasswordStore:
 
     def add_password(self, title: str, password: str) -> None:
         """Add a password to the specified title."""
-        assert isinstance(title, str)
-        assert isinstance(password, str)
+        if not isinstance(title, str):
+            raise TypeError(f"title must be str, got {type(title).__name__}")
+        if not isinstance(password, str):
+            raise TypeError(f"password must be str, got {type(password).__name__}")
         if title == "":
             raise ValueError("Empty title")
         if password == "":
@@ -71,8 +81,14 @@ class PasswordStore:
 
         # Calculate column widths
         max_title_length = min(MAX_COL_WIDTH, len(max(self._store.keys(), key=len)))
-        max_password_length = max(
-            len(max(passwords, key=len)) for passwords in self._store.values()
+        # Filter out empty password sets to avoid ValueError from max() on empty sequence
+        non_empty_passwords = [
+            passwords for passwords in self._store.values() if passwords
+        ]
+        max_password_length = (
+            max(len(max(passwords, key=len)) for passwords in non_empty_passwords)
+            if non_empty_passwords
+            else 0
         )
 
         title_width = max(max_title_length, len("Title"))
