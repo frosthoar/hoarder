@@ -1,4 +1,5 @@
-from hoarder.rar_path import RarScheme, parse_rar_list, rar_sort
+from hoarder.archives import RarScheme
+from hoarder.archives.rar_path import parse_rar_list, rar_sort
 
 
 def test_parse() -> None:

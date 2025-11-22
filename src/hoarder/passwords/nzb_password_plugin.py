@@ -8,15 +8,16 @@ import traceback
 import xml.etree.ElementTree as ET
 from typing import Callable, NamedTuple
 
-import hoarder
-from hoarder.password_plugin import PasswordPlugin
+from ..archives.rar_archive import RarArchive
+from .password_plugin import PasswordPlugin
+from .password_store import PasswordStore
 
 try:
     from typing import override  # type: ignore [attr-defined]
 except ImportError:
     from typing_extensions import override
 
-logger = logging.getLogger("hoarder.nzb_password_plugin")
+logger = logging.getLogger("hoarder.passwords.nzb_password_plugin")
 
 
 class ArchiveEntry(NamedTuple):
@@ -147,16 +148,16 @@ class NzbPasswordPlugin(PasswordPlugin):
     @staticmethod
     def _process_directory(
         nzb_directory: pathlib.Path,
-    ) -> hoarder.password_store.PasswordStore:
+    ) -> PasswordStore:
         """Process all NZB and RAR files in a directory to extract passwords.
 
         Args:
             nzb_directory (pathlib.Path): Directory containing NZB and RAR files.
 
         Returns:
-            hoarder.password_store.PasswordStore: A PasswordStore containing extracted title-password pairs.
+            PasswordStore: A PasswordStore containing extracted title-password pairs.
         """
-        dir_store = hoarder.password_store.PasswordStore()
+        dir_store = PasswordStore()
         for root, _, files in os.walk(nzb_directory):
             for file in files:
                 full_path: pathlib.Path = nzb_directory / root / file
@@ -168,9 +169,7 @@ class NzbPasswordPlugin(PasswordPlugin):
                         dir_store.add_password(*title_password)
                 elif full_path.suffix == ".rar":
                     logger.debug(f"Processing RARed NZB(s) {full_path}")
-                    rar_file: hoarder.RarArchive = hoarder.RarArchive.from_path(
-                        full_path
-                    )
+                    rar_file: RarArchive = RarArchive.from_path(full_path)
                     for file_entry in rar_file.files:
                         logger.debug(f"Read {file_entry.path}... extracting passwords")
                         title_password = NzbPasswordPlugin._process_file(
@@ -184,13 +183,13 @@ class NzbPasswordPlugin(PasswordPlugin):
         return dir_store
 
     @override
-    def extract_passwords(self) -> hoarder.password_store.PasswordStore:
+    def extract_passwords(self) -> PasswordStore:
         """Extract passwords from all configured NZB directories.
 
         Returns:
-            hoarder.password_store.PasswordStore: A PasswordStore containing all extracted title-password pairs.
+            PasswordStore: A PasswordStore containing all extracted title-password pairs.
         """
-        password_store = hoarder.password_store.PasswordStore()
+        password_store = PasswordStore()
         for p in self._nzb_paths:
             password_store = password_store | NzbPasswordPlugin._process_directory(p)
         return password_store

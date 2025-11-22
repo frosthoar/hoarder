@@ -7,9 +7,15 @@ import pathlib
 import re
 import typing
 
-import hoarder.hash_archive as hash_archive
+from .hash_archive import Algo, FileEntry, HashArchive
 
-logger = logging.getLogger("hoarder.hash_name_file")
+try:
+    from typing import override  # type: ignore [attr-defined]
+except ImportError:
+    from typing_extensions import override
+
+
+logger = logging.getLogger("hoarder.archives.hash_name_file")
 
 T = typing.TypeVar("T", bound="HashNameArchive")
 
@@ -23,7 +29,7 @@ class HashEnclosure(enum.Enum):
     PAREN = "()"
 
 
-class HashNameArchive(hash_archive.HashArchive):
+class HashNameArchive(HashArchive):
     """This class contains information about a file that has a hash in its name."""
 
     # Regular expressions to match hash in file names
@@ -49,7 +55,7 @@ class HashNameArchive(hash_archive.HashArchive):
     def __init__(
         self,
         path: pathlib.Path,
-        files: set[hash_archive.FileEntry] | None = None,
+        files: set[FileEntry] | None = None,
         enc: HashEnclosure = HashEnclosure.SQUARE,
     ) -> None:
         if files is not None:
@@ -65,6 +71,7 @@ class HashNameArchive(hash_archive.HashArchive):
         self.enc = enc
 
     @classmethod
+    @override
     def from_path(cls: type[T], path: pathlib.Path) -> T:
         """Create a HashNameArchive object by reading information from a file name given its path."""
         if not path.is_file():
@@ -76,7 +83,7 @@ class HashNameArchive(hash_archive.HashArchive):
             match = cls._regexes[enc].match(path.name)
             if match:
                 crc = bytes.fromhex(match.group("crc"))
-                algo = hash_archive.Algo.CRC32
+                algo = Algo.CRC32
                 break
         else:
             raise ValueError(f"Could not extract hash from {path}")
@@ -84,7 +91,7 @@ class HashNameArchive(hash_archive.HashArchive):
         file_size = os.path.getsize(path)
 
         files = {
-            hash_archive.FileEntry(
+            FileEntry(
                 pathlib.PurePath(path.name),
                 file_size,
                 False,

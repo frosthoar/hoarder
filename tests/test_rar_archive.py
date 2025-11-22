@@ -4,7 +4,7 @@ import typing
 
 import pytest
 import tests.test_case_file_info
-from hoarder.rar_archive import RarArchive
+from hoarder.archives import RarArchive
 
 
 @pytest.mark.parametrize(

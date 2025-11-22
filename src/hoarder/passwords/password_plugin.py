@@ -3,7 +3,7 @@
 import abc
 import typing
 
-import hoarder.password_store
+from .password_store import PasswordStore
 
 
 class PasswordPlugin(abc.ABC):
@@ -14,6 +14,6 @@ class PasswordPlugin(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def extract_passwords(self) -> hoarder.password_store.PasswordStore:
+    def extract_passwords(self) -> PasswordStore:
         """Extract passwords from the file, returning a mapping of title -> passwords."""
         pass

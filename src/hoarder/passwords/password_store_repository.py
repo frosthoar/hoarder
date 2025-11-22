@@ -7,8 +7,8 @@ try:
 except ImportError:
     from typing_extensions import override
 
-from hoarder.password_store import PasswordStore
-from hoarder.sql3_fk import Sqlite3FK
+from ..utils import Sqlite3FK
+from .password_store import PasswordStore
 
 
 class PasswordRepository(abc.ABC):

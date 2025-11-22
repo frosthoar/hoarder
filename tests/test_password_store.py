@@ -1,7 +1,7 @@
 """Tests for the PasswordStore module."""
 
 import pytest
-from hoarder.password_store import PasswordStore
+from hoarder.passwords import PasswordStore
 
 
 @pytest.fixture(scope="function")

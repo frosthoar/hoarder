@@ -5,15 +5,15 @@ import os
 import pathlib
 import typing
 
-import hoarder.hash_archive as hash_archive
-import hoarder.path_utils as path_utils
+from ..utils import PathType, determine_path_type
+from .hash_archive import Algo, FileEntry, HashArchive
 
-logger = logging.getLogger("hoarder.sfv_file")
+logger = logging.getLogger("hoarder.archives.sfv_file")
 
 T = typing.TypeVar("T", bound="SfvArchive")
 
 
-class SfvArchive(hash_archive.HashArchive):
+class SfvArchive(HashArchive):
     """This class contains information about a SFV file."""
 
     @classmethod
@@ -49,17 +49,11 @@ class SfvArchive(hash_archive.HashArchive):
                         )
 
                     entry_path: pathlib.PurePath
-                    if (
-                        path_utils.determine_path_type(entry_path_str)
-                        == path_utils.PathType.WINDOWS
-                    ):
+                    if determine_path_type(entry_path_str) == PathType.WINDOWS:
                         entry_path = pathlib.PurePath(
                             pathlib.PureWindowsPath(entry_path_str).as_posix()
                         )
-                    elif (
-                        path_utils.determine_path_type(entry_path_str)
-                        == path_utils.PathType.UNRESOLVABLE
-                    ):
+                    elif determine_path_type(entry_path_str) == PathType.UNRESOLVABLE:
                         raise ValueError(
                             f"Could not determine path type of {entry_path_str}"
                         )
@@ -67,12 +61,12 @@ class SfvArchive(hash_archive.HashArchive):
                         entry_path = pathlib.PurePosixPath(entry_path_str)
 
                     files.append(
-                        hash_archive.FileEntry(
+                        FileEntry(
                             pathlib.PurePath(entry_path),
                             file_size,
                             False,
                             bytes.fromhex(crc),
-                            hash_archive.Algo.CRC32,
+                            Algo.CRC32,
                         )
                     )
                 except ValueError as e:
