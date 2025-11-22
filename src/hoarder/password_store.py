@@ -9,8 +9,16 @@ from collections.abc import Iterator
 class PasswordStore:
     """A store that associates titles with multiple passwords using sets."""
 
-    def __init__(self) -> None:
+    def __init__(self, data: dict[str, set[str]] | None = None) -> None:
+        """Initialize the password store, optionally from existing data.
+        
+        Args:
+            data: Optional dictionary mapping titles to sets of passwords.
+        """
         self._store: dict[str, set[str]] = defaultdict(set)
+        if data is not None:
+            for title, passwords in data.items():
+                self._store[title] = set(passwords)
 
     def __getitem__(self, title: str) -> set[str]:
         """Get all passwords for the specified title."""
