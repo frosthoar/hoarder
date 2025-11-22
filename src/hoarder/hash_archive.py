@@ -14,7 +14,6 @@ except ImportError:
     from typing_extensions import override
 
 
-
 class Algo(enum.IntEnum):
     """This class contains the possible hash algorithms."""
 
@@ -56,6 +55,7 @@ class FileEntry:
 
 
 T = typing.TypeVar("T", bound="HashArchive")
+
 
 class HashArchive(abc.ABC):
     """This class contains information about an hash file."""
