@@ -20,7 +20,7 @@ def password_repo(temp_db_path):
 
 def test_init_creates_tables(temp_db_path):
     """Test that initialization creates the database tables."""
-    repo = PasswordSqlite3Repository(temp_db_path)
+    _ = PasswordSqlite3Repository(temp_db_path)
 
     # Verify database file exists
     assert temp_db_path.exists()
@@ -46,7 +46,7 @@ def test_init_creates_tables(temp_db_path):
 def test_init_with_string_path(tmp_path):
     """Test that initialization works with string path."""
     db_path = str(tmp_path / "test.db")
-    repo = PasswordSqlite3Repository(db_path)
+    _ = PasswordSqlite3Repository(db_path)
     assert pathlib.Path(db_path).exists()
 
 
