@@ -1,10 +1,17 @@
 """This module contains classes and functions to handle files (e.g. SFV, RAR, ...) containing hash information."""
 
 import abc
+import collections.abc
 import dataclasses
 import enum
 import pathlib
 import typing
+from abc import abstractmethod
+
+try:
+    from typing import override  # type: ignore [attr-defined]
+except ImportError:
+    from typing_extensions import override
 
 
 class Algo(enum.IntEnum):
@@ -42,7 +49,8 @@ class FileEntry:
     def __lt__(self: Self, other: Self) -> bool:
         return self.path < other.path
 
-    def __hash__(self: Self) -> int:
+    @override
+    def __hash__(self) -> int:
         return hash(self.path)
 
 
@@ -64,19 +72,19 @@ class HashArchive(abc.ABC):
 
     def __init__(self, path: pathlib.Path, files: set[FileEntry] | None = None) -> None:
         """Create a HashArchive object by reading information from an hash file given its path."""
-        self.files: set[FileEntry] = files or set()
-        self.path: pathlib.Path = path
-        self.is_deleted: bool = True
+        self.files = files or set()
+        self.path = path
+        self.is_deleted = True
 
     @classmethod
-    @abc.abstractmethod
+    @abstractmethod
     def from_path(cls: typing.Type[T], path: pathlib.Path) -> T:
         """Create a HashArchive object by reading information from an hash file given its path."""
 
     def __len__(self) -> int:
         return len(self.files)
 
-    def __iter__(self) -> typing.Iterator[FileEntry]:
+    def __iter__(self) -> collections.abc.Iterator[FileEntry]:
         return iter(self.files)
 
     def _printable_attributes(self):
@@ -88,6 +96,7 @@ class HashArchive(abc.ABC):
             and not hasattr(type(self), a)
         ]
 
+    @override
     def __repr__(self) -> str:
         class_name = self.__class__.__name__
         d: dict[str, str | list[str]] = {}
