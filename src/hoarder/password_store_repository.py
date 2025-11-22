@@ -69,8 +69,6 @@ class PasswordSqlite3Repository(PasswordRepository):
         """Save the given PasswordStore to persistent storage."""
         with Sqlite3FK(self._db_path) as con:
             cur = con.cursor()
-            title: str
-            passwords: set[str]
             for title, passwords in store:
                 _ = cur.execute(
                     "INSERT INTO titles (title) VALUES (:title) ON CONFLICT DO NOTHING;",

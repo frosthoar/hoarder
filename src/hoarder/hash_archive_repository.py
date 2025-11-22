@@ -173,7 +173,7 @@ class HashArchiveRepository:
             }
             if archive_path:
                 ret_dict.update(archive_path=str(archive_path))
-            yield (ret_dict)
+            yield ret_dict
 
     @staticmethod
     def _fill_archive(row: sqlite3.Row) -> HashArchive:
