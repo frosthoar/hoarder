@@ -9,7 +9,6 @@ from hoarder.archives import (
     RarArchive,
     SfvArchive,
 )
-
 from tests.test_case_file_info import RAR_TEST_ARCHIVE_DEFS
 
 logger = logging.getLogger()

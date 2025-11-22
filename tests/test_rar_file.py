@@ -2,9 +2,8 @@ import logging
 import pathlib
 
 import pytest
-from hoarder.archives import FileEntry, RarArchive, RarScheme
-
 import tests.test_case_file_info
+from hoarder.archives import FileEntry, RarArchive, RarScheme
 
 logger = logging.getLogger("hoarder.test_rar_file")
 

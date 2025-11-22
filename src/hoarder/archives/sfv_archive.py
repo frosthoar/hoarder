@@ -5,8 +5,8 @@ import os
 import pathlib
 import typing
 
-from .hash_archive import Algo, FileEntry, HashArchive
 from ..utils import determine_path_type, PathType
+from .hash_archive import Algo, FileEntry, HashArchive
 
 logger = logging.getLogger("hoarder.archives.sfv_file")
 

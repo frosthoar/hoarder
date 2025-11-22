@@ -1,9 +1,9 @@
 import pathlib
 import subprocess
-import tests.test_case_file_info
 import typing
 
 import pytest
+import tests.test_case_file_info
 from hoarder.archives import RarArchive
 
 
