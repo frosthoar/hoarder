@@ -9,7 +9,6 @@ from hoarder.rar_archive import RarArchive
 from hoarder.rar_path import RarScheme
 from hoarder.sfv_archive import SfvArchive
 from hoarder.sql3_fk import Sqlite3FK
-from hoarder.db_utils import now_str
 
 
 class HashArchiveRepository:
@@ -59,7 +58,6 @@ class HashArchiveRepository:
 
         with Sqlite3FK(self._db_path) as con:
             cur = con.cursor()
-            _ = cur.execute("BEGIN;")
             _ = cur.execute(
                 "DELETE FROM hash_archives WHERE path = ?;", (archive_row["path"],)
             )
@@ -83,10 +81,13 @@ class HashArchiveRepository:
                     """,
                     fe_rows,
                 )
-            con.commit()
 
-    def load(self, path: Path | str) -> HashArchive | None:
-        """Return the archive (plus its FileEntry set) previously stored."""
+    def load(self, path: Path | str) -> HashArchive:
+        """Return the archive (plus its FileEntry set) previously stored.
+        
+        Raises:
+            FileNotFoundError: If the archive with the given path is not found.
+        """
         with Sqlite3FK(self._db_path) as con:
             con.row_factory = sqlite3.Row
             cur = con.cursor()
@@ -114,9 +115,9 @@ class HashArchiveRepository:
             archive.files = {
                 FileEntry(
                     path=PurePath(cast(str, r["path"])),
-                    size=cast(int, r["size"]),
+                    size=cast(int | None, r["size"]),
                     is_dir=bool(cast(int, r["is_dir"])),
-                    hash_value=cast(bytes, r["hash_value"]),
+                    hash_value=cast(bytes | None, r["hash_value"]),
                     algo=Algo(r["algo"]) if r["algo"] is not None else None,
                 )
                 for r in fe_rows
@@ -124,6 +125,7 @@ class HashArchiveRepository:
             return archive
 
     def _create_tables(self) -> None:
+        """Create the database tables if they don't exist."""
         with Sqlite3FK(self._db_path) as con:
             cur = con.cursor()
             _ = cur.execute(HashArchiveRepository._CREATE_HASH_ARCHIVES)
@@ -188,19 +190,19 @@ class HashArchiveRepository:
             arch = RarArchive(
                 Path(archive_path),
                 files=None,
-                password=cast(str, row["password"]),
-                version=cast(str, row["rar_version"]),
+                password=cast(str | None, row["password"]),
+                version=cast(str | None, row["rar_version"]),
                 scheme=(
                     RarScheme(cast(int, row["rar_scheme"]))
                     if row["rar_scheme"] is not None
                     else None
                 ),
-                n_volumes=cast(int, row["n_volumes"]),
+                n_volumes=cast(int | None, row["n_volumes"]),
             )
         elif archive_type == "SfvArchive":
             arch = SfvArchive(Path(archive_path), files=set())
         else:
-            raise ValueError(f"Unknown archive type in databaase: {archive_type}")
+            raise ValueError(f"Unknown archive type in database: {archive_type}")
 
         arch.is_deleted = bool(cast(int, row["is_deleted"]))
         return arch
