@@ -142,9 +142,7 @@ class RarArchive(HashArchive):
                     # so the CRCs in the header are not useful for verification.
                     hash_value = bytes.fromhex(entry["CRC"]) if "CRC" in entry else None
                     algo = Algo.CRC32 if hash_value else None
-                files.add(
-                    FileEntry(entry_path, size, is_dir, hash_value, algo)
-                )
+                files.add(FileEntry(entry_path, size, is_dir, hash_value, algo))
         logger.info(scheme)
         return cls(main_volume, files, password, version, scheme, n_volumes)
 

@@ -49,17 +49,11 @@ class SfvArchive(HashArchive):
                         )
 
                     entry_path: pathlib.PurePath
-                    if (
-                        determine_path_type(entry_path_str)
-                        == PathType.WINDOWS
-                    ):
+                    if determine_path_type(entry_path_str) == PathType.WINDOWS:
                         entry_path = pathlib.PurePath(
                             pathlib.PureWindowsPath(entry_path_str).as_posix()
                         )
-                    elif (
-                        determine_path_type(entry_path_str)
-                        == PathType.UNRESOLVABLE
-                    ):
+                    elif determine_path_type(entry_path_str) == PathType.UNRESOLVABLE:
                         raise ValueError(
                             f"Could not determine path type of {entry_path_str}"
                         )
