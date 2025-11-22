@@ -2,6 +2,11 @@ import abc
 import json
 from pathlib import Path
 
+try:
+    from typing import override  # type: ignore [attr-defined]
+except ImportError:
+    from typing_extensions import override
+
 from hoarder.password_store import PasswordStore
 from hoarder.sql3_fk import Sqlite3FK
 
@@ -59,10 +64,13 @@ class PasswordSqlite3Repository(PasswordRepository):
         self._db_path = db_path
         self._create_tables(self._db_path)
 
+    @override
     def save(self, store: PasswordStore) -> None:
         """Save the given PasswordStore to persistent storage."""
         with Sqlite3FK(self._db_path) as con:
             cur = con.cursor()
+            title: str
+            passwords: set[str]
             for title, passwords in store:
                 _ = cur.execute(
                     "INSERT INTO titles (title) VALUES (:title) ON CONFLICT DO NOTHING;",
@@ -74,6 +82,7 @@ class PasswordSqlite3Repository(PasswordRepository):
                         {"password": password, "title": title},
                     )
 
+    @override
     def load_all(self) -> PasswordStore:
         """Load all passwords and return them as a PasswordStore."""
         with Sqlite3FK(self._db_path) as con:
