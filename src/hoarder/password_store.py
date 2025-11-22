@@ -82,7 +82,9 @@ class PasswordStore:
         # Calculate column widths
         max_title_length = min(MAX_COL_WIDTH, len(max(self._store.keys(), key=len)))
         # Filter out empty password sets to avoid ValueError from max() on empty sequence
-        non_empty_passwords = [passwords for passwords in self._store.values() if passwords]
+        non_empty_passwords = [
+            passwords for passwords in self._store.values() if passwords
+        ]
         max_password_length = (
             max(len(max(passwords, key=len)) for passwords in non_empty_passwords)
             if non_empty_passwords

@@ -84,7 +84,7 @@ class HashArchiveRepository:
 
     def load(self, path: Path | str) -> HashArchive:
         """Return the archive (plus its FileEntry set) previously stored.
-        
+
         Raises:
             FileNotFoundError: If the archive with the given path is not found.
         """
