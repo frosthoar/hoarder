@@ -7,35 +7,35 @@ import re
 import subprocess
 import typing
 
-import hoarder.hash_archive as hash_archive
-import hoarder.rar_path as rar_path
-from hoarder.shared import SEVENZIP
+from .hash_archive import Algo, FileEntry, HashArchive
+from .rar_path import RarScheme
+from ..utils import SEVENZIP
 
 try:
     from typing import override  # type: ignore [attr-defined]
 except ImportError:
     from typing_extensions import override
 
-logger = logging.getLogger("hoarder.rar_file")
+logger = logging.getLogger("hoarder.archives.rar_file")
 
 T = typing.TypeVar("T", bound="RarArchive")
 
 
-class RarArchive(hash_archive.HashArchive):
+class RarArchive(HashArchive):
     """This class contains information about a RAR file."""
 
     password: str | None
-    scheme: rar_path.RarScheme | None
+    scheme: RarScheme | None
     version: str | None
     n_volumes: int | None
 
     def __init__(
         self,
         path: pathlib.Path,
-        files: set[hash_archive.FileEntry] | None = None,
+        files: set[FileEntry] | None = None,
         password: str | None = None,
         version: str | None = None,
-        scheme: rar_path.RarScheme | None = None,
+        scheme: RarScheme | None = None,
         n_volumes: int | None = None,
     ) -> None:
         super().__init__(path, files)
@@ -52,12 +52,12 @@ class RarArchive(hash_archive.HashArchive):
             raise ValueError(f"Invalid number of volumes for {self.path}")
         if self.n_volumes == 1:
             return [self.path]
-        if self.scheme == rar_path.RarScheme.DOT_RNN:
+        if self.scheme == RarScheme.DOT_RNN:
             return [self.path.parent / f"{self.path.stem}.rar"] + [
                 self.path.parent / f"{self.path.stem}.r{index:02d}"
                 for index in range(0, self.n_volumes - 1)
             ]
-        if self.scheme == rar_path.RarScheme.PART_N:
+        if self.scheme == RarScheme.PART_N:
             stem = self.path.stem.split(".part")[0]
             volume_list = [
                 self.path.parent / f"{stem}.part{index}.rar"
@@ -79,7 +79,7 @@ class RarArchive(hash_archive.HashArchive):
         if path.is_dir():
             logger.debug("A directory %s was given, trying to find RAR files", path)
             rar_dict: dict[
-                str, tuple[rar_path.RarScheme, list[pathlib.Path]]
+                str, tuple[RarScheme, list[pathlib.Path]]
             ] = rar_path.find_rar_files(path)
             if len(rar_dict) != 1:
                 raise ValueError(
@@ -129,7 +129,7 @@ class RarArchive(hash_archive.HashArchive):
         else:
             version = type_entries[0]["Type"]
 
-        files: set[hash_archive.FileEntry] = set()
+        files: set[FileEntry] = set()
         for entry in infos:
             if "Path" in entry and "Type" not in entry:
                 entry_path = pathlib.PurePath(entry["Path"])
@@ -141,9 +141,9 @@ class RarArchive(hash_archive.HashArchive):
                     # RAR5 hashes the file contents again with their respective mtimes,
                     # so the CRCs in the header are not useful for verification.
                     hash_value = bytes.fromhex(entry["CRC"]) if "CRC" in entry else None
-                    algo = hash_archive.Algo.CRC32 if hash_value else None
+                    algo = Algo.CRC32 if hash_value else None
                 files.add(
-                    hash_archive.FileEntry(entry_path, size, is_dir, hash_value, algo)
+                    FileEntry(entry_path, size, is_dir, hash_value, algo)
                 )
         logger.info(scheme)
         return cls(main_volume, files, password, version, scheme, n_volumes)
@@ -257,7 +257,7 @@ class RarArchive(hash_archive.HashArchive):
                         crc = self.get_crc32_slow(entry.path)  # used for PART_N, slow
 
                     entry.hash_value = crc
-                    entry.algo = hash_archive.Algo.CRC32
+                    entry.algo = Algo.CRC32
                 except subprocess.CalledProcessError:
                     logger.error(
                         "Failed to get CRC32 for %(entry_path)s",

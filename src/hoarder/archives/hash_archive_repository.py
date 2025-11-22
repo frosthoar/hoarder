@@ -3,12 +3,12 @@ import sqlite3
 from pathlib import Path, PurePath
 from typing import cast
 
-from hoarder.hash_archive import Algo, FileEntry, HashArchive
-from hoarder.hash_name_archive import HashEnclosure, HashNameArchive
-from hoarder.rar_archive import RarArchive
-from hoarder.rar_path import RarScheme
-from hoarder.sfv_archive import SfvArchive
-from hoarder.sql3_fk import Sqlite3FK
+from .hash_archive import Algo, FileEntry, HashArchive
+from .hash_name_archive import HashEnclosure, HashNameArchive
+from .rar_archive import RarArchive
+from .rar_path import RarScheme
+from .sfv_archive import SfvArchive
+from ..utils.sql3_fk import Sqlite3FK
 
 
 class HashArchiveRepository:
