@@ -1,14 +1,19 @@
 """This module contains classes and functions to handle files (e.g. SFV, RAR, ...) containing hash information."""
 
 import abc
+import collections.abc
 import dataclasses
 import enum
 import pathlib
 import typing
-import collections.abc
 
-from typing import override
 from abc import abstractmethod
+
+try:
+    from typing import override  # type: ignore [attr-defined]
+except ImportError:
+    from typing_extensions import override
+
 
 
 class Algo(enum.IntEnum):
