@@ -19,8 +19,8 @@ class PasswordRepository(abc.ABC):
         raise NotImplementedError
 
 
-class PasswordSqlite3Repository:
-    """Repository for PasswordStore."""
+class PasswordSqlite3Repository(PasswordRepository):
+    """Repository for PasswordStore using SQLite3 backend."""
 
     _db_path: str | Path
 
@@ -46,37 +46,39 @@ class PasswordSqlite3Repository:
     """
 
     @staticmethod
-    def _create_tables(db_path) -> None:
+    def _create_tables(db_path: str | Path) -> None:
+        """Create the database tables if they don't exist."""
         with Sqlite3FK(db_path) as con:
             cur = con.cursor()
             _ = cur.execute(PasswordSqlite3Repository._CREATE_TITLES)
             _ = cur.execute(PasswordSqlite3Repository._CREATE_PASSWORDS)
 
     def __init__(self, db_path: str | Path) -> None:
+        """Initialize the repository with the given database path."""
         self._db_path = db_path
         self._create_tables(self._db_path)
 
-    def save(self, title: str, password: str) -> None:
+    def save(self, data: dict[str, set[str]]) -> None:
+        """Save the given password dictionary to persistent storage."""
         with Sqlite3FK(self._db_path) as con:
             cur = con.cursor()
-            _ = cur.execute("BEGIN;")
-            _ = cur.execute(
-                "INSERT INTO titles (title) VALUES (:title) ON CONFLICT DO NOTHING;",
-                {"title": title},
-            )
-            _ = cur.execute(
-                "INSERT INTO passwords(title_id, password) SELECT id AS title_id, :password AS password FROM titles WHERE title = :title",
-                {"password": password, "title": title},
-            )
-            con.commit()
+            for title, passwords in data.items():
+                _ = cur.execute(
+                    "INSERT INTO titles (title) VALUES (:title) ON CONFLICT DO NOTHING;",
+                    {"title": title},
+                )
+                for password in passwords:
+                    _ = cur.execute(
+                        "INSERT INTO passwords(title_id, password) SELECT id AS title_id, :password AS password FROM titles WHERE title = :title",
+                        {"password": password, "title": title},
+                    )
 
     def load_all(self) -> dict[str, set[str]]:
+        """Load all passwords and return them as a dict."""
         with Sqlite3FK(self._db_path) as con:
             cur = con.cursor()
-            _ = cur.execute("BEGIN;")
             _ = cur.execute(
-                "SELECT title, json_group_array(password) FROM titles JOIN passwords ON titles.id = passwords.title_id GROUP BY title ORDER BY TITLE;"
+                "SELECT title, json_group_array(password) FROM titles JOIN passwords ON titles.id = passwords.title_id GROUP BY title ORDER BY title;"
             )
             ret = cur.fetchall()
-            con.commit()
         return {title: set(json.loads(passwords)) for title, passwords in ret}
