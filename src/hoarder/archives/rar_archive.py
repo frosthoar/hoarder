@@ -31,14 +31,15 @@ class RarArchive(HashArchive):
 
     def __init__(
         self,
-        path: pathlib.Path,
+        root: pathlib.Path,
+        path: pathlib.PurePath,
         files: set[FileEntry] | None = None,
         password: str | None = None,
         version: str | None = None,
         scheme: RarScheme | None = None,
         n_volumes: int | None = None,
     ) -> None:
-        super().__init__(path, files)
+        super().__init__(root, path, files)
         self.password = password
         self.scheme = scheme
         self.n_volumes = n_volumes
@@ -47,20 +48,20 @@ class RarArchive(HashArchive):
     def get_volumes(self) -> list[pathlib.Path]:
         """Get a list of all volumes of the same RAR archive."""
         if self.n_volumes is None:
-            raise ValueError(f"Volumes not set for {self.path}")
+            raise ValueError(f"Volumes not set for {self.full_path}")
         if self.n_volumes == 0:
-            raise ValueError(f"Invalid number of volumes for {self.path}")
+            raise ValueError(f"Invalid number of volumes for {self.full_path}")
         if self.n_volumes == 1:
-            return [self.path]
+            return [self.full_path]
         if self.scheme == RarScheme.DOT_RNN:
-            return [self.path.parent / f"{self.path.stem}.rar"] + [
-                self.path.parent / f"{self.path.stem}.r{index:02d}"
+            return [self.root / f"{self.path.stem}.rar"] + [
+                self.root / f"{self.path.stem}.r{index:02d}"
                 for index in range(0, self.n_volumes - 1)
             ]
         if self.scheme == RarScheme.PART_N:
             stem = self.path.stem.split(".part")[0]
             volume_list = [
-                self.path.parent / f"{stem}.part{index}.rar"
+                self.root / f"{stem}.part{index}.rar"
                 for index in range(1, self.n_volumes + 1)
             ]
             for p in volume_list:
@@ -68,29 +69,41 @@ class RarArchive(HashArchive):
                     raise FileNotFoundError(f"Volume {p} not found")
             return volume_list
         raise ValueError(
-            f"Ambiguous RAR file {self.path} with {self.n_volumes} volumes"
+            f"Ambiguous RAR file {self.full_path} with {self.n_volumes} volumes"
         )
 
     @classmethod
     @override
-    def from_path(cls: type[T], path: pathlib.Path, password: str | None = None) -> T:
-        """Create a RarArchive object by reading information from a (main) RAR file given its path."""
+    def from_path(cls: type[T], root: pathlib.Path, path: pathlib.PurePath, password: str | None = None) -> T:
+        """Create a RarArchive object by reading information from a (main) RAR file given its root and path.
+        
+        Args:
+            root: The root directory path (explicitly set, not inferred)
+            path: The relative path from root (as PurePath)
+            password: Optional password for encrypted archives
+        """
+        full_path = root / path
 
-        if path.is_dir():
-            logger.debug("A directory %s was given, trying to find RAR files", path)
+        if full_path.is_dir():
+            logger.debug("A directory %s was given, trying to find RAR files", full_path)
             rar_dict: dict[str, tuple[RarScheme, list[pathlib.Path]]] = find_rar_files(
-                path
+                full_path
             )
             if len(rar_dict) != 1:
                 raise ValueError(
-                    f"Directory {path} contains multiple non-indexed RAR files"
+                    f"Directory {full_path} contains multiple non-indexed RAR files"
                 )
             _, (scheme, rar_volumes) = rar_dict.popitem()
             n_volumes = len(rar_volumes)
             main_volume = rar_volumes[0]
-            logger.debug("Found %d volumes in %s", n_volumes, path)
-        elif path.is_file():
-            logger.debug("A file %s was given, trying to find RAR files", path)
+            # Calculate relative path from root
+            try:
+                main_volume_path = main_volume.relative_to(root)
+            except ValueError:
+                raise ValueError(f"Main volume {main_volume} is not under root {root}")
+            logger.debug("Found %d volumes in %s", n_volumes, full_path)
+        elif full_path.is_file():
+            logger.debug("A file %s was given, trying to find RAR files", full_path)
             if match := PART_N_PAT.match(str(path.name)):
                 logger.debug("Path %s matches a PART_N_PAT pattern", path)
             elif match := DOT_RNN_PAT.match(str(path.name)):
@@ -99,33 +112,40 @@ class RarArchive(HashArchive):
             if match:
                 seek_stem = match["stem"]
                 logger.debug("Path %s matches a RAR pattern", path)
+                # Search in the directory containing the file (root / path.parent)
+                search_dir = root / path.parent if path.parent != pathlib.PurePath(".") else root
                 logger.debug(
                     "Finding RAR files with stem %s in directory %s",
                     seek_stem,
-                    path.parent,
+                    search_dir,
                 )
-                rar_dict = find_rar_files(path.parent, seek_stem)
+                rar_dict = find_rar_files(search_dir, seek_stem)
                 if rar_dict:
                     logger.info(rar_dict)
                     scheme, rar_volumes = rar_dict[seek_stem]
                     n_volumes = len(rar_volumes)
-                    logger.debug("Found %d volumes in %s", n_volumes, path.parent)
+                    logger.debug("Found %d volumes in %s", n_volumes, search_dir)
                     main_volume = rar_dict[seek_stem][1][0]
+                    # Calculate relative path from root
+                    try:
+                        main_volume_path = main_volume.relative_to(root)
+                    except ValueError:
+                        raise ValueError(f"Main volume {main_volume} is not under root {root}")
                     logger.debug("Main volume is %s", main_volume)
                 else:
-                    raise ValueError(f"Path {path} does not match any RAR pattern")
+                    raise ValueError(f"Path {full_path} does not match any RAR pattern")
             else:
-                raise ValueError(f"Path {path} does not match any RAR pattern")
+                raise ValueError(f"Path {full_path} does not match any RAR pattern")
         else:
-            logger.debug("Path %s is not a file or directory", path)
-            raise FileNotFoundError(f"{path} could not be found")
+            logger.debug("Path %s is not a file or directory", full_path)
+            raise FileNotFoundError(f"{full_path} could not be found")
 
         infos = RarArchive.list_rar(main_volume, password)
         type_entries = [entry for entry in infos if "Type" in entry]
 
         if not type_entries or len(type_entries) > 1:
             version = None
-            logger.warning(f"No 'Type' entries found in {path}")
+            logger.warning(f"No 'Type' entries found in {full_path}")
         else:
             version = type_entries[0]["Type"]
 
@@ -144,7 +164,7 @@ class RarArchive(HashArchive):
                     algo = Algo.CRC32 if hash_value else None
                 files.add(FileEntry(entry_path, size, is_dir, hash_value, algo))
         logger.info(scheme)
-        return cls(main_volume, files, password, version, scheme, n_volumes)
+        return cls(root, pathlib.PurePath(main_volume_path), files, password, version, scheme, n_volumes)
 
     @classmethod
     def list_rar(
@@ -200,7 +220,7 @@ class RarArchive(HashArchive):
             "-scsUTF-8",
             "-sccUTF-8",
             "-p" + (self.password or ""),
-            str(self.path),
+            str(self.full_path),
             str(entry_path),
         ]
         logger.debug(
@@ -245,7 +265,7 @@ class RarArchive(HashArchive):
     def update_hash_values(self):
         """Update the hash values of all files in the archive.
         This will always use the slow method."""
-        logger.debug("Updating hash values for %(name)s", {"name": self.path.name})
+        logger.debug("Updating hash values for %(name)s", {"name": self.full_path.name})
         for entry in self:
             if not entry.hash_value:
                 try:
@@ -274,7 +294,7 @@ class RarArchive(HashArchive):
             "-scsUTF-8",
             "-sccUTF-8",
             "-p" + (self.password if self.password else ""),
-            str(self.path),
+            str(self.full_path),
             str(path),
         ]
 

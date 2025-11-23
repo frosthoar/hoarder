@@ -29,11 +29,14 @@ def test_sfv_repositories(create_test_repo):
 
         print(p.is_file())
 
-        saved_sfv_file = SfvArchive.from_path(pathlib.Path(p))
-        saved_sfv_file_path = saved_sfv_file.path
+        root = p.parent
+        path = pathlib.PurePath(p.name)
+        saved_sfv_file = SfvArchive.from_path(root, path)
         create_test_repo.save(saved_sfv_file)
-        retrieved_sfv_file = create_test_repo.load(saved_sfv_file_path)
+        retrieved_sfv_file = create_test_repo.load(saved_sfv_file.root, saved_sfv_file.path)
 
+        print(saved_sfv_file)
+        print(retrieved_sfv_file)
         assert repr(saved_sfv_file) == repr(retrieved_sfv_file)
 
 
@@ -47,13 +50,15 @@ def test_rar_repositories(
     rar_file = rar_file_tuple[0]
     logger.debug(f"Now processing {rar_file}")
     password = rar_file_tuple[1]
+    root = rar_file.parent
+    path = pathlib.PurePath(rar_file.name)
     saved_rar_file = RarArchive.from_path(
-        rar_file,
+        root,
+        path,
         password=password,
     )
-    saved_rar_file_path = saved_rar_file.path
     create_test_repo.save(saved_rar_file)
-    retrieved_rar_file = create_test_repo.load(saved_rar_file_path)
+    retrieved_rar_file = create_test_repo.load(saved_rar_file.root, saved_rar_file.path)
 
     assert repr(saved_rar_file) == repr(retrieved_rar_file)
 
@@ -65,11 +70,11 @@ def test_hnf_repositories(create_test_repo):
         "[Foobar] Lowercase and Parens - 11 (x264-AC3)(d74b7612).mkv",
         "[Test] Uppercase and Parens! S02E080 (WEB 1080p x264 10-bit AAC) (5A365C81).mkv",
     ]:
-        saved_hnf_file = HashNameArchive.from_path(
-            pathlib.Path("./test_files/hnf/") / hnf_fn
-        )
-        saved_hnf_file_path = saved_hnf_file.path
+        hnf_path = pathlib.Path("./test_files/hnf/") / hnf_fn
+        root = hnf_path.parent
+        path = pathlib.PurePath(hnf_path.name)
+        saved_hnf_file = HashNameArchive.from_path(root, path)
         create_test_repo.save(saved_hnf_file)
-        retrieved_hnf_file = create_test_repo.load(saved_hnf_file_path)
+        retrieved_hnf_file = create_test_repo.load(saved_hnf_file.root, saved_hnf_file.path)
 
     assert repr(saved_hnf_file) == repr(retrieved_hnf_file)

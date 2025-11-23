@@ -16,11 +16,19 @@ class HashArchiveRepository:
 
     _db_path: str | Path
 
+    _CREATE_ROOT_DIRECTORIES: str = """
+    CREATE TABLE IF NOT EXISTS root_directories (
+        id             INTEGER  PRIMARY KEY AUTOINCREMENT,
+        path           TEXT     NOT NULL UNIQUE
+    );
+    """
+
     _CREATE_HASH_ARCHIVES: str = """
     CREATE TABLE IF NOT EXISTS hash_archives (
         id             INTEGER  PRIMARY KEY AUTOINCREMENT,
         type           TEXT     NOT NULL,
-        path           TEXT     NOT NULL UNIQUE,
+        root_id        INTEGER  NOT NULL,
+        path           TEXT     NOT NULL,
         is_deleted        INTEGER,
         timestamp      TEXT     DEFAULT CURRENT_TIMESTAMP,
         -- HashNameArchive
@@ -29,7 +37,11 @@ class HashArchiveRepository:
         password       TEXT,
         rar_scheme     INTEGER,
         rar_version    TEXT,
-        n_volumes      INTEGER
+        n_volumes      INTEGER,
+        FOREIGN KEY (root_id)
+          REFERENCES root_directories(id)
+          ON DELETE CASCADE,
+        UNIQUE(root_id, path)
     );
     """
 
@@ -58,9 +70,28 @@ class HashArchiveRepository:
 
         with Sqlite3FK(self._db_path) as con:
             cur = con.cursor()
+            # Insert or get root directory
+            root_path_str = str(archive.root.resolve())
             _ = cur.execute(
-                "DELETE FROM hash_archives WHERE path = ?;", (archive_row["path"],)
+                "INSERT OR IGNORE INTO root_directories (path) VALUES (?);",
+                (root_path_str,),
             )
+            root_row = cur.execute(
+                "SELECT id FROM root_directories WHERE path = ?;",
+                (root_path_str,),
+            ).fetchone()
+            root_id = root_row[0] if root_row else None
+            if root_id is None:
+                raise ValueError(f"Failed to get root_id for {root_path_str}")
+
+            # Delete existing archive with same root_id and path
+            _ = cur.execute(
+                "DELETE FROM hash_archives WHERE root_id = ? AND path = ?;",
+                (root_id, archive_row["path"]),
+            )
+            
+            # Insert archive with root_id
+            archive_row["root_id"] = root_id
             _ = cur.execute(
                 f"""
                 INSERT INTO hash_archives ({', '.join(archive_row)})
@@ -71,39 +102,66 @@ class HashArchiveRepository:
 
             if archive.files:
                 fe_rows = list(
-                    self._build_fileentry_rows(archive.files, archive_path=archive.path)
+                    self._build_fileentry_rows(
+                        archive.files, root_id=root_id, archive_path=archive_row["path"]
+                    )
                 )
                 _ = cur.executemany(
                     """
                     INSERT INTO file_entries (path, size, is_dir, hash_value, algo, archive_id)
                     SELECT :path AS path, :size AS size, :is_dir AS is_dir, :hash_value AS hash_value,
-                    :algo AS algo, id as archive_id FROM hash_archives WHERE path = :archive_path
+                    :algo AS algo, id as archive_id FROM hash_archives WHERE root_id = :root_id AND path = :archive_path
                     """,
                     fe_rows,
                 )
 
-    def load(self, path: Path | str) -> HashArchive:
+    def load(self, root: Path, path: PurePath | str) -> HashArchive:
         """Return the archive (plus its FileEntry set) previously stored.
 
+        Args:
+            root: The root directory path
+            path: The relative path from root
+
         Raises:
-            FileNotFoundError: If the archive with the given path is not found.
+            FileNotFoundError: If the archive with the given root and path is not found.
         """
+        root_path_str = str(root.resolve())
+        path_str = str(path)
+
         with Sqlite3FK(self._db_path) as con:
             con.row_factory = sqlite3.Row
             cur = con.cursor()
 
+            # Get root_id
+            root_row = cur.execute(
+                "SELECT id FROM root_directories WHERE path = ?;",
+                (root_path_str,),
+            ).fetchone()
+            if root_row is None:
+                raise FileNotFoundError(f"Root directory not found: {root_path_str}")
+            root_id = root_row[0]
+
             arc_row = cast(
                 None | sqlite3.Row,
                 cur.execute(
-                    "SELECT * FROM hash_archives WHERE path = :path;",
-                    {"path": str(path)},
+                    "SELECT * FROM hash_archives WHERE root_id = ? AND path = ?;",
+                    (root_id, path_str),
                 ).fetchone(),
             )
 
             if arc_row is None:
-                raise FileNotFoundError(str(path))
+                raise FileNotFoundError(f"Archive not found: {root_path_str}/{path_str}")
 
-            archive = self._fill_archive(arc_row)
+            # Get root path from database
+            root_path_row = cur.execute(
+                "SELECT path FROM root_directories WHERE id = ?;",
+                (arc_row["root_id"],),
+            ).fetchone()
+            if root_path_row is None:
+                raise FileNotFoundError(f"Root directory not found for root_id: {arc_row['root_id']}")
+            archive_root = Path(cast(str, root_path_row["path"]))
+            
+            archive = self._fill_archive(arc_row, archive_root)
 
             fe_rows = cast(
                 list[sqlite3.Row],
@@ -128,6 +186,7 @@ class HashArchiveRepository:
         """Create the database tables if they don't exist."""
         with Sqlite3FK(self._db_path) as con:
             cur = con.cursor()
+            _ = cur.execute(HashArchiveRepository._CREATE_ROOT_DIRECTORIES)
             _ = cur.execute(HashArchiveRepository._CREATE_HASH_ARCHIVES)
             _ = cur.execute(HashArchiveRepository._CREATE_FILE_ENTRIES)
 
@@ -161,6 +220,7 @@ class HashArchiveRepository:
     @staticmethod
     def _build_fileentry_rows(
         entries: collections.abc.Iterable[FileEntry],
+        root_id: int | None = None,
         archive_path: str | Path | None = None,
     ) -> collections.abc.Iterable[dict[str, str | int | None | bytes]]:
         for fe in entries:
@@ -171,24 +231,28 @@ class HashArchiveRepository:
                 "hash_value": fe.hash_value,
                 "algo": fe.algo.value if fe.algo is not None else None,
             }
+            if root_id is not None:
+                ret_dict["root_id"] = root_id
             if archive_path:
                 ret_dict.update(archive_path=str(archive_path))
             yield ret_dict
 
     @staticmethod
-    def _fill_archive(row: sqlite3.Row) -> HashArchive:
+    def _fill_archive(row: sqlite3.Row, root: Path) -> HashArchive:
         archive_type = cast(str, row["type"])
         archive_path = cast(str, row["path"])
         arch: HashArchive | None = None
         if archive_type == "HashNameArchive":
             arch = HashNameArchive(
-                Path(archive_path),
+                root,
+                PurePath(archive_path),
                 files=None,
                 enc=HashEnclosure(row["hash_enclosure"]),
             )
         elif archive_type == "RarArchive":
             arch = RarArchive(
-                Path(archive_path),
+                root,
+                PurePath(archive_path),
                 files=None,
                 password=cast(str | None, row["password"]),
                 version=cast(str | None, row["rar_version"]),
@@ -200,7 +264,7 @@ class HashArchiveRepository:
                 n_volumes=cast(int | None, row["n_volumes"]),
             )
         elif archive_type == "SfvArchive":
-            arch = SfvArchive(Path(archive_path), files=set())
+            arch = SfvArchive(root, PurePath(archive_path), files=set())
         else:
             raise ValueError(f"Unknown archive type in database: {archive_type}")
 

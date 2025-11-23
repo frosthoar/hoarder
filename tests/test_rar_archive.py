@@ -27,7 +27,9 @@ def test_read_file_content_validation(
         pytest.skip(f"Compare directory {compare_base} not found")
 
     try:
-        archive = RarArchive.from_path(rar_path, password=password)
+        root = rar_path.parent
+        path = pathlib.PurePath(rar_path.name)
+        archive = RarArchive.from_path(root, path, password=password)
 
         # Test a selection of files from the archive
         test_files = [

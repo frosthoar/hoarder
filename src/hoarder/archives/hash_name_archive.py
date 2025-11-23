@@ -54,7 +54,8 @@ class HashNameArchive(HashArchive):
 
     def __init__(
         self,
-        path: pathlib.Path,
+        root: pathlib.Path,
+        path: pathlib.PurePath,
         files: set[FileEntry] | None = None,
         enc: HashEnclosure = HashEnclosure.SQUARE,
     ) -> None:
@@ -67,16 +68,22 @@ class HashNameArchive(HashArchive):
                 raise ValueError(
                     f"HashNameArchive path {path} does not match file entry {next(iter(files)).path}"
                 )
-        super().__init__(path, files)
+        super().__init__(root, path, files)
         self.enc = enc
 
     @classmethod
     @override
-    def from_path(cls: type[T], path: pathlib.Path) -> T:
-        """Create a HashNameArchive object by reading information from a file name given its path."""
-        if not path.is_file():
-            raise FileNotFoundError(f"File not found: {path}")
-        logger.debug("Reading %s", path)
+    def from_path(cls: type[T], root: pathlib.Path, path: pathlib.PurePath) -> T:
+        """Create a HashNameArchive object by reading information from a file name given its root and path.
+        
+        Args:
+            root: The root directory path (explicitly set, not inferred)
+            path: The relative path from root (as PurePath)
+        """
+        full_path = root / path
+        if not full_path.is_file():
+            raise FileNotFoundError(f"File not found: {full_path}")
+        logger.debug("Reading %s", full_path)
         crc = None
         algo = None
         for enc in HashEnclosure:
@@ -88,7 +95,7 @@ class HashNameArchive(HashArchive):
         else:
             raise ValueError(f"Could not extract hash from {path}")
 
-        file_size = os.path.getsize(path)
+        file_size = os.path.getsize(full_path)
 
         files = {
             FileEntry(
@@ -100,4 +107,4 @@ class HashNameArchive(HashArchive):
             )
         }
 
-        return cls(path, files, enc)
+        return cls(root, path, files, enc)

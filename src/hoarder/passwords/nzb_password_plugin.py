@@ -169,7 +169,9 @@ class NzbPasswordPlugin(PasswordPlugin):
                         dir_store.add_password(*title_password)
                 elif full_path.suffix == ".rar":
                     logger.debug(f"Processing RARed NZB(s) {full_path}")
-                    rar_file: RarArchive = RarArchive.from_path(full_path)
+                    root = full_path.parent
+                    path = pathlib.PurePath(full_path.name)
+                    rar_file: RarArchive = RarArchive.from_path(root, path)
                     for file_entry in rar_file.files:
                         logger.debug(f"Read {file_entry.path}... extracting passwords")
                         title_password = NzbPasswordPlugin._process_file(
