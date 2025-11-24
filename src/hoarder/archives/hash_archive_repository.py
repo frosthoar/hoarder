@@ -16,10 +16,10 @@ class HashArchiveRepository:
 
     _db_path: str | Path
 
-    _CREATE_ROOT_DIRECTORIES: str = """
-    CREATE TABLE IF NOT EXISTS root_directories (
+    _CREATE_STORAGE_PATHS: str = """
+    CREATE TABLE IF NOT EXISTS storage_paths (
         id             INTEGER  PRIMARY KEY AUTOINCREMENT,
-        path           TEXT     NOT NULL UNIQUE
+        storage_path   TEXT     NOT NULL UNIQUE
     );
     """
 
@@ -39,7 +39,7 @@ class HashArchiveRepository:
         rar_version    TEXT,
         n_volumes      INTEGER,
         FOREIGN KEY (root_id)
-          REFERENCES root_directories(id)
+          REFERENCES storage_paths(id)
           ON DELETE CASCADE,
         UNIQUE(root_id, path)
     );
@@ -73,11 +73,11 @@ class HashArchiveRepository:
             # Insert or get root directory
             root_path_str = str(archive.root.resolve())
             _ = cur.execute(
-                "INSERT OR IGNORE INTO root_directories (path) VALUES (?);",
+                "INSERT OR IGNORE INTO storage_paths (storage_path) VALUES (?);",
                 (root_path_str,),
             )
             root_row = cur.execute(
-                "SELECT id FROM root_directories WHERE path = ?;",
+                "SELECT id FROM storage_paths WHERE storage_path = ?;",
                 (root_path_str,),
             ).fetchone()
             root_id = root_row[0] if root_row else None
@@ -134,7 +134,7 @@ class HashArchiveRepository:
 
             # Get root_id
             root_row = cur.execute(
-                "SELECT id FROM root_directories WHERE path = ?;",
+                "SELECT id FROM storage_paths WHERE storage_path = ?;",
                 (root_path_str,),
             ).fetchone()
             if root_row is None:
@@ -154,12 +154,12 @@ class HashArchiveRepository:
 
             # Get root path from database
             root_path_row = cur.execute(
-                "SELECT path FROM root_directories WHERE id = ?;",
+                "SELECT storage_path FROM storage_paths WHERE id = ?;",
                 (arc_row["root_id"],),
             ).fetchone()
             if root_path_row is None:
                 raise FileNotFoundError(f"Root directory not found for root_id: {arc_row['root_id']}")
-            archive_root = Path(cast(str, root_path_row["path"]))
+            archive_root = Path(cast(str, root_path_row["storage_path"]))
             
             archive = self._fill_archive(arc_row, archive_root)
 
@@ -186,7 +186,7 @@ class HashArchiveRepository:
         """Create the database tables if they don't exist."""
         with Sqlite3FK(self._db_path) as con:
             cur = con.cursor()
-            _ = cur.execute(HashArchiveRepository._CREATE_ROOT_DIRECTORIES)
+            _ = cur.execute(HashArchiveRepository._CREATE_STORAGE_PATHS)
             _ = cur.execute(HashArchiveRepository._CREATE_HASH_ARCHIVES)
             _ = cur.execute(HashArchiveRepository._CREATE_FILE_ENTRIES)
 
