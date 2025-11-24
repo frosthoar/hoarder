@@ -27,7 +27,7 @@ class HashArchiveRepository:
     CREATE TABLE IF NOT EXISTS hash_archives (
         id             INTEGER  PRIMARY KEY AUTOINCREMENT,
         type           TEXT     NOT NULL,
-        root_id        INTEGER  NOT NULL,
+        storage_path_id        INTEGER  NOT NULL,
         path           TEXT     NOT NULL,
         is_deleted        INTEGER,
         timestamp      TEXT     DEFAULT CURRENT_TIMESTAMP,
@@ -38,10 +38,10 @@ class HashArchiveRepository:
         rar_scheme     INTEGER,
         rar_version    TEXT,
         n_volumes      INTEGER,
-        FOREIGN KEY (root_id)
+        FOREIGN KEY (storage_path_id)
           REFERENCES storage_paths(id)
           ON DELETE CASCADE,
-        UNIQUE(root_id, path)
+        UNIQUE(storage_path_id, path)
     );
     """
 
@@ -82,19 +82,19 @@ class HashArchiveRepository:
             _ = cur.execute(
                 """
                 DELETE FROM hash_archives 
-                WHERE root_id = (SELECT id FROM storage_paths WHERE storage_path = ?)
+                WHERE storage_path_id = (SELECT id FROM storage_paths WHERE storage_path = ?)
                   AND path = ?;
                 """,
                 (storage_path_str, archive_path_str),
             )
             
-            # Insert archive with root_id from subquery using INSERT ... SELECT
-            # Column order must match schema: type, root_id, path, is_deleted, ...
-            columns = ["type", "root_id", "path", "is_deleted", "hash_enclosure", 
+            # Insert archive with storage_path_id from subquery using INSERT ... SELECT
+            # Column order must match schema: type, storage_path_id, path, is_deleted, ...
+            columns = ["type", "storage_path_id", "path", "is_deleted", "hash_enclosure", 
                       "password", "rar_scheme", "rar_version", "n_volumes"]
             select_values = [
                 "?",  # type
-                "(SELECT id FROM storage_paths WHERE storage_path = ?)",  # root_id
+                "(SELECT id FROM storage_paths WHERE storage_path = ?)",  # storage_path_id
                 "?",  # path
                 "?",  # is_deleted
                 "?",  # hash_enclosure
@@ -106,7 +106,7 @@ class HashArchiveRepository:
             
             insert_params = [
                 archive_row["type"],
-                storage_path_str,  # for root_id subquery
+                storage_path_str,  # for storage_path_id subquery
                 archive_row["path"],
                 archive_row["is_deleted"],
                 archive_row["hash_enclosure"],
@@ -136,7 +136,7 @@ class HashArchiveRepository:
                     SELECT :path AS path, :size AS size, :is_dir AS is_dir, :hash_value AS hash_value,
                     :algo AS algo, hash_archives.id as archive_id 
                     FROM hash_archives 
-                    JOIN storage_paths ON hash_archives.root_id = storage_paths.id
+                    JOIN storage_paths ON hash_archives.storage_path_id = storage_paths.id
                     WHERE storage_paths.storage_path = :storage_path AND hash_archives.path = :archive_path
                     """,
                     fe_rows,
@@ -166,7 +166,7 @@ class HashArchiveRepository:
                     """
                     SELECT hash_archives.*, storage_paths.storage_path 
                     FROM hash_archives 
-                    JOIN storage_paths ON hash_archives.root_id = storage_paths.id
+                    JOIN storage_paths ON hash_archives.storage_path_id = storage_paths.id
                     WHERE storage_paths.storage_path = ? AND hash_archives.path = ?;
                     """,
                     (storage_path_str, path_str),
