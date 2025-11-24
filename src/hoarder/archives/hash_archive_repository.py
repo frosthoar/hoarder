@@ -67,50 +67,77 @@ class HashArchiveRepository:
     def save(self, archive: HashArchive) -> None:
         """Insert or replace one archive and all its FileEntry rows."""
         archive_row = self._build_archive_row(archive)
+        storage_path_str = str(archive.storage_path.resolve())
+        archive_path_str = archive_row["path"]
 
         with Sqlite3FK(self._db_path) as con:
             cur = con.cursor()
-            # Insert or get root directory
-            root_path_str = str(archive.storage_path.resolve())
+            # Insert or get storage path (needed for foreign key constraint)
             _ = cur.execute(
                 "INSERT OR IGNORE INTO storage_paths (storage_path) VALUES (?);",
-                (root_path_str,),
+                (storage_path_str,),
             )
-            root_row = cur.execute(
-                "SELECT id FROM storage_paths WHERE storage_path = ?;",
-                (root_path_str,),
-            ).fetchone()
-            root_id = root_row[0] if root_row else None
-            if root_id is None:
-                raise ValueError(f"Failed to get root_id for {root_path_str}")
 
-            # Delete existing archive with same root_id and path
+            # Delete existing archive with same storage_path and path using subquery
             _ = cur.execute(
-                "DELETE FROM hash_archives WHERE root_id = ? AND path = ?;",
-                (root_id, archive_row["path"]),
+                """
+                DELETE FROM hash_archives 
+                WHERE root_id = (SELECT id FROM storage_paths WHERE storage_path = ?)
+                  AND path = ?;
+                """,
+                (storage_path_str, archive_path_str),
             )
             
-            # Insert archive with root_id
-            archive_row["root_id"] = root_id
+            # Insert archive with root_id from subquery using INSERT ... SELECT
+            # Column order must match schema: type, root_id, path, is_deleted, ...
+            columns = ["type", "root_id", "path", "is_deleted", "hash_enclosure", 
+                      "password", "rar_scheme", "rar_version", "n_volumes"]
+            select_values = [
+                "?",  # type
+                "(SELECT id FROM storage_paths WHERE storage_path = ?)",  # root_id
+                "?",  # path
+                "?",  # is_deleted
+                "?",  # hash_enclosure
+                "?",  # password
+                "?",  # rar_scheme
+                "?",  # rar_version
+                "?",  # n_volumes
+            ]
+            
+            insert_params = [
+                archive_row["type"],
+                storage_path_str,  # for root_id subquery
+                archive_row["path"],
+                archive_row["is_deleted"],
+                archive_row["hash_enclosure"],
+                archive_row["password"],
+                archive_row["rar_scheme"],
+                archive_row["rar_version"],
+                archive_row["n_volumes"],
+            ]
+            
             _ = cur.execute(
                 f"""
-                INSERT INTO hash_archives ({', '.join(archive_row)})
-                VALUES ({', '.join(':' + k for k in archive_row)});
+                INSERT INTO hash_archives ({', '.join(columns)})
+                SELECT {', '.join(select_values)};
                 """,
-                archive_row,
+                tuple(insert_params),
             )
 
             if archive.files:
                 fe_rows = list(
                     self._build_fileentry_rows(
-                        archive.files, root_id=root_id, archive_path=archive_row["path"]
+                        archive.files, storage_path=storage_path_str, archive_path=archive_path_str
                     )
                 )
                 _ = cur.executemany(
                     """
                     INSERT INTO file_entries (path, size, is_dir, hash_value, algo, archive_id)
                     SELECT :path AS path, :size AS size, :is_dir AS is_dir, :hash_value AS hash_value,
-                    :algo AS algo, id as archive_id FROM hash_archives WHERE root_id = :root_id AND path = :archive_path
+                    :algo AS algo, hash_archives.id as archive_id 
+                    FROM hash_archives 
+                    JOIN storage_paths ON hash_archives.root_id = storage_paths.id
+                    WHERE storage_paths.storage_path = :storage_path AND hash_archives.path = :archive_path
                     """,
                     fe_rows,
                 )
@@ -125,42 +152,32 @@ class HashArchiveRepository:
         Raises:
             FileNotFoundError: If the archive with the given storage_path and path is not found.
         """
-        root_path_str = str(storage_path.resolve())
+        storage_path_str = str(storage_path.resolve())
         path_str = str(path)
 
         with Sqlite3FK(self._db_path) as con:
             con.row_factory = sqlite3.Row
             cur = con.cursor()
 
-            # Get root_id
-            root_row = cur.execute(
-                "SELECT id FROM storage_paths WHERE storage_path = ?;",
-                (root_path_str,),
-            ).fetchone()
-            if root_row is None:
-                raise FileNotFoundError(f"Root directory not found: {root_path_str}")
-            root_id = root_row[0]
-
+            # Get archive with storage_path using JOIN
             arc_row = cast(
                 None | sqlite3.Row,
                 cur.execute(
-                    "SELECT * FROM hash_archives WHERE root_id = ? AND path = ?;",
-                    (root_id, path_str),
+                    """
+                    SELECT hash_archives.*, storage_paths.storage_path 
+                    FROM hash_archives 
+                    JOIN storage_paths ON hash_archives.root_id = storage_paths.id
+                    WHERE storage_paths.storage_path = ? AND hash_archives.path = ?;
+                    """,
+                    (storage_path_str, path_str),
                 ).fetchone(),
             )
 
             if arc_row is None:
-                raise FileNotFoundError(f"Archive not found: {root_path_str}/{path_str}")
+                raise FileNotFoundError(f"Archive not found: {storage_path_str}/{path_str}")
 
-            # Get storage path from database
-            storage_path_row = cur.execute(
-                "SELECT storage_path FROM storage_paths WHERE id = ?;",
-                (arc_row["root_id"],),
-            ).fetchone()
-            if storage_path_row is None:
-                raise FileNotFoundError(f"Storage path not found for root_id: {arc_row['root_id']}")
-            archive_storage_path = Path(cast(str, storage_path_row["storage_path"]))
-            
+            # Get storage_path from the joined row
+            archive_storage_path = Path(cast(str, arc_row["storage_path"]))
             archive = self._fill_archive(arc_row, archive_storage_path)
 
             fe_rows = cast(
@@ -220,7 +237,7 @@ class HashArchiveRepository:
     @staticmethod
     def _build_fileentry_rows(
         entries: collections.abc.Iterable[FileEntry],
-        root_id: int | None = None,
+        storage_path: str | None = None,
         archive_path: str | Path | None = None,
     ) -> collections.abc.Iterable[dict[str, str | int | None | bytes]]:
         for fe in entries:
@@ -231,8 +248,8 @@ class HashArchiveRepository:
                 "hash_value": fe.hash_value,
                 "algo": fe.algo.value if fe.algo is not None else None,
             }
-            if root_id is not None:
-                ret_dict["root_id"] = root_id
+            if storage_path:
+                ret_dict["storage_path"] = storage_path
             if archive_path:
                 ret_dict.update(archive_path=str(archive_path))
             yield ret_dict
