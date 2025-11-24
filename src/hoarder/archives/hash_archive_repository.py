@@ -71,7 +71,7 @@ class HashArchiveRepository:
         with Sqlite3FK(self._db_path) as con:
             cur = con.cursor()
             # Insert or get root directory
-            root_path_str = str(archive.root.resolve())
+            root_path_str = str(archive.storage_path.resolve())
             _ = cur.execute(
                 "INSERT OR IGNORE INTO storage_paths (storage_path) VALUES (?);",
                 (root_path_str,),
@@ -115,17 +115,17 @@ class HashArchiveRepository:
                     fe_rows,
                 )
 
-    def load(self, root: Path, path: PurePath | str) -> HashArchive:
+    def load(self, storage_path: Path, path: PurePath | str) -> HashArchive:
         """Return the archive (plus its FileEntry set) previously stored.
 
         Args:
-            root: The root directory path
-            path: The relative path from root
+            storage_path: The storage directory path
+            path: The relative path from storage_path
 
         Raises:
-            FileNotFoundError: If the archive with the given root and path is not found.
+            FileNotFoundError: If the archive with the given storage_path and path is not found.
         """
-        root_path_str = str(root.resolve())
+        root_path_str = str(storage_path.resolve())
         path_str = str(path)
 
         with Sqlite3FK(self._db_path) as con:
@@ -152,16 +152,16 @@ class HashArchiveRepository:
             if arc_row is None:
                 raise FileNotFoundError(f"Archive not found: {root_path_str}/{path_str}")
 
-            # Get root path from database
-            root_path_row = cur.execute(
+            # Get storage path from database
+            storage_path_row = cur.execute(
                 "SELECT storage_path FROM storage_paths WHERE id = ?;",
                 (arc_row["root_id"],),
             ).fetchone()
-            if root_path_row is None:
-                raise FileNotFoundError(f"Root directory not found for root_id: {arc_row['root_id']}")
-            archive_root = Path(cast(str, root_path_row["storage_path"]))
+            if storage_path_row is None:
+                raise FileNotFoundError(f"Storage path not found for root_id: {arc_row['root_id']}")
+            archive_storage_path = Path(cast(str, storage_path_row["storage_path"]))
             
-            archive = self._fill_archive(arc_row, archive_root)
+            archive = self._fill_archive(arc_row, archive_storage_path)
 
             fe_rows = cast(
                 list[sqlite3.Row],
@@ -238,20 +238,20 @@ class HashArchiveRepository:
             yield ret_dict
 
     @staticmethod
-    def _fill_archive(row: sqlite3.Row, root: Path) -> HashArchive:
+    def _fill_archive(row: sqlite3.Row, storage_path: Path) -> HashArchive:
         archive_type = cast(str, row["type"])
         archive_path = cast(str, row["path"])
         arch: HashArchive | None = None
         if archive_type == "HashNameArchive":
             arch = HashNameArchive(
-                root,
+                storage_path,
                 PurePath(archive_path),
                 files=None,
                 enc=HashEnclosure(row["hash_enclosure"]),
             )
         elif archive_type == "RarArchive":
             arch = RarArchive(
-                root,
+                storage_path,
                 PurePath(archive_path),
                 files=None,
                 password=cast(str | None, row["password"]),
@@ -264,7 +264,7 @@ class HashArchiveRepository:
                 n_volumes=cast(int | None, row["n_volumes"]),
             )
         elif archive_type == "SfvArchive":
-            arch = SfvArchive(root, PurePath(archive_path), files=set())
+            arch = SfvArchive(storage_path, PurePath(archive_path), files=set())
         else:
             raise ValueError(f"Unknown archive type in database: {archive_type}")
 

@@ -60,7 +60,7 @@ T = typing.TypeVar("T", bound="HashArchive")
 class HashArchive(abc.ABC):
     """This class contains information about an hash file."""
 
-    root: pathlib.Path
+    storage_path: pathlib.Path
     path: pathlib.PurePath
     files: set[FileEntry]
     is_deleted: bool
@@ -72,33 +72,33 @@ class HashArchive(abc.ABC):
     DELETABLE: typing.ClassVar[bool] = True
 
     def __init__(
-        self, root: pathlib.Path, path: pathlib.PurePath, files: set[FileEntry] | None = None
+        self, storage_path: pathlib.Path, path: pathlib.PurePath, files: set[FileEntry] | None = None
     ) -> None:
         """Create a HashArchive object.
         
         Args:
-            root: The root directory path (explicitly set, not inferred)
-            path: The relative path from root (as PurePath)
+            storage_path: The storage directory path (explicitly set, not inferred)
+            path: The relative path from storage_path (as PurePath)
             files: Optional set of FileEntry objects
         """
         self.files = files or set()
-        self.root = root.resolve()
+        self.storage_path = storage_path.resolve()
         self.path = path
         self.is_deleted = True
 
     @property
     def full_path(self) -> pathlib.Path:
-        """Calculate the full path by combining root and path."""
-        return self.root / self.path
+        """Calculate the full path by combining storage_path and path."""
+        return self.storage_path / self.path
 
     @classmethod
     @abstractmethod
-    def from_path(cls: typing.Type[T], root: pathlib.Path, path: pathlib.PurePath) -> T:
-        """Create a HashArchive object by reading information from an hash file given its root and path.
+    def from_path(cls: typing.Type[T], storage_path: pathlib.Path, path: pathlib.PurePath) -> T:
+        """Create a HashArchive object by reading information from an hash file given its storage_path and path.
         
         Args:
-            root: The root directory path (explicitly set, not inferred)
-            path: The relative path from root (as PurePath)
+            storage_path: The storage directory path (explicitly set, not inferred)
+            path: The relative path from storage_path (as PurePath)
         """
 
     def __len__(self) -> int:

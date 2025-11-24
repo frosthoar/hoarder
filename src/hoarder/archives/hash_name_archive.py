@@ -54,7 +54,7 @@ class HashNameArchive(HashArchive):
 
     def __init__(
         self,
-        root: pathlib.Path,
+        storage_path: pathlib.Path,
         path: pathlib.PurePath,
         files: set[FileEntry] | None = None,
         enc: HashEnclosure = HashEnclosure.SQUARE,
@@ -68,19 +68,19 @@ class HashNameArchive(HashArchive):
                 raise ValueError(
                     f"HashNameArchive path {path} does not match file entry {next(iter(files)).path}"
                 )
-        super().__init__(root, path, files)
+        super().__init__(storage_path, path, files)
         self.enc = enc
 
     @classmethod
     @override
-    def from_path(cls: type[T], root: pathlib.Path, path: pathlib.PurePath) -> T:
-        """Create a HashNameArchive object by reading information from a file name given its root and path.
+    def from_path(cls: type[T], storage_path: pathlib.Path, path: pathlib.PurePath) -> T:
+        """Create a HashNameArchive object by reading information from a file name given its storage_path and path.
         
         Args:
-            root: The root directory path (explicitly set, not inferred)
-            path: The relative path from root (as PurePath)
+            storage_path: The storage directory path (explicitly set, not inferred)
+            path: The relative path from storage_path (as PurePath)
         """
-        full_path = root / path
+        full_path = storage_path / path
         if not full_path.is_file():
             raise FileNotFoundError(f"File not found: {full_path}")
         logger.debug("Reading %s", full_path)
@@ -107,4 +107,4 @@ class HashNameArchive(HashArchive):
             )
         }
 
-        return cls(root, path, files, enc)
+        return cls(storage_path, path, files, enc)

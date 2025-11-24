@@ -17,14 +17,14 @@ class SfvArchive(HashArchive):
     """This class contains information about a SFV file."""
 
     @classmethod
-    def from_path(cls: typing.Type[T], root: pathlib.Path, path: pathlib.PurePath) -> T:
-        """Create a SfvArchive object by reading information from an SFV file given its root and path.
+    def from_path(cls: typing.Type[T], storage_path: pathlib.Path, path: pathlib.PurePath) -> T:
+        """Create a SfvArchive object by reading information from an SFV file given its storage_path and path.
         
         Args:
-            root: The root directory path (explicitly set, not inferred)
-            path: The relative path from root (as PurePath)
+            storage_path: The storage directory path (explicitly set, not inferred)
+            path: The relative path from storage_path (as PurePath)
         """
-        full_path = root / path
+        full_path = storage_path / path
         files = []
         with open(full_path, "rt", encoding="utf-8") as file:
             logger.debug("Reading %s", full_path)
@@ -44,10 +44,10 @@ class SfvArchive(HashArchive):
                     continue
                 try:
                     file_size = None
-                    if (root / entry_path_str).exists():
+                    if (storage_path / entry_path_str).exists():
                         # SFV files are placed in the same directory as the files they reference
                         # so we should be able to get the size of the file
-                        file_size = os.path.getsize(root / entry_path_str)
+                        file_size = os.path.getsize(storage_path / entry_path_str)
                     else:
                         logger.warning(
                             "File '%(entry_path_str)s' does not exist",
@@ -81,4 +81,4 @@ class SfvArchive(HashArchive):
                         "Error converting '%(line)s' to FileEntry: %(error)s",
                         {"line": line, "error": e},
                     )
-        return cls(root, path, set(files))
+        return cls(storage_path, path, set(files))
