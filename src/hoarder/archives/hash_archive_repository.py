@@ -87,41 +87,13 @@ class HashArchiveRepository:
                 """,
                 (storage_path_str, archive_path_str),
             )
-            
-            # Insert archive with storage_path_id from subquery using INSERT ... SELECT
-            # Column order must match schema: type, storage_path_id, path, is_deleted, ...
-            columns = ["type", "storage_path_id", "path", "is_deleted", "hash_enclosure", 
-                      "password", "rar_scheme", "rar_version", "n_volumes"]
-            select_values = [
-                "?",  # type
-                "(SELECT id FROM storage_paths WHERE storage_path = ?)",  # storage_path_id
-                "?",  # path
-                "?",  # is_deleted
-                "?",  # hash_enclosure
-                "?",  # password
-                "?",  # rar_scheme
-                "?",  # rar_version
-                "?",  # n_volumes
-            ]
-            
-            insert_params = [
-                archive_row["type"],
-                storage_path_str,  # for storage_path_id subquery
-                archive_row["path"],
-                archive_row["is_deleted"],
-                archive_row["hash_enclosure"],
-                archive_row["password"],
-                archive_row["rar_scheme"],
-                archive_row["rar_version"],
-                archive_row["n_volumes"],
-            ]
-            
+
             _ = cur.execute(
                 f"""
-                INSERT INTO hash_archives ({', '.join(columns)})
-                SELECT {', '.join(select_values)};
+                INSERT INTO hash_archives ({', '.join(archive_row.keys())}, storage_path_id)
+                SELECT {', '.join([':' + k + ' AS ' + k for k in archive_row.keys()])}, (SELECT id FROM storage_paths WHERE storage_path = :storage_path)
                 """,
-                tuple(insert_params),
+                archive_row | {"storage_path": storage_path_str}
             )
 
             if archive.files:
