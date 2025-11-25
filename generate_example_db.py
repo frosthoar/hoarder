@@ -26,9 +26,27 @@ def main() -> None:
         print(f"Removing existing database: {db_path}")
         db_path.unlink()
 
-    # Create repository
-    repo = HashArchiveRepository(db_path)
-    print(f"Created repository with database: {db_path}\n")
+    # Collect all storage paths that will be used
+    allowed_storage_paths = set()
+    sfv_dir = test_files_dir / "sfv"
+    hnf_dir = test_files_dir / "hnf"
+    rar_dir = test_files_dir / "rar"
+
+    if sfv_dir.exists():
+        allowed_storage_paths.add(sfv_dir)
+    if hnf_dir.exists():
+        allowed_storage_paths.add(hnf_dir)
+    if rar_dir.exists():
+        allowed_storage_paths.add(rar_dir)
+
+    if not allowed_storage_paths:
+        print("Error: No test file directories found. Cannot create example database.")
+        sys.exit(1)
+
+    # Create repository with allowed storage paths
+    repo = HashArchiveRepository(db_path, allowed_storage_paths)
+    print(f"Created repository with database: {db_path}")
+    print(f"Allowed storage paths: {sorted(str(p) for p in allowed_storage_paths)}\n")
 
     archives_created = 0
 
