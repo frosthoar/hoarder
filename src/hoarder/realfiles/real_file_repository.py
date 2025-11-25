@@ -82,12 +82,13 @@ class RealFileRepository:
                 """,
                 real_file_row | {"storage_path": storage_path_str},
             )
-            real_file_id = cur.lastrowid
-
             if real_file.verification:
                 verification_rows = list(
                     self._build_verification_rows(
-                        real_file.verification, real_file_id, cur
+                        real_file.verification,
+                        str(real_file.path),
+                        storage_path_str,
+                        cur,
                     )
                 )
                 if verification_rows:
@@ -101,14 +102,18 @@ class RealFileRepository:
                             algo,
                             comment
                         )
-                        VALUES (
-                            :real_file_id,
+                        SELECT
+                            real_files.id,
                             :source_type,
                             :hash_archive_id,
                             :hash_value,
                             :algo,
                             :comment
-                        );
+                        FROM real_files
+                        JOIN storage_paths
+                          ON real_files.storage_path_id = storage_paths.id
+                        WHERE storage_paths.storage_path = :storage_path
+                          AND real_files.path = :path;
                         """,
                         verification_rows,
                     )
@@ -181,12 +186,12 @@ class RealFileRepository:
     def _build_verification_rows(
         self,
         verifications: Iterable[Verification],
-        real_file_id: int,
+        path: str,
+        storage_path: str,
         cursor: sqlite3.Cursor,
     ) -> collections.abc.Iterator[dict[str, object | None]]:
         for verification in verifications:
             yield {
-                "real_file_id": real_file_id,
                 "source_type": verification.source_type.value,
                 "hash_archive_id": self._lookup_hash_archive_id(
                     cursor, verification.hash_archive
@@ -194,6 +199,8 @@ class RealFileRepository:
                 "hash_value": verification.hash_value,
                 "algo": verification.algo.value,
                 "comment": verification.comment,
+                "path": path,
+                "storage_path": storage_path,
             }
 
     def _lookup_hash_archive_id(
