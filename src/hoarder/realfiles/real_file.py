@@ -4,8 +4,10 @@ import dataclasses
 import datetime as dt
 import enum
 from pathlib import Path, PurePath
+from typing import ClassVar, Type
 
 from hoarder.archives.hash_archive import Algo, HashArchive
+from hoarder.contents_hasher import CRC32Hasher, ContentsHasher
 
 
 class VerificationSource(enum.IntEnum):
@@ -37,10 +39,28 @@ class RealFile:
     )
     comment: str | None = None
 
+    _HASHERS: ClassVar[dict[Algo, Type[ContentsHasher]]] = {
+        Algo.CRC32: CRC32Hasher,
+    }
+
     @property
     def full_path(self) -> Path:
         """Return the resolved path on disk."""
         return self.storage_path / self.path
+
+    def calculate_hash(self, algo: Algo = Algo.CRC32) -> bytes:
+        """Calculate and assign hash/algo for this real file."""
+        hasher_cls = self._HASHERS.get(algo)
+        if hasher_cls is None:
+            raise NotImplementedError(
+                f"Hash calculation for algo {algo.name} is not implemented"
+            )
+
+        hasher = hasher_cls(self.full_path)
+        hash_value = hasher.hash_contents()
+        self.hash_value = hash_value
+        self.algo = algo
+        return hash_value
 
 
 @dataclasses.dataclass(slots=True)
