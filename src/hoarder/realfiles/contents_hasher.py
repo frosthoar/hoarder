@@ -72,4 +72,3 @@ class CRC32Hasher(ContentsHasher):
 
 
 __all__ = ["ContentsHasher", "CRC32Hasher"]
-

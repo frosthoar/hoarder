@@ -57,4 +57,3 @@ def test_calculate_hash_unsupported_algo_raises() -> None:
 
     with pytest.raises(NotImplementedError):
         real_file.calculate_hash(algo=Algo.SHA1)
-

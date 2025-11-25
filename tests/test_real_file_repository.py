@@ -46,7 +46,9 @@ def _build_real_file(entry: case_files.FileEntry, storage_path: Path) -> RealFil
     return real_file
 
 
-def test_real_file_repository_roundtrip(real_file_repo: RealFileRepository, compare_storage_path: Path) -> None:
+def test_real_file_repository_roundtrip(
+    real_file_repo: RealFileRepository, compare_storage_path: Path
+) -> None:
     entry = next(file for file in case_files.TEST_FILES if not file.is_dir)
     full_path = compare_storage_path / entry.path
     if not full_path.exists():
@@ -67,7 +69,9 @@ def test_real_file_repository_roundtrip(real_file_repo: RealFileRepository, comp
     assert loaded.verification == []
 
 
-def test_real_file_repository_persists_verifications(real_file_repo: RealFileRepository, compare_storage_path: Path) -> None:
+def test_real_file_repository_persists_verifications(
+    real_file_repo: RealFileRepository, compare_storage_path: Path
+) -> None:
     entry = next(file for file in case_files.TEST_FILES if not file.is_dir)
     real_file = _build_real_file(entry, compare_storage_path)
 
@@ -94,7 +98,9 @@ def test_real_file_repository_persists_verifications(real_file_repo: RealFileRep
     assert loaded_verification.verified
 
 
-def test_real_file_repository_requires_known_hash_archive(real_file_repo: RealFileRepository, compare_storage_path: Path) -> None:
+def test_real_file_repository_requires_known_hash_archive(
+    real_file_repo: RealFileRepository, compare_storage_path: Path
+) -> None:
     sfv_path = Path("./test_files/sfv/files.sfv")
     if not sfv_path.exists():
         pytest.skip(f"SFV test file missing: {sfv_path}")
@@ -116,7 +122,9 @@ def test_real_file_repository_requires_known_hash_archive(real_file_repo: RealFi
         real_file_repo.save(real_file)
 
 
-def test_real_file_repository_disallows_unknown_storage_path_on_save(real_file_repo: RealFileRepository, compare_storage_path: Path) -> None:
+def test_real_file_repository_disallows_unknown_storage_path_on_save(
+    real_file_repo: RealFileRepository, compare_storage_path: Path
+) -> None:
     disallowed_storage = compare_storage_path.parent
     real_file = RealFile(
         storage_path=disallowed_storage,
@@ -134,7 +142,9 @@ def test_real_file_repository_disallows_unknown_storage_path_on_save(real_file_r
         real_file_repo.save(real_file)
 
 
-def test_real_file_repository_disallows_unknown_storage_path_on_load(real_file_repo: RealFileRepository, compare_storage_path: Path) -> None:
+def test_real_file_repository_disallows_unknown_storage_path_on_load(
+    real_file_repo: RealFileRepository, compare_storage_path: Path
+) -> None:
     disallowed_storage = compare_storage_path.parent
     with pytest.raises(ValueError):
         real_file_repo.load(disallowed_storage, PurePath("missing"))
@@ -150,4 +160,3 @@ def test_real_file_repository_validates_paths_on_init(tmp_path) -> None:
         pytest.skip(f"Fixture path missing: {existing_path}")
     repo = RealFileRepository(tmp_path / "db.sqlite", [existing_path])
     assert existing_path.resolve() in repo._allowed_storage_paths
-

@@ -123,4 +123,3 @@ class Verification:
         if self.source_type is VerificationSource.SELF_HASH:
             return False
         return self.verified
-

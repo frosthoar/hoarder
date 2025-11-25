@@ -29,7 +29,9 @@ class RealFileRepository:
         for path in allowed_storage_paths:
             normalized = path.resolve()
             if not normalized.exists():
-                raise FileNotFoundError(f"Storage path does not exist on disk: {normalized}")
+                raise FileNotFoundError(
+                    f"Storage path does not exist on disk: {normalized}"
+                )
             normalized_paths.append(normalized)
         self._allowed_storage_paths = set(normalized_paths)
         ensure_repository_tables(self._db_path)
@@ -37,7 +39,9 @@ class RealFileRepository:
 
     def save(self, real_file: RealFile) -> None:
         """Insert or replace a RealFile and its verifications."""
-        normalized_storage_path = self._check_storage_path_allowed(real_file.storage_path)
+        normalized_storage_path = self._check_storage_path_allowed(
+            real_file.storage_path
+        )
         storage_path_str = str(normalized_storage_path)
         real_file_row = self._build_real_file_row(real_file)
 
@@ -82,7 +86,9 @@ class RealFileRepository:
 
             if real_file.verification:
                 verification_rows = list(
-                    self._build_verification_rows(real_file.verification, real_file_id, cur)
+                    self._build_verification_rows(
+                        real_file.verification, real_file_id, cur
+                    )
                 )
                 if verification_rows:
                     _ = cur.executemany(
@@ -127,7 +133,9 @@ class RealFileRepository:
             ).fetchone()
 
             if rf_row is None:
-                raise FileNotFoundError(f"Real file not found: {storage_path_str}/{path_str}")
+                raise FileNotFoundError(
+                    f"Real file not found: {storage_path_str}/{path_str}"
+                )
 
             real_file = self._row_to_real_file(rf_row)
             verifications = self._load_verifications(cur, rf_row["id"], real_file)
@@ -161,8 +169,12 @@ class RealFileRepository:
             "is_dir": int(real_file.is_dir),
             "hash_value": real_file.hash_value,
             "algo": real_file.algo.value if real_file.algo is not None else None,
-            "first_seen": real_file.first_seen.isoformat() if real_file.first_seen else None,
-            "last_seen": real_file.last_seen.isoformat() if real_file.last_seen else None,
+            "first_seen": real_file.first_seen.isoformat()
+            if real_file.first_seen
+            else None,
+            "last_seen": real_file.last_seen.isoformat()
+            if real_file.last_seen
+            else None,
             "comment": real_file.comment,
         }
 
@@ -176,7 +188,9 @@ class RealFileRepository:
             yield {
                 "real_file_id": real_file_id,
                 "source_type": verification.source_type.value,
-                "hash_archive_id": self._lookup_hash_archive_id(cursor, verification.hash_archive),
+                "hash_archive_id": self._lookup_hash_archive_id(
+                    cursor, verification.hash_archive
+                ),
                 "hash_value": verification.hash_value,
                 "algo": verification.algo.value,
                 "comment": verification.comment,
@@ -270,4 +284,3 @@ class RealFileRepository:
 
 
 __all__ = ["RealFileRepository"]
-
