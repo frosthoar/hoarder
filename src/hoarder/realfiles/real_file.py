@@ -66,13 +66,14 @@ class RealFile:
     @classmethod
     def from_path(
         cls,
-        storage_path: Path,
+        storage_path: Path | str,
         path: PurePath | str,
         *,
         include_hash: bool = False,
         algo: Algo = Algo.CRC32,
     ) -> RealFile:
         """Create a RealFile instance by inspecting the filesystem."""
+        storage_path = Path(storage_path)
         pure_path = PurePath(path)
         full_path = storage_path / pure_path
         if not full_path.exists():
