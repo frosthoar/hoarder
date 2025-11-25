@@ -7,12 +7,8 @@ This script creates a small example database with sample archives from the test_
 import pathlib
 import sys
 
-from hoarder.archives import (
-    HashArchiveRepository,
-    HashNameArchive,
-    RarArchive,
-    SfvArchive,
-)
+from hoarder.archives import (HashArchiveRepository, HashNameArchive,
+                              RarArchive, SfvArchive)
 
 
 def main() -> None:
@@ -63,7 +59,9 @@ def main() -> None:
             try:
                 hnf_archive = HashNameArchive.from_path(storage_path, path)
                 repo.save(hnf_archive)
-                print(f"  ✓ Saved HashNameArchive with {len(hnf_archive.files)} file entry")
+                print(
+                    f"  ✓ Saved HashNameArchive with {len(hnf_archive.files)} file entry"
+                )
                 archives_created += 1
             except Exception as e:
                 print(f"  ✗ Failed to add HashNameArchive: {e}")
@@ -83,7 +81,9 @@ def main() -> None:
                 storage_path = rar_file.parent
                 path = pathlib.PurePath(rar_file.name)
                 try:
-                    rar_archive = RarArchive.from_path(storage_path, path, password=None)
+                    rar_archive = RarArchive.from_path(
+                        storage_path, path, password=None
+                    )
                     repo.save(rar_archive)
                     print(
                         f"  ✓ Saved RAR archive with {len(rar_archive.files)} file entries"
@@ -127,4 +127,3 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"\n\nError: {e}", file=sys.stderr)
         sys.exit(1)
-
