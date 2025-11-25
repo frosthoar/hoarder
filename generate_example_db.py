@@ -7,8 +7,12 @@ This script creates a small example database with sample archives from the test_
 import pathlib
 import sys
 
-from hoarder.archives import (HashArchiveRepository, HashNameArchive,
-                              RarArchive, SfvArchive)
+from hoarder.archives import (
+    HashArchiveRepository,
+    HashNameArchive,
+    RarArchive,
+    SfvArchive,
+)
 
 
 def main() -> None:
