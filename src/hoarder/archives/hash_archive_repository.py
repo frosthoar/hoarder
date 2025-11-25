@@ -183,9 +183,7 @@ class HashArchiveRepository:
                     f"Archive not found: {storage_path_str}/{path_str}"
                 )
 
-            # Get storage_path from the joined row
-            archive_storage_path = Path(cast(str, arc_row["storage_path"]))
-            archive = self._fill_archive(arc_row, archive_storage_path)
+            archive = self._fill_archive(arc_row)
 
             fe_rows = cast(
                 list[sqlite3.Row],
@@ -293,9 +291,14 @@ class HashArchiveRepository:
             yield ret_dict
 
     @staticmethod
-    def _fill_archive(row: sqlite3.Row, storage_path: Path) -> HashArchive:
+    def _fill_archive(row: sqlite3.Row) -> HashArchive:
+        """Create a HashArchive from a database row.
+
+        The row must include storage_paths.storage_path from a JOIN.
+        """
         archive_type = cast(str, row["type"])
         archive_path = cast(str, row["path"])
+        storage_path = Path(cast(str, row["storage_path"]))
         arch: HashArchive | None = None
         if archive_type == "HashNameArchive":
             arch = HashNameArchive(
