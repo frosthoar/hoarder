@@ -63,6 +63,33 @@ class RealFile:
         self.algo = algo
         return hash_value
 
+    @classmethod
+    def from_path(
+        cls,
+        storage_path: Path,
+        path: PurePath | str,
+        *,
+        include_hash: bool = False,
+        algo: Algo = Algo.CRC32,
+    ) -> RealFile:
+        """Create a RealFile instance by inspecting the filesystem."""
+        pure_path = PurePath(path)
+        full_path = storage_path / pure_path
+        if not full_path.exists():
+            raise FileNotFoundError(full_path)
+
+        stat = full_path.stat()
+        real_file = cls(
+            storage_path=storage_path,
+            path=pure_path,
+            size=stat.st_size,
+            is_dir=full_path.is_dir(),
+        )
+
+        if include_hash and not real_file.is_dir:
+            real_file.calculate_hash(algo=algo)
+        return real_file
+
 
 @dataclasses.dataclass(slots=True)
 class Verification:
