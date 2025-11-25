@@ -3,6 +3,7 @@ import sqlite3
 from pathlib import Path, PurePath
 from typing import cast
 
+from ..utils.db_schema import ensure_repository_tables
 from ..utils.sql3_fk import Sqlite3FK
 from .hash_archive import Algo, FileEntry, HashArchive
 from .hash_name_archive import HashEnclosure, HashNameArchive
@@ -16,50 +17,6 @@ class HashArchiveRepository:
 
     _db_path: str | Path
     _allowed_storage_paths: set[Path]
-
-    _CREATE_STORAGE_PATHS: str = """
-    CREATE TABLE IF NOT EXISTS storage_paths (
-        id             INTEGER  PRIMARY KEY AUTOINCREMENT,
-        storage_path   TEXT     NOT NULL UNIQUE
-    );
-    """
-
-    _CREATE_HASH_ARCHIVES: str = """
-    CREATE TABLE IF NOT EXISTS hash_archives (
-        id             INTEGER  PRIMARY KEY AUTOINCREMENT,
-        type           TEXT     NOT NULL,
-        storage_path_id        INTEGER  NOT NULL,
-        path           TEXT     NOT NULL,
-        is_deleted        INTEGER,
-        timestamp      TEXT     DEFAULT CURRENT_TIMESTAMP,
-        -- HashNameArchive
-        hash_enclosure TEXT,
-        -- RarArchive
-        password       TEXT,
-        rar_scheme     INTEGER,
-        rar_version    TEXT,
-        n_volumes      INTEGER,
-        FOREIGN KEY (storage_path_id)
-          REFERENCES storage_paths(id)
-          ON DELETE CASCADE,
-        UNIQUE(storage_path_id, path)
-    );
-    """
-
-    _CREATE_FILE_ENTRIES: str = """
-    CREATE TABLE IF NOT EXISTS file_entries (
-        id          INTEGER  PRIMARY KEY AUTOINCREMENT,
-        path        TEXT     NOT NULL,
-        size        INTEGER,
-        is_dir      INTEGER  NOT NULL,
-        hash_value  BLOB,
-        algo        INTEGER,
-        archive_id  INTEGER  NOT NULL,
-        FOREIGN KEY (archive_id)
-          REFERENCES hash_archives(id)
-          ON DELETE CASCADE
-    );
-    """
 
     def __init__(
         self, db_path: str | Path, allowed_storage_paths: collections.abc.Iterable[Path]
@@ -86,7 +43,7 @@ class HashArchiveRepository:
             normalized_paths.append(normalized)
 
         self._allowed_storage_paths = set(normalized_paths)
-        self._create_tables()
+        ensure_repository_tables(self._db_path)
         self._initialize_storage_paths()
 
     def save(self, archive: HashArchive) -> None:
@@ -203,14 +160,6 @@ class HashArchiveRepository:
                 for r in fe_rows
             }
             return archive
-
-    def _create_tables(self) -> None:
-        """Create the database tables if they don't exist."""
-        with Sqlite3FK(self._db_path) as con:
-            cur = con.cursor()
-            _ = cur.execute(HashArchiveRepository._CREATE_STORAGE_PATHS)
-            _ = cur.execute(HashArchiveRepository._CREATE_HASH_ARCHIVES)
-            _ = cur.execute(HashArchiveRepository._CREATE_FILE_ENTRIES)
 
     def _initialize_storage_paths(self) -> None:
         """Insert allowed storage paths into the database."""
