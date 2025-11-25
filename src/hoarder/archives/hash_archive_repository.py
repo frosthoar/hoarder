@@ -15,12 +15,21 @@ class HashArchiveRepository:
     """Repository for any HashArchive subclass."""
 
     _db_path: str | Path
+    _allowed_storage_paths: set[Path]
+
+    _CREATE_STORAGE_PATHS: str = """
+    CREATE TABLE IF NOT EXISTS storage_paths (
+        id             INTEGER  PRIMARY KEY AUTOINCREMENT,
+        storage_path   TEXT     NOT NULL UNIQUE
+    );
+    """
 
     _CREATE_HASH_ARCHIVES: str = """
     CREATE TABLE IF NOT EXISTS hash_archives (
         id             INTEGER  PRIMARY KEY AUTOINCREMENT,
         type           TEXT     NOT NULL,
-        path           TEXT     NOT NULL UNIQUE,
+        storage_path_id        INTEGER  NOT NULL,
+        path           TEXT     NOT NULL,
         is_deleted        INTEGER,
         timestamp      TEXT     DEFAULT CURRENT_TIMESTAMP,
         -- HashNameArchive
@@ -29,7 +38,11 @@ class HashArchiveRepository:
         password       TEXT,
         rar_scheme     INTEGER,
         rar_version    TEXT,
-        n_volumes      INTEGER
+        n_volumes      INTEGER,
+        FOREIGN KEY (storage_path_id)
+          REFERENCES storage_paths(id)
+          ON DELETE CASCADE,
+        UNIQUE(storage_path_id, path)
     );
     """
 
@@ -48,60 +61,127 @@ class HashArchiveRepository:
     );
     """
 
-    def __init__(self, db_path: str | Path) -> None:
+    def __init__(
+        self, db_path: str | Path, allowed_storage_paths: collections.abc.Iterable[Path]
+    ) -> None:
+        """Initialize the repository with allowed storage paths.
+
+        Args:
+            db_path: Path to the SQLite database file
+            allowed_storage_paths: Iterable of allowed storage paths. These will be
+                normalized (resolved) and checked for existence on disk.
+
+        Raises:
+            FileNotFoundError: If any of the allowed storage paths don't exist on disk.
+        """
         self._db_path = db_path
+        # Normalize and validate storage paths
+        normalized_paths: list[Path] = []
+        for path in allowed_storage_paths:
+            normalized = path.resolve()
+            if not normalized.exists():
+                raise FileNotFoundError(
+                    f"Storage path does not exist on disk: {normalized}"
+                )
+            normalized_paths.append(normalized)
+
+        self._allowed_storage_paths = set(normalized_paths)
         self._create_tables()
+        self._initialize_storage_paths()
 
     def save(self, archive: HashArchive) -> None:
-        """Insert or replace one archive and all its FileEntry rows."""
+        """Insert or replace one archive and all its FileEntry rows.
+
+        Raises:
+            ValueError: If the archive's storage_path is not in the allowed set.
+        """
+        # Check if storage_path is allowed and get normalized path
+        normalized_storage_path = self._check_storage_path_allowed(archive.storage_path)
+        storage_path_str = str(normalized_storage_path)
+
         archive_row = self._build_archive_row(archive)
+        archive_path_str = str(archive_row["path"])
 
         with Sqlite3FK(self._db_path) as con:
             cur = con.cursor()
+
+            # Delete existing archive with same storage_path and path using subquery
             _ = cur.execute(
-                "DELETE FROM hash_archives WHERE path = ?;", (archive_row["path"],)
+                """
+                DELETE FROM hash_archives
+                WHERE storage_path_id = (SELECT id FROM storage_paths WHERE storage_path = ?)
+                  AND path = ?;
+                """,
+                (storage_path_str, archive_path_str),
             )
+
             _ = cur.execute(
                 f"""
-                INSERT INTO hash_archives ({', '.join(archive_row)})
-                VALUES ({', '.join(':' + k for k in archive_row)});
+                INSERT INTO hash_archives ({', '.join(archive_row.keys())}, storage_path_id)
+                SELECT {', '.join([':' + k + ' AS ' + k for k in archive_row.keys()])},
+                (SELECT id FROM storage_paths WHERE storage_path = :storage_path)
                 """,
-                archive_row,
+                archive_row | {"storage_path": storage_path_str},
             )
 
             if archive.files:
                 fe_rows = list(
-                    self._build_fileentry_rows(archive.files, archive_path=archive.path)
+                    self._build_fileentry_rows(
+                        archive.files,
+                        storage_path=storage_path_str,
+                        archive_path=archive_path_str,
+                    )
                 )
                 _ = cur.executemany(
                     """
                     INSERT INTO file_entries (path, size, is_dir, hash_value, algo, archive_id)
                     SELECT :path AS path, :size AS size, :is_dir AS is_dir, :hash_value AS hash_value,
-                    :algo AS algo, id as archive_id FROM hash_archives WHERE path = :archive_path
+                    :algo AS algo, hash_archives.id as archive_id
+                    FROM hash_archives
+                    JOIN storage_paths ON hash_archives.storage_path_id = storage_paths.id
+                    WHERE storage_paths.storage_path = :storage_path AND hash_archives.path = :archive_path
                     """,
                     fe_rows,
                 )
 
-    def load(self, path: Path | str) -> HashArchive:
+    def load(self, storage_path: Path, path: PurePath | str) -> HashArchive:
         """Return the archive (plus its FileEntry set) previously stored.
 
+        Args:
+            storage_path: The storage directory path
+            path: The relative path from storage_path
+
         Raises:
-            FileNotFoundError: If the archive with the given path is not found.
+            ValueError: If the storage_path is not in the allowed set.
+            FileNotFoundError: If the archive with the given storage_path and path is not found.
         """
+        # Check if storage_path is allowed and get normalized path
+        normalized_storage_path = self._check_storage_path_allowed(storage_path)
+        storage_path_str = str(normalized_storage_path)
+        path_str = str(path)
+
         with Sqlite3FK(self._db_path) as con:
             con.row_factory = sqlite3.Row
             cur = con.cursor()
 
+            # Get archive with storage_path using JOIN
             arc_row = cast(
                 None | sqlite3.Row,
                 cur.execute(
-                    "SELECT * FROM hash_archives WHERE path = :path;",
-                    {"path": str(path)},
+                    """
+                    SELECT hash_archives.*, storage_paths.storage_path
+                    FROM hash_archives
+                    JOIN storage_paths ON hash_archives.storage_path_id = storage_paths.id
+                    WHERE storage_paths.storage_path = ? AND hash_archives.path = ?;
+                    """,
+                    (storage_path_str, path_str),
                 ).fetchone(),
             )
 
             if arc_row is None:
-                raise FileNotFoundError(str(path))
+                raise FileNotFoundError(
+                    f"Archive not found: {storage_path_str}/{path_str}"
+                )
 
             archive = self._fill_archive(arc_row)
 
@@ -128,8 +208,40 @@ class HashArchiveRepository:
         """Create the database tables if they don't exist."""
         with Sqlite3FK(self._db_path) as con:
             cur = con.cursor()
+            _ = cur.execute(HashArchiveRepository._CREATE_STORAGE_PATHS)
             _ = cur.execute(HashArchiveRepository._CREATE_HASH_ARCHIVES)
             _ = cur.execute(HashArchiveRepository._CREATE_FILE_ENTRIES)
+
+    def _initialize_storage_paths(self) -> None:
+        """Insert allowed storage paths into the database."""
+        with Sqlite3FK(self._db_path) as con:
+            cur = con.cursor()
+            for storage_path in self._allowed_storage_paths:
+                storage_path_str = str(storage_path)
+                _ = cur.execute(
+                    "INSERT OR IGNORE INTO storage_paths (storage_path) VALUES (?);",
+                    (storage_path_str,),
+                )
+
+    def _check_storage_path_allowed(self, storage_path: Path) -> Path:
+        """Check if storage_path is in the allowed set and return normalized path.
+
+        Args:
+            storage_path: The storage path to check
+
+        Returns:
+            The normalized (resolved) storage path.
+
+        Raises:
+            ValueError: If the storage_path is not in the allowed set.
+        """
+        normalized = storage_path.resolve()
+        if normalized not in self._allowed_storage_paths:
+            raise ValueError(
+                f"Storage path '{normalized}' is not in the allowed set. "
+                f"Allowed paths: {sorted(str(p) for p in self._allowed_storage_paths)}"
+            )
+        return normalized
 
     def _build_archive_row(self, arch: HashArchive) -> dict[str, str | int | None]:
         """Return a dict used directly with named-parameter SQL."""
@@ -161,6 +273,7 @@ class HashArchiveRepository:
     @staticmethod
     def _build_fileentry_rows(
         entries: collections.abc.Iterable[FileEntry],
+        storage_path: str | None = None,
         archive_path: str | Path | None = None,
     ) -> collections.abc.Iterable[dict[str, str | int | None | bytes]]:
         for fe in entries:
@@ -171,24 +284,33 @@ class HashArchiveRepository:
                 "hash_value": fe.hash_value,
                 "algo": fe.algo.value if fe.algo is not None else None,
             }
+            if storage_path:
+                ret_dict["storage_path"] = storage_path
             if archive_path:
                 ret_dict.update(archive_path=str(archive_path))
             yield ret_dict
 
     @staticmethod
     def _fill_archive(row: sqlite3.Row) -> HashArchive:
+        """Create a HashArchive from a database row.
+
+        The row must include storage_paths.storage_path from a JOIN.
+        """
         archive_type = cast(str, row["type"])
         archive_path = cast(str, row["path"])
+        storage_path = Path(cast(str, row["storage_path"]))
         arch: HashArchive | None = None
         if archive_type == "HashNameArchive":
             arch = HashNameArchive(
-                Path(archive_path),
+                storage_path,
+                PurePath(archive_path),
                 files=None,
                 enc=HashEnclosure(row["hash_enclosure"]),
             )
         elif archive_type == "RarArchive":
             arch = RarArchive(
-                Path(archive_path),
+                storage_path,
+                PurePath(archive_path),
                 files=None,
                 password=cast(str | None, row["password"]),
                 version=cast(str | None, row["rar_version"]),
@@ -200,7 +322,7 @@ class HashArchiveRepository:
                 n_volumes=cast(int | None, row["n_volumes"]),
             )
         elif archive_type == "SfvArchive":
-            arch = SfvArchive(Path(archive_path), files=set())
+            arch = SfvArchive(storage_path, PurePath(archive_path), files=set())
         else:
             raise ValueError(f"Unknown archive type in database: {archive_type}")
 

@@ -8,7 +8,7 @@ import tomllib
 def load_config() -> dict[str, dict[str, str]]:
     # get module path
 
-    p = pathlib.Path(__file__).parent
+    p = pathlib.Path(__file__).parent.parent
     cf = p / "config.toml"
     with open(cf, "rb") as f:
         d: dict[str, dict[str, str]] = tomllib.load(f)

@@ -24,7 +24,9 @@ def test_rar_archives_set(
     ) = rar_data_tuple
 
     main_archive_path = main_archive_path.resolve()
-    rar_archive = RarArchive.from_path(main_archive_path, password=password)
+    root = main_archive_path.parent
+    path = pathlib.PurePath(main_archive_path.name)
+    rar_archive = RarArchive.from_path(root, path, password=password)
     logger.debug(f"== Listing {main_archive_path}")
     for f in rar_archive.files:
         logger.debug(f)
@@ -34,6 +36,6 @@ def test_rar_archives_set(
     logger.info(f"+ {list(map(lambda x: x.path,rar_archive))}")
     logger.info(f"* {list(map(lambda x: x.path,compare_files_list))}")
     assert sorted(rar_archive.files) == sorted(compare_files_list)
-    assert rar_archive.path == main_archive_path
+    assert rar_archive.full_path == main_archive_path
     assert rar_archive.scheme == naming_scheme
     assert rar_archive.n_volumes == n_volumes

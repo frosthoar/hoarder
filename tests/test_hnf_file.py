@@ -21,7 +21,9 @@ def list_hnf_file_paths():
 def test_hnf_archives(list_hnf_file_paths: list[pathlib.Path]):
     hnf_archives = []
     for hnf_file_path in list_hnf_file_paths:
-        hnf_archive = HashNameArchive.from_path(hnf_file_path)
+        root = hnf_file_path.parent
+        path = pathlib.PurePath(hnf_file_path.name)
+        hnf_archive = HashNameArchive.from_path(root, path)
         hnf_archives.append(hnf_archive)
     assert len(hnf_archives) == 4
     assert sorted(itertools.chain(*map(lambda x: x.files, hnf_archives))) == sorted(

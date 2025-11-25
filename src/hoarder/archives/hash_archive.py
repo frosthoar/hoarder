@@ -60,7 +60,8 @@ T = typing.TypeVar("T", bound="HashArchive")
 class HashArchive(abc.ABC):
     """This class contains information about an hash file."""
 
-    path: pathlib.Path
+    storage_path: pathlib.Path
+    path: pathlib.PurePath
     files: set[FileEntry]
     is_deleted: bool
     info: str | None = None
@@ -70,16 +71,40 @@ class HashArchive(abc.ABC):
     # where the archive is essentially the file itself and must not be deleted.
     DELETABLE: typing.ClassVar[bool] = True
 
-    def __init__(self, path: pathlib.Path, files: set[FileEntry] | None = None) -> None:
-        """Create a HashArchive object by reading information from an hash file given its path."""
+    def __init__(
+        self,
+        storage_path: pathlib.Path,
+        path: pathlib.PurePath,
+        files: set[FileEntry] | None = None,
+    ) -> None:
+        """Create a HashArchive object.
+
+        Args:
+            storage_path: The storage directory path (explicitly set, not inferred)
+            path: The relative path from storage_path (as PurePath)
+            files: Optional set of FileEntry objects
+        """
         self.files = files or set()
+        self.storage_path = storage_path.resolve()
         self.path = path
         self.is_deleted = True
 
+    @property
+    def full_path(self) -> pathlib.Path:
+        """Calculate the full path by combining storage_path and path."""
+        return self.storage_path / self.path
+
     @classmethod
     @abstractmethod
-    def from_path(cls: typing.Type[T], path: pathlib.Path) -> T:
-        """Create a HashArchive object by reading information from an hash file given its path."""
+    def from_path(
+        cls: typing.Type[T], storage_path: pathlib.Path, path: pathlib.PurePath
+    ) -> T:
+        """Create a HashArchive object by reading information from an hash file given its storage_path and path.
+
+        Args:
+            storage_path: The storage directory path (explicitly set, not inferred)
+            path: The relative path from storage_path (as PurePath)
+        """
 
     def __len__(self) -> int:
         return len(self.files)
@@ -113,7 +138,7 @@ class HashArchive(abc.ABC):
         maxlen_hash = 8 if any(file.hash_value for file in self) else 0
         maxlen_algo = 5 if any(file.algo for file in self) else 0
         class_name = self.__class__.__name__
-        ret = f"{class_name}: {self.path}\n"
+        ret = f"{class_name}: {self.full_path}\n"
 
         cols = 0
         header_fields = self._printable_attributes()
