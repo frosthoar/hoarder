@@ -91,20 +91,16 @@ class RealFileRepository:
                             real_file_id,
                             source_type,
                             hash_archive_id,
-                            verified,
                             hash_value,
                             algo,
-                            verified_at,
                             comment
                         )
                         VALUES (
                             :real_file_id,
                             :source_type,
                             :hash_archive_id,
-                            :verified,
                             :hash_value,
                             :algo,
-                            :verified_at,
                             :comment
                         );
                         """,
@@ -181,10 +177,8 @@ class RealFileRepository:
                 "real_file_id": real_file_id,
                 "source_type": verification.source_type.value,
                 "hash_archive_id": self._lookup_hash_archive_id(cursor, verification.hash_archive),
-                "verified": int(verification.verified),
                 "hash_value": verification.hash_value,
                 "algo": verification.algo.value,
-                "verified_at": verification.verified_at.isoformat(),
                 "comment": verification.comment,
             }
 
@@ -217,7 +211,7 @@ class RealFileRepository:
         self, cursor: sqlite3.Cursor, real_file_db_id: int, real_file: RealFile
     ) -> list[Verification]:
         verification_rows = cursor.execute(
-            "SELECT * FROM verifications WHERE real_file_id = ? ORDER BY verified_at;",
+            "SELECT * FROM verifications WHERE real_file_id = ? ORDER BY id;",
             (real_file_db_id,),
         ).fetchall()
 
@@ -232,10 +226,8 @@ class RealFileRepository:
                 real_file=real_file,
                 source_type=VerificationSource(row["source_type"]),
                 hash_archive=hash_archive,
-                verified=bool(row["verified"]),
                 hash_value=row["hash_value"],
                 algo=Algo(row["algo"]),
-                verified_at=dt.datetime.fromisoformat(row["verified_at"]),
                 comment=row["comment"],
             )
             verifications.append(verification)

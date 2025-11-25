@@ -73,10 +73,8 @@ CREATE TABLE IF NOT EXISTS verifications (
     real_file_id     INTEGER NOT NULL,
     source_type      INTEGER NOT NULL,
     hash_archive_id  INTEGER,
-    verified         INTEGER NOT NULL,
-    hash_value       BLOB,
-    algo             INTEGER,
-    verified_at      TEXT NOT NULL,
+    hash_value       BLOB NOT NULL,
+    algo             INTEGER NOT NULL,
     comment          TEXT,
     FOREIGN KEY (real_file_id)
       REFERENCES real_files(id)

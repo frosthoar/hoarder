@@ -98,11 +98,18 @@ class Verification:
     real_file: RealFile
     source_type: VerificationSource
     hash_archive: HashArchive | None
-    verified: bool
     hash_value: bytes
     algo: Algo
-    verified_at: dt.datetime
     comment: str | None = None
+
+    @property
+    def verified(self) -> bool:
+        """Return True when the real file hash matches the stored verification hash."""
+        if self.real_file.hash_value is None:
+            return False
+        if self.real_file.algo != self.algo:
+            return False
+        return self.real_file.hash_value == self.hash_value
 
     @property
     def is_trusted(self) -> bool:
