@@ -93,13 +93,15 @@ class HashArchiveRepository:
                 INSERT INTO hash_archives ({', '.join(archive_row.keys())}, storage_path_id)
                 SELECT {', '.join([':' + k + ' AS ' + k for k in archive_row.keys()])}, (SELECT id FROM storage_paths WHERE storage_path = :storage_path)
                 """,
-                archive_row | {"storage_path": storage_path_str}
+                archive_row | {"storage_path": storage_path_str},
             )
 
             if archive.files:
                 fe_rows = list(
                     self._build_fileentry_rows(
-                        archive.files, storage_path=storage_path_str, archive_path=archive_path_str
+                        archive.files,
+                        storage_path=storage_path_str,
+                        archive_path=archive_path_str,
                     )
                 )
                 _ = cur.executemany(
@@ -146,7 +148,9 @@ class HashArchiveRepository:
             )
 
             if arc_row is None:
-                raise FileNotFoundError(f"Archive not found: {storage_path_str}/{path_str}")
+                raise FileNotFoundError(
+                    f"Archive not found: {storage_path_str}/{path_str}"
+                )
 
             # Get storage_path from the joined row
             archive_storage_path = Path(cast(str, arc_row["storage_path"]))

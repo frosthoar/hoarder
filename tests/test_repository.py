@@ -33,7 +33,9 @@ def test_sfv_repositories(create_test_repo):
         path = pathlib.PurePath(p.name)
         saved_sfv_file = SfvArchive.from_path(root, path)
         create_test_repo.save(saved_sfv_file)
-        retrieved_sfv_file = create_test_repo.load(saved_sfv_file.storage_path, saved_sfv_file.path)
+        retrieved_sfv_file = create_test_repo.load(
+            saved_sfv_file.storage_path, saved_sfv_file.path
+        )
 
         print(saved_sfv_file)
         print(retrieved_sfv_file)
@@ -58,7 +60,9 @@ def test_rar_repositories(
         password=password,
     )
     create_test_repo.save(saved_rar_file)
-    retrieved_rar_file = create_test_repo.load(saved_rar_file.storage_path, saved_rar_file.path)
+    retrieved_rar_file = create_test_repo.load(
+        saved_rar_file.storage_path, saved_rar_file.path
+    )
 
     assert repr(saved_rar_file) == repr(retrieved_rar_file)
 
@@ -75,6 +79,8 @@ def test_hnf_repositories(create_test_repo):
         path = pathlib.PurePath(hnf_path.name)
         saved_hnf_file = HashNameArchive.from_path(root, path)
         create_test_repo.save(saved_hnf_file)
-        retrieved_hnf_file = create_test_repo.load(saved_hnf_file.storage_path, saved_hnf_file.path)
+        retrieved_hnf_file = create_test_repo.load(
+            saved_hnf_file.storage_path, saved_hnf_file.path
+        )
 
     assert repr(saved_hnf_file) == repr(retrieved_hnf_file)

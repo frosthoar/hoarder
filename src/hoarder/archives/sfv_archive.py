@@ -17,9 +17,11 @@ class SfvArchive(HashArchive):
     """This class contains information about a SFV file."""
 
     @classmethod
-    def from_path(cls: typing.Type[T], storage_path: pathlib.Path, path: pathlib.PurePath) -> T:
+    def from_path(
+        cls: typing.Type[T], storage_path: pathlib.Path, path: pathlib.PurePath
+    ) -> T:
         """Create a SfvArchive object by reading information from an SFV file given its storage_path and path.
-        
+
         Args:
             storage_path: The storage directory path (explicitly set, not inferred)
             path: The relative path from storage_path (as PurePath)

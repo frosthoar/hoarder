@@ -74,9 +74,14 @@ class RarArchive(HashArchive):
 
     @classmethod
     @override
-    def from_path(cls: type[T], storage_path: pathlib.Path, path: pathlib.PurePath, password: str | None = None) -> T:
+    def from_path(
+        cls: type[T],
+        storage_path: pathlib.Path,
+        path: pathlib.PurePath,
+        password: str | None = None,
+    ) -> T:
         """Create a RarArchive object by reading information from a (main) RAR file given its storage_path and path.
-        
+
         Args:
             storage_path: The storage directory path (explicitly set, not inferred)
             path: The relative path from storage_path (as PurePath)
@@ -85,7 +90,9 @@ class RarArchive(HashArchive):
         full_path = storage_path / path
 
         if full_path.is_dir():
-            logger.debug("A directory %s was given, trying to find RAR files", full_path)
+            logger.debug(
+                "A directory %s was given, trying to find RAR files", full_path
+            )
             rar_dict: dict[str, tuple[RarScheme, list[pathlib.Path]]] = find_rar_files(
                 full_path
             )
@@ -100,7 +107,9 @@ class RarArchive(HashArchive):
             try:
                 main_volume_path = main_volume.relative_to(storage_path)
             except ValueError:
-                raise ValueError(f"Main volume {main_volume} is not under storage_path {storage_path}")
+                raise ValueError(
+                    f"Main volume {main_volume} is not under storage_path {storage_path}"
+                )
             logger.debug("Found %d volumes in %s", n_volumes, full_path)
         elif full_path.is_file():
             logger.debug("A file %s was given, trying to find RAR files", full_path)
@@ -113,7 +122,11 @@ class RarArchive(HashArchive):
                 seek_stem = match["stem"]
                 logger.debug("Path %s matches a RAR pattern", path)
                 # Search in the directory containing the file (storage_path / path.parent)
-                search_dir = storage_path / path.parent if path.parent != pathlib.PurePath(".") else storage_path
+                search_dir = (
+                    storage_path / path.parent
+                    if path.parent != pathlib.PurePath(".")
+                    else storage_path
+                )
                 logger.debug(
                     "Finding RAR files with stem %s in directory %s",
                     seek_stem,
@@ -130,7 +143,9 @@ class RarArchive(HashArchive):
                     try:
                         main_volume_path = main_volume.relative_to(storage_path)
                     except ValueError:
-                        raise ValueError(f"Main volume {main_volume} is not under storage_path {storage_path}")
+                        raise ValueError(
+                            f"Main volume {main_volume} is not under storage_path {storage_path}"
+                        )
                     logger.debug("Main volume is %s", main_volume)
                 else:
                     raise ValueError(f"Path {full_path} does not match any RAR pattern")
@@ -164,7 +179,15 @@ class RarArchive(HashArchive):
                     algo = Algo.CRC32 if hash_value else None
                 files.add(FileEntry(entry_path, size, is_dir, hash_value, algo))
         logger.info(scheme)
-        return cls(storage_path, pathlib.PurePath(main_volume_path), files, password, version, scheme, n_volumes)
+        return cls(
+            storage_path,
+            pathlib.PurePath(main_volume_path),
+            files,
+            password,
+            version,
+            scheme,
+            n_volumes,
+        )
 
     @classmethod
     def list_rar(

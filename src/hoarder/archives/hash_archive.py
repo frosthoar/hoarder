@@ -72,10 +72,13 @@ class HashArchive(abc.ABC):
     DELETABLE: typing.ClassVar[bool] = True
 
     def __init__(
-        self, storage_path: pathlib.Path, path: pathlib.PurePath, files: set[FileEntry] | None = None
+        self,
+        storage_path: pathlib.Path,
+        path: pathlib.PurePath,
+        files: set[FileEntry] | None = None,
     ) -> None:
         """Create a HashArchive object.
-        
+
         Args:
             storage_path: The storage directory path (explicitly set, not inferred)
             path: The relative path from storage_path (as PurePath)
@@ -93,9 +96,11 @@ class HashArchive(abc.ABC):
 
     @classmethod
     @abstractmethod
-    def from_path(cls: typing.Type[T], storage_path: pathlib.Path, path: pathlib.PurePath) -> T:
+    def from_path(
+        cls: typing.Type[T], storage_path: pathlib.Path, path: pathlib.PurePath
+    ) -> T:
         """Create a HashArchive object by reading information from an hash file given its storage_path and path.
-        
+
         Args:
             storage_path: The storage directory path (explicitly set, not inferred)
             path: The relative path from storage_path (as PurePath)
