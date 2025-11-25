@@ -137,7 +137,7 @@ class HashArchiveRepository:
                     INSERT INTO file_entries (path, size, is_dir, hash_value, algo, archive_id)
                     SELECT :path AS path, :size AS size, :is_dir AS is_dir, :hash_value AS hash_value,
                     :algo AS algo, hash_archives.id as archive_id
-                    FROM hash_archives 
+                    FROM hash_archives
                     JOIN storage_paths ON hash_archives.storage_path_id = storage_paths.id
                     WHERE storage_paths.storage_path = :storage_path AND hash_archives.path = :archive_path
                     """,
