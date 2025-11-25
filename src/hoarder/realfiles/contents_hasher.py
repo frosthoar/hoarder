@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 import typing
 import zlib
@@ -9,7 +11,7 @@ try:
 except ImportError:
     from typing_extensions import override
 
-logger = logging.getLogger("hoarder.contents_hasher")
+logger = logging.getLogger("hoarder.realfiles.contents_hasher")
 
 
 class ContentsHasher(ABC):
@@ -20,10 +22,9 @@ class ContentsHasher(ABC):
         if self._path.is_dir():
             logger.debug("Hashing directory yields empty hash")
             return self.empty_hash()
-        else:
-            logger.debug(f"Opening {self._path}")
-            with open(self._path, "rb") as f:
-                return self._hash_file(f)
+        logger.debug("Opening %s", self._path)
+        with open(self._path, "rb") as f:
+            return self._hash_file(f)
 
     def _file_chunks(self, file: typing.IO[bytes], chunksize: int = 2**16):
         with file:
@@ -39,15 +40,15 @@ class ContentsHasher(ABC):
 
     @abstractmethod
     def update(self, chunk: bytes) -> None:
-        pass
+        ...
 
     @abstractmethod
     def digest(self) -> bytes:
-        pass
+        ...
 
     @abstractmethod
     def empty_hash(self) -> bytes:
-        pass
+        ...
 
 
 class CRC32Hasher(ContentsHasher):
@@ -68,3 +69,7 @@ class CRC32Hasher(ContentsHasher):
     @override
     def empty_hash(self) -> bytes:
         return (0).to_bytes(4, "big")
+
+
+__all__ = ["ContentsHasher", "CRC32Hasher"]
+

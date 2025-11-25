@@ -1,9 +1,8 @@
-from . import archives, contents_hasher, passwords, realfiles, utils
+from . import archives, passwords, realfiles, utils
 
 __all__ = [
     "utils",
     "archives",
     "passwords",
-    "contents_hasher",
     "realfiles",
 ]
