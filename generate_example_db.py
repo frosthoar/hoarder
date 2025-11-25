@@ -118,7 +118,7 @@ def main() -> None:
                     continue
 
     print(f"\n{'='*60}")
-    print(f"Example database created successfully!")
+    print("Example database created successfully!")
     print(f"Database location: {db_path}")
     print(f"Total archives saved: {archives_created}")
     print(f"{'='*60}")

@@ -123,9 +123,7 @@ def test_storage_path_not_allowed_error(tmpdir_factory):
     if not allowed_path.exists():
         pytest.skip(f"Test file directory not found: {allowed_path}")
 
-    repo = HashArchiveRepository(
-        pathlib.Path(p / "hoarder.db"), [allowed_path]
-    )
+    repo = HashArchiveRepository(pathlib.Path(p / "hoarder.db"), [allowed_path])
 
     # Try to save an archive from a different storage path
     hnf_path = (
@@ -155,9 +153,7 @@ def test_storage_path_not_allowed_on_load(tmpdir_factory):
     if not allowed_path.exists():
         pytest.skip(f"Test file directory not found: {allowed_path}")
 
-    repo = HashArchiveRepository(
-        pathlib.Path(p / "hoarder.db"), [allowed_path]
-    )
+    repo = HashArchiveRepository(pathlib.Path(p / "hoarder.db"), [allowed_path])
 
     # Try to load from a disallowed storage path
     hnf_path = (

@@ -108,7 +108,7 @@ class HashArchiveRepository:
             # Delete existing archive with same storage_path and path using subquery
             _ = cur.execute(
                 """
-                DELETE FROM hash_archives 
+                DELETE FROM hash_archives
                 WHERE storage_path_id = (SELECT id FROM storage_paths WHERE storage_path = ?)
                   AND path = ?;
                 """,
@@ -118,7 +118,8 @@ class HashArchiveRepository:
             _ = cur.execute(
                 f"""
                 INSERT INTO hash_archives ({', '.join(archive_row.keys())}, storage_path_id)
-                SELECT {', '.join([':' + k + ' AS ' + k for k in archive_row.keys()])}, (SELECT id FROM storage_paths WHERE storage_path = :storage_path)
+                SELECT {', '.join([':' + k + ' AS ' + k for k in archive_row.keys()])},
+                (SELECT id FROM storage_paths WHERE storage_path = :storage_path)
                 """,
                 archive_row | {"storage_path": storage_path_str},
             )
@@ -135,7 +136,7 @@ class HashArchiveRepository:
                     """
                     INSERT INTO file_entries (path, size, is_dir, hash_value, algo, archive_id)
                     SELECT :path AS path, :size AS size, :is_dir AS is_dir, :hash_value AS hash_value,
-                    :algo AS algo, hash_archives.id as archive_id 
+                    :algo AS algo, hash_archives.id as archive_id
                     FROM hash_archives 
                     JOIN storage_paths ON hash_archives.storage_path_id = storage_paths.id
                     WHERE storage_paths.storage_path = :storage_path AND hash_archives.path = :archive_path
@@ -168,8 +169,8 @@ class HashArchiveRepository:
                 None | sqlite3.Row,
                 cur.execute(
                     """
-                    SELECT hash_archives.*, storage_paths.storage_path 
-                    FROM hash_archives 
+                    SELECT hash_archives.*, storage_paths.storage_path
+                    FROM hash_archives
                     JOIN storage_paths ON hash_archives.storage_path_id = storage_paths.id
                     WHERE storage_paths.storage_path = ? AND hash_archives.path = ?;
                     """,
