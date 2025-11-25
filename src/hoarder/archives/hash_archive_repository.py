@@ -68,7 +68,7 @@ class HashArchiveRepository:
         """Insert or replace one archive and all its FileEntry rows."""
         archive_row = self._build_archive_row(archive)
         storage_path_str = str(archive.storage_path.resolve())
-        archive_path_str = archive_row["path"]
+        archive_path_str = str(archive_row["path"])
 
         with Sqlite3FK(self._db_path) as con:
             cur = con.cursor()
