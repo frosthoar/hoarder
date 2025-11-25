@@ -15,6 +15,7 @@ class HashArchiveRepository:
     """Repository for any HashArchive subclass."""
 
     _db_path: str | Path
+    _allowed_storage_paths: set[Path]
 
     _CREATE_STORAGE_PATHS: str = """
     CREATE TABLE IF NOT EXISTS storage_paths (
@@ -60,23 +61,49 @@ class HashArchiveRepository:
     );
     """
 
-    def __init__(self, db_path: str | Path) -> None:
+    def __init__(
+        self, db_path: str | Path, allowed_storage_paths: collections.abc.Iterable[Path]
+    ) -> None:
+        """Initialize the repository with allowed storage paths.
+
+        Args:
+            db_path: Path to the SQLite database file
+            allowed_storage_paths: Iterable of allowed storage paths. These will be
+                normalized (resolved) and checked for existence on disk.
+
+        Raises:
+            FileNotFoundError: If any of the allowed storage paths don't exist on disk.
+        """
         self._db_path = db_path
+        # Normalize and validate storage paths
+        normalized_paths: list[Path] = []
+        for path in allowed_storage_paths:
+            normalized = path.resolve()
+            if not normalized.exists():
+                raise FileNotFoundError(
+                    f"Storage path does not exist on disk: {normalized}"
+                )
+            normalized_paths.append(normalized)
+
+        self._allowed_storage_paths = set(normalized_paths)
         self._create_tables()
+        self._initialize_storage_paths()
 
     def save(self, archive: HashArchive) -> None:
-        """Insert or replace one archive and all its FileEntry rows."""
+        """Insert or replace one archive and all its FileEntry rows.
+
+        Raises:
+            ValueError: If the archive's storage_path is not in the allowed set.
+        """
+        # Check if storage_path is allowed and get normalized path
+        normalized_storage_path = self._check_storage_path_allowed(archive.storage_path)
+        storage_path_str = str(normalized_storage_path)
+
         archive_row = self._build_archive_row(archive)
-        storage_path_str = str(archive.storage_path.resolve())
         archive_path_str = str(archive_row["path"])
 
         with Sqlite3FK(self._db_path) as con:
             cur = con.cursor()
-            # Insert or get storage path (needed for foreign key constraint)
-            _ = cur.execute(
-                "INSERT OR IGNORE INTO storage_paths (storage_path) VALUES (?);",
-                (storage_path_str,),
-            )
 
             # Delete existing archive with same storage_path and path using subquery
             _ = cur.execute(
@@ -124,9 +151,12 @@ class HashArchiveRepository:
             path: The relative path from storage_path
 
         Raises:
+            ValueError: If the storage_path is not in the allowed set.
             FileNotFoundError: If the archive with the given storage_path and path is not found.
         """
-        storage_path_str = str(storage_path.resolve())
+        # Check if storage_path is allowed and get normalized path
+        normalized_storage_path = self._check_storage_path_allowed(storage_path)
+        storage_path_str = str(normalized_storage_path)
         path_str = str(path)
 
         with Sqlite3FK(self._db_path) as con:
@@ -182,6 +212,37 @@ class HashArchiveRepository:
             _ = cur.execute(HashArchiveRepository._CREATE_STORAGE_PATHS)
             _ = cur.execute(HashArchiveRepository._CREATE_HASH_ARCHIVES)
             _ = cur.execute(HashArchiveRepository._CREATE_FILE_ENTRIES)
+
+    def _initialize_storage_paths(self) -> None:
+        """Insert allowed storage paths into the database."""
+        with Sqlite3FK(self._db_path) as con:
+            cur = con.cursor()
+            for storage_path in self._allowed_storage_paths:
+                storage_path_str = str(storage_path)
+                _ = cur.execute(
+                    "INSERT OR IGNORE INTO storage_paths (storage_path) VALUES (?);",
+                    (storage_path_str,),
+                )
+
+    def _check_storage_path_allowed(self, storage_path: Path) -> Path:
+        """Check if storage_path is in the allowed set and return normalized path.
+
+        Args:
+            storage_path: The storage path to check
+
+        Returns:
+            The normalized (resolved) storage path.
+
+        Raises:
+            ValueError: If the storage_path is not in the allowed set.
+        """
+        normalized = storage_path.resolve()
+        if normalized not in self._allowed_storage_paths:
+            raise ValueError(
+                f"Storage path '{normalized}' is not in the allowed set. "
+                f"Allowed paths: {sorted(str(p) for p in self._allowed_storage_paths)}"
+            )
+        return normalized
 
     def _build_archive_row(self, arch: HashArchive) -> dict[str, str | int | None]:
         """Return a dict used directly with named-parameter SQL."""
