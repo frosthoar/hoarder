@@ -6,9 +6,8 @@ import sqlite3
 from pathlib import Path, PurePath
 from typing import Iterable
 
-from hoarder.archives.hash_archive import Algo, HashArchive
-from hoarder.archives.hash_archive_repository import HashArchiveRepository
-from hoarder.realfiles.real_file import RealFile, Verification, VerificationSource
+from ..archives import Algo, HashArchive, HashArchiveRepository
+from .real_file import RealFile, Verification, VerificationSource
 
 
 class RealFileRepository:
