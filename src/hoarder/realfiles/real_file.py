@@ -6,8 +6,7 @@ import enum
 from pathlib import Path, PurePath
 from typing import ClassVar, Type
 
-from hoarder.archives.hash_archive import Algo, HashArchive
-
+from ..archives import Algo
 from .contents_hasher import CRC32Hasher, ContentsHasher
 
 
@@ -98,7 +97,6 @@ class Verification:
 
     real_file: RealFile
     source_type: VerificationSource
-    hash_archive: HashArchive | None
     hash_value: bytes
     algo: Algo
     comment: str | None = None

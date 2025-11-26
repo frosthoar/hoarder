@@ -6,24 +6,18 @@ import sqlite3
 from pathlib import Path, PurePath
 from typing import Iterable
 
-from ..archives import Algo, HashArchive, HashArchiveRepository
+from ..archives import Algo
 from .real_file import RealFile, Verification, VerificationSource
 
 
 class RealFileRepository:
     """Repository handling persistence for RealFile and Verification instances."""
 
-    def save(
-        self,
-        real_file: RealFile,
-        con: sqlite3.Connection,
-        hash_repo: HashArchiveRepository | None = None,
-    ) -> None:
+    def save(self, real_file: RealFile, con: sqlite3.Connection) -> None:
         """Insert or replace a RealFile and its verifications."""
         storage_path_str = str(real_file.storage_path.resolve())
         real_file_row = self._build_real_file_row(real_file)
 
-        self._ensure_storage_path(con, real_file.storage_path)
         cur = con.cursor()
         _ = cur.execute(
             """
@@ -69,16 +63,12 @@ class RealFileRepository:
                 )
             )
             if verification_rows:
-                self._persist_missing_hash_archives(
-                    real_file.verification, con, hash_repo
-                )
                 expected_rows = len(verification_rows)
                 _ = cur.executemany(
                     """
                     INSERT INTO verifications (
                         real_file_id,
                         source_type,
-                        hash_archive_id,
                         hash_value,
                         algo,
                         comment
@@ -86,17 +76,6 @@ class RealFileRepository:
                     SELECT
                         real_files.id,
                         :source_type,
-                        CASE
-                            WHEN :hash_archive_path IS NULL THEN NULL
-                            ELSE (
-                                SELECT ha.id
-                                FROM hash_archives ha
-                                JOIN storage_paths ha_sp
-                                  ON ha.storage_path_id = ha_sp.id
-                                WHERE ha_sp.storage_path = :hash_archive_storage_path
-                                  AND ha.path = :hash_archive_path
-                            )
-                        END AS hash_archive_id,
                         :hash_value,
                         :algo,
                         :comment
@@ -109,16 +88,13 @@ class RealFileRepository:
                     verification_rows,
                 )
                 if cur.rowcount != expected_rows:
-                    raise ValueError(
-                        "Verification refers to a HashArchive that is not stored in the database"
-                    )
+                    raise ValueError("Failed to insert verification rows")
 
     def load(
         self,
         storage_path: Path,
         path: PurePath | str,
         con: sqlite3.Connection,
-        hash_repo: HashArchiveRepository | None = None,
     ) -> RealFile:
         """Load one RealFile (including all Verification records)."""
         storage_path_str = str(storage_path.resolve())
@@ -140,9 +116,7 @@ class RealFileRepository:
             raise FileNotFoundError(f"Real file not found: {storage_path_str}/{path_str}")
 
         real_file = self._row_to_real_file(rf_row)
-        verifications = self._load_verifications(
-            con, rf_row["id"], real_file, hash_repo=hash_repo
-        )
+        verifications = self._load_verifications(con, rf_row["id"], real_file)
         real_file.verification = verifications
         return real_file
 
@@ -170,14 +144,6 @@ class RealFileRepository:
         storage_path: str,
     ) -> collections.abc.Iterator[dict[str, object | None]]:
         for verification in verifications:
-            hash_archive_path: str | None = None
-            hash_archive_storage: str | None = None
-            if verification.hash_archive is not None:
-                hash_archive_path = str(verification.hash_archive.path)
-                hash_archive_storage = str(
-                    verification.hash_archive.storage_path.resolve()
-                )
-
             yield {
                 "source_type": verification.source_type.value,
                 "hash_value": verification.hash_value,
@@ -185,8 +151,6 @@ class RealFileRepository:
                 "comment": verification.comment,
                 "path": path,
                 "storage_path": storage_path,
-                "hash_archive_path": hash_archive_path,
-                "hash_archive_storage_path": hash_archive_storage,
             }
 
     def _load_verifications(
@@ -194,7 +158,6 @@ class RealFileRepository:
         con: sqlite3.Connection,
         real_file_db_id: int,
         real_file: RealFile,
-        hash_repo: HashArchiveRepository | None = None,
     ) -> list[Verification]:
         cursor = con.cursor()
         verification_rows = cursor.execute(
@@ -204,72 +167,15 @@ class RealFileRepository:
 
         verifications: list[Verification] = []
         for row in verification_rows:
-            hash_archive: HashArchive | None = None
-            hash_archive_id = row["hash_archive_id"]
-            if hash_archive_id is not None:
-                if hash_repo is not None:
-                    hash_archive = hash_repo.load_by_id(hash_archive_id, con)
-                else:
-                    hash_archive = self._load_hash_archive_by_id(con, hash_archive_id)
-
             verification = Verification(
                 real_file=real_file,
                 source_type=VerificationSource(row["source_type"]),
-                hash_archive=hash_archive,
                 hash_value=row["hash_value"],
                 algo=Algo(row["algo"]),
                 comment=row["comment"],
             )
             verifications.append(verification)
         return verifications
-
-    def _load_hash_archive_by_id(
-        self, con: sqlite3.Connection, archive_id: int
-    ) -> HashArchive | None:
-        con.row_factory = sqlite3.Row
-        cursor = con.cursor()
-        hash_archive_row = cursor.execute(
-            """
-            SELECT hash_archives.*, storage_paths.storage_path
-            FROM hash_archives
-            JOIN storage_paths ON hash_archives.storage_path_id = storage_paths.id
-            WHERE hash_archives.id = ?;
-            """,
-            (archive_id,),
-        ).fetchone()
-
-        if hash_archive_row is None:
-            return None
-        return HashArchiveRepository._fill_archive(hash_archive_row)
-
-    @staticmethod
-    def _persist_missing_hash_archives(
-        verifications: Iterable[Verification],
-        con: sqlite3.Connection,
-        hash_repo: HashArchiveRepository | None,
-    ) -> None:
-        if hash_repo is None:
-            if any(v.hash_archive is not None for v in verifications):
-                raise ValueError(
-                    "hash_repo must be provided to save verifications referencing archives"
-                )
-            return
-
-        for verification in verifications:
-            if verification.hash_archive is None:
-                continue
-            RealFileRepository._ensure_storage_path(
-                con, verification.hash_archive.storage_path
-            )
-            hash_repo.save(verification.hash_archive, con)
-
-    @staticmethod
-    def _ensure_storage_path(con: sqlite3.Connection, storage_path: Path) -> None:
-        cur = con.cursor()
-        _ = cur.execute(
-            "INSERT OR IGNORE INTO storage_paths (storage_path) VALUES (?);",
-            (str(storage_path.resolve()),),
-        )
 
     @staticmethod
     def _row_to_real_file(row: sqlite3.Row) -> RealFile:

@@ -7,7 +7,7 @@ import pytest
 
 import tests.test_case_file_info as case_files
 from hoarder import HoarderRepository
-from hoarder.archives import Algo, SfvArchive
+from hoarder.archives import Algo
 from hoarder.realfiles import RealFile, Verification, VerificationSource
 
 FROZEN_TS = dt.datetime(2024, 1, 1, tzinfo=dt.timezone.utc)
@@ -70,12 +70,10 @@ def test_real_file_repository_persists_verifications(
 ) -> None:
     entry = next(file for file in case_files.TEST_FILES if not file.is_dir)
     real_file = _build_real_file(entry, compare_storage_path)
-    archive_file = SfvArchive.from_path(Path("./test_files"), PurePath("./sfv/files.sfv"))
 
     verification = Verification(
         real_file=real_file,
         source_type=VerificationSource.ARCHIVE,
-        hash_archive=archive_file,
         hash_value=real_file.hash_value or b"",
         algo=real_file.algo or Algo.CRC32,
         comment="verified from archive",
@@ -88,7 +86,6 @@ def test_real_file_repository_persists_verifications(
     assert len(loaded.verification) == 1
     loaded_verification = loaded.verification[0]
     assert loaded_verification.source_type is VerificationSource.ARCHIVE
-    assert loaded_verification.hash_archive is archive_file
     assert loaded_verification.hash_value == verification.hash_value
     assert loaded_verification.algo == verification.algo
     assert loaded_verification.comment == "verified from archive"

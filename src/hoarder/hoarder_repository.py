@@ -49,15 +49,13 @@ class HoarderRepository:
         )
         with Sqlite3FK(self.db_path) as con:
             self._ensure_storage_path(con, normalized_storage_path)
-            self.real_file_repo.save(real_file, con, self.hash_repo)
+            self.real_file_repo.save(real_file, con)
 
     def load_real_file(self, storage_path: Path, path: PurePath | str) -> RealFile:
         normalized_storage_path = self._check_storage_path_allowed(storage_path)
         with Sqlite3FK(self.db_path) as con:
             self._ensure_storage_path(con, normalized_storage_path)
-            return self.real_file_repo.load(
-                normalized_storage_path, path, con, self.hash_repo
-            )
+            return self.real_file_repo.load(normalized_storage_path, path, con)
 
     def save_password_store(self, store: PasswordStore) -> None:
         with Sqlite3FK(self.db_path) as con:

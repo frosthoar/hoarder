@@ -72,16 +72,12 @@ CREATE TABLE IF NOT EXISTS verifications (
     id               INTEGER PRIMARY KEY AUTOINCREMENT,
     real_file_id     INTEGER NOT NULL,
     source_type      INTEGER NOT NULL,
-    hash_archive_id  INTEGER,
     hash_value       BLOB NOT NULL,
     algo             INTEGER NOT NULL,
     comment          TEXT,
     FOREIGN KEY (real_file_id)
       REFERENCES real_files(id)
-      ON DELETE CASCADE,
-    FOREIGN KEY (hash_archive_id)
-      REFERENCES hash_archives(id)
-      ON DELETE SET NULL
+      ON DELETE CASCADE
 );
 """
 
