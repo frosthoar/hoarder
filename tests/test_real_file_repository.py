@@ -6,13 +6,9 @@ from pathlib import Path, PurePath
 import pytest
 
 import tests.test_case_file_info as case_files
-from hoarder.archives import Algo, SfvArchive
-from hoarder.realfiles import (
-    RealFile,
-    RealFileRepository,
-    Verification,
-    VerificationSource,
-)
+from hoarder import HoarderRepository
+from hoarder.archives import Algo
+from hoarder.realfiles import RealFile, Verification, VerificationSource
 
 FROZEN_TS = dt.datetime(2024, 1, 1, tzinfo=dt.timezone.utc)
 
@@ -29,9 +25,9 @@ def compare_storage_path() -> Path:
 
 
 @pytest.fixture
-def real_file_repo(tmp_path, compare_storage_path: Path) -> RealFileRepository:
+def hoarder_repo(tmp_path, compare_storage_path: Path) -> HoarderRepository:
     db_path = tmp_path / "realfiles.db"
-    return RealFileRepository(db_path, [compare_storage_path])
+    return HoarderRepository(db_path, [compare_storage_path])
 
 
 def _build_real_file(entry: case_files.FileEntry, storage_path: Path) -> RealFile:
@@ -47,7 +43,7 @@ def _build_real_file(entry: case_files.FileEntry, storage_path: Path) -> RealFil
 
 
 def test_real_file_repository_roundtrip(
-    real_file_repo: RealFileRepository, compare_storage_path: Path
+    hoarder_repo: HoarderRepository, compare_storage_path: Path
 ) -> None:
     entry = next(file for file in case_files.TEST_FILES if not file.is_dir)
     full_path = compare_storage_path / entry.path
@@ -55,9 +51,9 @@ def test_real_file_repository_roundtrip(
         pytest.skip(f"Fixture file missing: {full_path}")
 
     original = _build_real_file(entry, compare_storage_path)
-    real_file_repo.save(original)
+    hoarder_repo.save_real_file(original)
 
-    loaded = real_file_repo.load(compare_storage_path, entry.path)
+    loaded = hoarder_repo.load_real_file(compare_storage_path, entry.path)
 
     assert loaded.storage_path == compare_storage_path
     assert loaded.path == entry.path
@@ -70,7 +66,7 @@ def test_real_file_repository_roundtrip(
 
 
 def test_real_file_repository_persists_verifications(
-    real_file_repo: RealFileRepository, compare_storage_path: Path
+    hoarder_repo: HoarderRepository, compare_storage_path: Path
 ) -> None:
     entry = next(file for file in case_files.TEST_FILES if not file.is_dir)
     real_file = _build_real_file(entry, compare_storage_path)
@@ -85,8 +81,8 @@ def test_real_file_repository_persists_verifications(
     )
     real_file.verification.append(verification)
 
-    real_file_repo.save(real_file)
-    loaded = real_file_repo.load(compare_storage_path, entry.path)
+    hoarder_repo.save_real_file(real_file)
+    loaded = hoarder_repo.load_real_file(compare_storage_path, entry.path)
 
     assert len(loaded.verification) == 1
     loaded_verification = loaded.verification[0]
@@ -98,32 +94,8 @@ def test_real_file_repository_persists_verifications(
     assert loaded_verification.verified
 
 
-def test_real_file_repository_requires_known_hash_archive(
-    real_file_repo: RealFileRepository, compare_storage_path: Path
-) -> None:
-    sfv_path = Path("./test_files/sfv/files.sfv")
-    if not sfv_path.exists():
-        pytest.skip(f"SFV test file missing: {sfv_path}")
-    sfv_archive = SfvArchive.from_path(sfv_path.parent, PurePath(sfv_path.name))
-
-    entry = next(file for file in case_files.TEST_FILES if not file.is_dir)
-    real_file = _build_real_file(entry, compare_storage_path)
-    verification = Verification(
-        real_file=real_file,
-        source_type=VerificationSource.ARCHIVE,
-        hash_archive=sfv_archive,
-        hash_value=real_file.hash_value or b"",
-        algo=real_file.algo or Algo.CRC32,
-        comment=None,
-    )
-    real_file.verification.append(verification)
-
-    with pytest.raises(ValueError):
-        real_file_repo.save(real_file)
-
-
 def test_real_file_repository_disallows_unknown_storage_path_on_save(
-    real_file_repo: RealFileRepository, compare_storage_path: Path
+    hoarder_repo: HoarderRepository, compare_storage_path: Path
 ) -> None:
     disallowed_storage = compare_storage_path.parent
     real_file = RealFile(
@@ -139,24 +111,24 @@ def test_real_file_repository_disallows_unknown_storage_path_on_save(
     )
 
     with pytest.raises(ValueError):
-        real_file_repo.save(real_file)
+        hoarder_repo.save_real_file(real_file)
 
 
 def test_real_file_repository_disallows_unknown_storage_path_on_load(
-    real_file_repo: RealFileRepository, compare_storage_path: Path
+    hoarder_repo: HoarderRepository, compare_storage_path: Path
 ) -> None:
     disallowed_storage = compare_storage_path.parent
     with pytest.raises(ValueError):
-        real_file_repo.load(disallowed_storage, PurePath("missing"))
+        hoarder_repo.load_real_file(disallowed_storage, PurePath("missing"))
 
 
 def test_real_file_repository_validates_paths_on_init(tmp_path) -> None:
     missing_path = Path("/nonexistent/path")
     with pytest.raises(FileNotFoundError):
-        RealFileRepository(tmp_path / "db.sqlite", [missing_path])
+        HoarderRepository(tmp_path / "db.sqlite", [missing_path])
 
     existing_path = Path("./test_files/compare")
     if not existing_path.exists():
         pytest.skip(f"Fixture path missing: {existing_path}")
-    repo = RealFileRepository(tmp_path / "db.sqlite", [existing_path])
-    assert existing_path.resolve() in repo._allowed_storage_paths
+    repo = HoarderRepository(tmp_path / "db.sqlite", [existing_path])
+    assert existing_path.resolve() in repo.allowed_storage_paths

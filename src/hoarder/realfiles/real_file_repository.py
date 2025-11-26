@@ -9,178 +9,139 @@ from typing import Iterable
 from hoarder.archives.hash_archive import Algo, HashArchive
 from hoarder.archives.hash_archive_repository import HashArchiveRepository
 from hoarder.realfiles.real_file import RealFile, Verification, VerificationSource
-from hoarder.utils.db_schema import ensure_repository_tables
-from hoarder.utils.sql3_fk import Sqlite3FK
 
 
 class RealFileRepository:
     """Repository handling persistence for RealFile and Verification instances."""
 
-    _db_path: str | Path
-    _allowed_storage_paths: set[Path]
-
-    def __init__(
+    def save(
         self,
-        db_path: str | Path,
-        allowed_storage_paths: Iterable[Path],
+        real_file: RealFile,
+        con: sqlite3.Connection,
+        hash_repo: HashArchiveRepository | None = None,
     ) -> None:
-        self._db_path = db_path
-        normalized_paths: list[Path] = []
-        for path in allowed_storage_paths:
-            normalized = path.resolve()
-            if not normalized.exists():
-                raise FileNotFoundError(
-                    f"Storage path does not exist on disk: {normalized}"
-                )
-            normalized_paths.append(normalized)
-        self._allowed_storage_paths = set(normalized_paths)
-        ensure_repository_tables(self._db_path)
-        self._initialize_storage_paths()
-        self._hash_archive_repo = HashArchiveRepository(
-            self._db_path, self._allowed_storage_paths
-        )
-
-    def save(self, real_file: RealFile) -> None:
         """Insert or replace a RealFile and its verifications."""
-        normalized_storage_path = self._check_storage_path_allowed(
-            real_file.storage_path
-        )
-        storage_path_str = str(normalized_storage_path)
+        storage_path_str = str(real_file.storage_path.resolve())
         real_file_row = self._build_real_file_row(real_file)
 
-        with Sqlite3FK(self._db_path) as con:
-            cur = con.cursor()
-            _ = cur.execute(
-                """
-                DELETE FROM real_files
-                WHERE storage_path_id = (SELECT id FROM storage_paths WHERE storage_path = ?)
-                  AND path = ?;
-                """,
-                (storage_path_str, str(real_file.path)),
+        cur = con.cursor()
+        _ = cur.execute(
+            """
+            DELETE FROM real_files
+            WHERE storage_path_id = (SELECT id FROM storage_paths WHERE storage_path = ?)
+              AND path = ?;
+            """,
+            (storage_path_str, str(real_file.path)),
+        )
+        _ = cur.execute(
+            """
+            INSERT INTO real_files (
+                storage_path_id,
+                path,
+                size,
+                is_dir,
+                hash_value,
+                algo,
+                first_seen,
+                last_seen,
+                comment
             )
-            _ = cur.execute(
-                """
-                INSERT INTO real_files (
-                    storage_path_id,
-                    path,
-                    size,
-                    is_dir,
-                    hash_value,
-                    algo,
-                    first_seen,
-                    last_seen,
-                    comment
+            SELECT storage_paths.id AS storage_path_id,
+                   :path AS path,
+                   :size AS size,
+                   :is_dir AS is_dir,
+                   :hash_value AS hash_value,
+                   :algo AS algo,
+                   :first_seen AS first_seen,
+                   :last_seen AS last_seen,
+                   :comment AS comment
+            FROM storage_paths
+            WHERE storage_path = :storage_path;
+            """,
+            real_file_row | {"storage_path": storage_path_str},
+        )
+        if real_file.verification:
+            verification_rows = list(
+                self._build_verification_rows(
+                    real_file.verification,
+                    str(real_file.path),
+                    storage_path_str,
                 )
-                SELECT storage_paths.id AS storage_path_id,
-                       :path AS path,
-                       :size AS size,
-                       :is_dir AS is_dir,
-                       :hash_value AS hash_value,
-                       :algo AS algo,
-                       :first_seen AS first_seen,
-                       :last_seen AS last_seen,
-                       :comment AS comment
-                FROM storage_paths
-                WHERE storage_path = :storage_path;
-                """,
-                real_file_row | {"storage_path": storage_path_str},
             )
-            if real_file.verification:
-                verification_rows = list(
-                    self._build_verification_rows(
-                        real_file.verification,
-                        str(real_file.path),
-                        storage_path_str,
-                    )
-                )
-                if verification_rows:
-                    verification_sql = """
-                        INSERT INTO verifications (
-                            real_file_id,
-                            source_type,
-                            hash_archive_id,
-                            hash_value,
-                            algo,
-                            comment
-                        )
-                        SELECT
-                            real_files.id,
-                            :source_type,
-                            CASE
-                                WHEN :hash_archive_path IS NULL
-                                     OR :hash_archive_storage_path IS NULL THEN NULL
-                                ELSE (
-                                    SELECT ha.id
-                                    FROM hash_archives ha
-                                    JOIN storage_paths ha_sp
-                                      ON ha.storage_path_id = ha_sp.id
-                                    WHERE ha_sp.storage_path = :hash_archive_storage_path
-                                      AND ha.path = :hash_archive_path
-                                )
-                            END AS hash_archive_id,
-                            :hash_value,
-                            :algo,
-                            :comment
-                        FROM real_files
-                        JOIN storage_paths
-                          ON real_files.storage_path_id = storage_paths.id
-                        WHERE storage_paths.storage_path = :storage_path
-                          AND real_files.path = :path;
+            if verification_rows:
+                expected_rows = len(verification_rows)
+                _ = cur.executemany(
                     """
-                    for row in verification_rows:
-                        result = cur.execute(verification_sql, row)
-                        if result.rowcount != 1:
-                            raise ValueError(
-                                "Verification refers to a HashArchive that is not stored in the database"
+                    INSERT INTO verifications (
+                        real_file_id,
+                        source_type,
+                        hash_archive_id,
+                        hash_value,
+                        algo,
+                        comment
+                    )
+                    SELECT
+                        real_files.id,
+                        :source_type,
+                        CASE
+                            WHEN :hash_archive_path IS NULL THEN NULL
+                            ELSE (
+                                SELECT ha.id
+                                FROM hash_archives ha
+                                JOIN storage_paths ha_sp
+                                  ON ha.storage_path_id = ha_sp.id
+                                WHERE ha_sp.storage_path = :hash_archive_storage_path
+                                  AND ha.path = :hash_archive_path
                             )
+                        END AS hash_archive_id,
+                        :hash_value,
+                        :algo,
+                        :comment
+                    FROM real_files
+                    JOIN storage_paths
+                      ON real_files.storage_path_id = storage_paths.id
+                    WHERE storage_paths.storage_path = :storage_path
+                      AND real_files.path = :path;
+                    """,
+                    verification_rows,
+                )
+                if cur.rowcount != expected_rows:
+                    raise ValueError(
+                        "Verification refers to a HashArchive that is not stored in the database"
+                    )
 
-    def load(self, storage_path: Path, path: PurePath | str) -> RealFile:
+    def load(
+        self,
+        storage_path: Path,
+        path: PurePath | str,
+        con: sqlite3.Connection,
+        hash_repo: HashArchiveRepository | None = None,
+    ) -> RealFile:
         """Load one RealFile (including all Verification records)."""
-        normalized_storage_path = self._check_storage_path_allowed(storage_path)
-        storage_path_str = str(normalized_storage_path)
+        storage_path_str = str(storage_path.resolve())
         path_str = str(path)
 
-        with Sqlite3FK(self._db_path) as con:
-            con.row_factory = sqlite3.Row
-            cur = con.cursor()
-            rf_row = cur.execute(
-                """
-                SELECT real_files.*, storage_paths.storage_path
-                FROM real_files
-                JOIN storage_paths ON real_files.storage_path_id = storage_paths.id
-                WHERE storage_paths.storage_path = ? AND real_files.path = ?;
-                """,
-                (storage_path_str, path_str),
-            ).fetchone()
+        con.row_factory = sqlite3.Row
+        cur = con.cursor()
+        rf_row = cur.execute(
+            """
+            SELECT real_files.*, storage_paths.storage_path
+            FROM real_files
+            JOIN storage_paths ON real_files.storage_path_id = storage_paths.id
+            WHERE storage_paths.storage_path = ? AND real_files.path = ?;
+            """,
+            (storage_path_str, path_str),
+        ).fetchone()
 
-            if rf_row is None:
-                raise FileNotFoundError(
-                    f"Real file not found: {storage_path_str}/{path_str}"
-                )
+        if rf_row is None:
+            raise FileNotFoundError(f"Real file not found: {storage_path_str}/{path_str}")
 
-            real_file = self._row_to_real_file(rf_row)
-            verifications = self._load_verifications(cur, rf_row["id"], real_file)
-            real_file.verification = verifications
-            return real_file
-
-    def _initialize_storage_paths(self) -> None:
-        with Sqlite3FK(self._db_path) as con:
-            cur = con.cursor()
-            for storage_path in self._allowed_storage_paths:
-                storage_path_str = str(storage_path)
-                _ = cur.execute(
-                    "INSERT OR IGNORE INTO storage_paths (storage_path) VALUES (?);",
-                    (storage_path_str,),
-                )
-
-    def _check_storage_path_allowed(self, storage_path: Path) -> Path:
-        normalized = storage_path.resolve()
-        if normalized not in self._allowed_storage_paths:
-            raise ValueError(
-                f"Storage path '{normalized}' is not in the allowed set. "
-                f"Allowed paths: {sorted(str(p) for p in self._allowed_storage_paths)}"
-            )
-        return normalized
+        real_file = self._row_to_real_file(rf_row)
+        verifications = self._load_verifications(
+            con, rf_row["id"], real_file, hash_repo=hash_repo
+        )
+        real_file.verification = verifications
+        return real_file
 
     @staticmethod
     def _build_real_file_row(real_file: RealFile) -> dict[str, object]:
@@ -209,7 +170,6 @@ class RealFileRepository:
             hash_archive_path: str | None = None
             hash_archive_storage: str | None = None
             if verification.hash_archive is not None:
-                self._hash_archive_repo.save(verification.hash_archive)
                 hash_archive_path = str(verification.hash_archive.path)
                 hash_archive_storage = str(
                     verification.hash_archive.storage_path.resolve()
@@ -227,8 +187,13 @@ class RealFileRepository:
             }
 
     def _load_verifications(
-        self, cursor: sqlite3.Cursor, real_file_db_id: int, real_file: RealFile
+        self,
+        con: sqlite3.Connection,
+        real_file_db_id: int,
+        real_file: RealFile,
+        hash_repo: HashArchiveRepository | None = None,
     ) -> list[Verification]:
+        cursor = con.cursor()
         verification_rows = cursor.execute(
             "SELECT * FROM verifications WHERE real_file_id = ? ORDER BY id;",
             (real_file_db_id,),
@@ -239,7 +204,10 @@ class RealFileRepository:
             hash_archive: HashArchive | None = None
             hash_archive_id = row["hash_archive_id"]
             if hash_archive_id is not None:
-                hash_archive = self._load_hash_archive_by_id(cursor, hash_archive_id)
+                if hash_repo is not None:
+                    hash_archive = hash_repo.load_by_id(hash_archive_id, con)
+                else:
+                    hash_archive = self._load_hash_archive_by_id(con, hash_archive_id)
 
             verification = Verification(
                 real_file=real_file,
@@ -253,8 +221,10 @@ class RealFileRepository:
         return verifications
 
     def _load_hash_archive_by_id(
-        self, cursor: sqlite3.Cursor, archive_id: int
+        self, con: sqlite3.Connection, archive_id: int
     ) -> HashArchive | None:
+        con.row_factory = sqlite3.Row
+        cursor = con.cursor()
         hash_archive_row = cursor.execute(
             """
             SELECT hash_archives.*, storage_paths.storage_path

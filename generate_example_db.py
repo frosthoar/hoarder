@@ -7,12 +7,8 @@ This script creates a small example database with sample archives from the test_
 import pathlib
 import sys
 
-from hoarder.archives import (
-    HashArchiveRepository,
-    HashNameArchive,
-    RarArchive,
-    SfvArchive,
-)
+from hoarder import HoarderRepository
+from hoarder.archives import HashNameArchive, RarArchive, SfvArchive
 
 
 def main() -> None:
@@ -48,7 +44,7 @@ def main() -> None:
         sys.exit(1)
 
     # Create repository with allowed storage paths
-    repo = HashArchiveRepository(db_path, allowed_storage_paths)
+    repo = HoarderRepository(db_path, allowed_storage_paths)
     print(f"Created repository with database: {db_path}")
     print(f"Allowed storage paths: {sorted(str(p) for p in allowed_storage_paths)}\n")
 
@@ -62,7 +58,7 @@ def main() -> None:
         path = pathlib.PurePath(sfv_file.name)
         try:
             sfv_archive = SfvArchive.from_path(storage_path, path)
-            repo.save(sfv_archive)
+            repo.save_hash_archive(sfv_archive)
             print(f"  ✓ Saved SFV archive with {len(sfv_archive.files)} file entries")
             archives_created += 1
         except Exception as e:
@@ -80,7 +76,7 @@ def main() -> None:
             path = pathlib.PurePath(hnf_file.name)
             try:
                 hnf_archive = HashNameArchive.from_path(storage_path, path)
-                repo.save(hnf_archive)
+                repo.save_hash_archive(hnf_archive)
                 print(
                     f"  ✓ Saved HashNameArchive with {len(hnf_archive.files)} file entry"
                 )
@@ -106,7 +102,7 @@ def main() -> None:
                     rar_archive = RarArchive.from_path(
                         storage_path, path, password=None
                     )
-                    repo.save(rar_archive)
+                    repo.save_hash_archive(rar_archive)
                     print(
                         f"  ✓ Saved RAR archive with {len(rar_archive.files)} file entries"
                     )
@@ -131,7 +127,7 @@ def main() -> None:
             try:
                 storage_path = sfv_file.parent
                 path = pathlib.PurePath(sfv_file.name)
-                loaded_archive = repo.load(storage_path, path)
+                loaded_archive = repo.load_hash_archive(storage_path, path)
                 print(f"  ✓ Successfully loaded: {loaded_archive.__class__.__name__}")
                 print(f"    Storage path: {loaded_archive.storage_path}")
                 print(f"    Path: {loaded_archive.path}")
