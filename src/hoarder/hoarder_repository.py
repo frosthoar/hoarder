@@ -4,14 +4,11 @@ import collections.abc
 import sqlite3
 from pathlib import Path, PurePath
 
-from hoarder.archives.hash_archive import HashArchive
-from hoarder.archives.hash_archive_repository import HashArchiveRepository
-from hoarder.passwords.password_store import PasswordStore
-from hoarder.passwords.password_store_repository import PasswordSqlite3Repository
-from hoarder.realfiles.real_file import RealFile
-from hoarder.realfiles.real_file_repository import RealFileRepository
-from hoarder.utils.db_schema import ensure_repository_tables
-from hoarder.utils.sql3_fk import Sqlite3FK
+from .archives import HashArchive, HashArchiveRepository
+from .passwords import PasswordSqlite3Repository, PasswordStore
+from .realfiles import RealFile, RealFileRepository
+from .utils import Sqlite3FK
+from .utils.db_schema import ensure_repository_tables
 
 
 class HoarderRepository:
