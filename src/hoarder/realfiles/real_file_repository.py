@@ -18,6 +18,7 @@ class RealFileRepository:
         storage_path_str = str(real_file.storage_path.resolve())
         real_file_row = self._build_real_file_row(real_file)
 
+        self._ensure_storage_path(con, real_file.storage_path)
         cur = con.cursor()
         _ = cur.execute(
             """
@@ -55,6 +56,8 @@ class RealFileRepository:
             real_file_row | {"storage_path": storage_path_str},
         )
         if real_file.verification:
+            for verification in real_file.verification:
+                self._ensure_storage_path(con, verification.source_storage_path)
             verification_rows = list(
                 self._build_verification_rows(
                     real_file.verification,
@@ -69,6 +72,8 @@ class RealFileRepository:
                     INSERT INTO verifications (
                         real_file_id,
                         source_type,
+                        source_path,
+                        source_storage_path_id,
                         hash_value,
                         algo,
                         comment
@@ -76,6 +81,12 @@ class RealFileRepository:
                     SELECT
                         real_files.id,
                         :source_type,
+                        :source_path,
+                        (
+                            SELECT id
+                            FROM storage_paths
+                            WHERE storage_path = :source_storage_path
+                        ) AS source_storage_path_id,
                         :hash_value,
                         :algo,
                         :comment
@@ -146,6 +157,8 @@ class RealFileRepository:
         for verification in verifications:
             yield {
                 "source_type": verification.source_type.value,
+                "source_path": str(verification.source_path),
+                "source_storage_path": str(verification.source_storage_path.resolve()),
                 "hash_value": verification.hash_value,
                 "algo": verification.algo.value,
                 "comment": verification.comment,
@@ -161,7 +174,14 @@ class RealFileRepository:
     ) -> list[Verification]:
         cursor = con.cursor()
         verification_rows = cursor.execute(
-            "SELECT * FROM verifications WHERE real_file_id = ? ORDER BY id;",
+            """
+            SELECT verifications.*, storage_paths.storage_path AS source_storage_path
+            FROM verifications
+            JOIN storage_paths
+              ON verifications.source_storage_path_id = storage_paths.id
+            WHERE real_file_id = ?
+            ORDER BY verifications.id;
+            """,
             (real_file_db_id,),
         ).fetchall()
 
@@ -170,12 +190,22 @@ class RealFileRepository:
             verification = Verification(
                 real_file=real_file,
                 source_type=VerificationSource(row["source_type"]),
+                source_path=PurePath(row["source_path"]),
+                source_storage_path=Path(row["source_storage_path"]),
                 hash_value=row["hash_value"],
                 algo=Algo(row["algo"]),
                 comment=row["comment"],
             )
             verifications.append(verification)
         return verifications
+
+    @staticmethod
+    def _ensure_storage_path(con: sqlite3.Connection, storage_path: Path) -> None:
+        cur = con.cursor()
+        _ = cur.execute(
+            "INSERT OR IGNORE INTO storage_paths (storage_path) VALUES (?);",
+            (str(storage_path.resolve()),),
+        )
 
     @staticmethod
     def _row_to_real_file(row: sqlite3.Row) -> RealFile:

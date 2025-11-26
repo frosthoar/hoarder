@@ -97,6 +97,8 @@ class Verification:
 
     real_file: RealFile
     source_type: VerificationSource
+    source_path: PurePath
+    source_storage_path: Path
     hash_value: bytes
     algo: Algo
     comment: str | None = None

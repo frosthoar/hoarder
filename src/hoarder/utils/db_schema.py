@@ -69,14 +69,19 @@ CREATE TABLE IF NOT EXISTS real_files (
 
 _CREATE_VERIFICATIONS = """
 CREATE TABLE IF NOT EXISTS verifications (
-    id               INTEGER PRIMARY KEY AUTOINCREMENT,
-    real_file_id     INTEGER NOT NULL,
-    source_type      INTEGER NOT NULL,
-    hash_value       BLOB NOT NULL,
-    algo             INTEGER NOT NULL,
-    comment          TEXT,
+    id                       INTEGER PRIMARY KEY AUTOINCREMENT,
+    real_file_id             INTEGER NOT NULL,
+    source_type              INTEGER NOT NULL,
+    source_path              TEXT    NOT NULL,
+    source_storage_path_id   INTEGER NOT NULL,
+    hash_value               BLOB NOT NULL,
+    algo                     INTEGER NOT NULL,
+    comment                  TEXT,
     FOREIGN KEY (real_file_id)
       REFERENCES real_files(id)
+      ON DELETE CASCADE,
+    FOREIGN KEY (source_storage_path_id)
+      REFERENCES storage_paths(id)
       ON DELETE CASCADE
 );
 """

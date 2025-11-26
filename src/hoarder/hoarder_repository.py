@@ -47,6 +47,10 @@ class HoarderRepository:
         normalized_storage_path = self._check_storage_path_allowed(
             real_file.storage_path
         )
+        for verification in real_file.verification:
+            verification.source_storage_path = self._check_storage_path_allowed(
+                verification.source_storage_path
+            )
         with Sqlite3FK(self.db_path) as con:
             self._ensure_storage_path(con, normalized_storage_path)
             self.real_file_repo.save(real_file, con)

@@ -74,6 +74,8 @@ def test_real_file_repository_persists_verifications(
     verification = Verification(
         real_file=real_file,
         source_type=VerificationSource.ARCHIVE,
+        source_path=PurePath("compare") / entry.path,
+        source_storage_path=compare_storage_path,
         hash_value=real_file.hash_value or b"",
         algo=real_file.algo or Algo.CRC32,
         comment="verified from archive",
@@ -86,6 +88,8 @@ def test_real_file_repository_persists_verifications(
     assert len(loaded.verification) == 1
     loaded_verification = loaded.verification[0]
     assert loaded_verification.source_type is VerificationSource.ARCHIVE
+    assert loaded_verification.source_path == verification.source_path
+    assert loaded_verification.source_storage_path == verification.source_storage_path
     assert loaded_verification.hash_value == verification.hash_value
     assert loaded_verification.algo == verification.algo
     assert loaded_verification.comment == "verified from archive"
