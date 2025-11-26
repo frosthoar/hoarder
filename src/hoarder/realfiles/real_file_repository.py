@@ -36,6 +36,9 @@ class RealFileRepository:
         self._allowed_storage_paths = set(normalized_paths)
         ensure_repository_tables(self._db_path)
         self._initialize_storage_paths()
+        self._hash_archive_repo = HashArchiveRepository(
+            self._db_path, self._allowed_storage_paths
+        )
 
     def save(self, real_file: RealFile) -> None:
         """Insert or replace a RealFile and its verifications."""
@@ -91,9 +94,7 @@ class RealFileRepository:
                     )
                 )
                 if verification_rows:
-                    expected_rows = len(verification_rows)
-                    _ = cur.executemany(
-                        """
+                    verification_sql = """
                         INSERT INTO verifications (
                             real_file_id,
                             source_type,
@@ -106,7 +107,8 @@ class RealFileRepository:
                             real_files.id,
                             :source_type,
                             CASE
-                                WHEN :hash_archive_path IS NULL THEN NULL
+                                WHEN :hash_archive_path IS NULL
+                                     OR :hash_archive_storage_path IS NULL THEN NULL
                                 ELSE (
                                     SELECT ha.id
                                     FROM hash_archives ha
@@ -124,13 +126,13 @@ class RealFileRepository:
                           ON real_files.storage_path_id = storage_paths.id
                         WHERE storage_paths.storage_path = :storage_path
                           AND real_files.path = :path;
-                        """,
-                        verification_rows,
-                    )
-                    if cur.rowcount != expected_rows:
-                        raise ValueError(
-                            "Verification refers to a HashArchive that is not stored in the database"
-                        )
+                    """
+                    for row in verification_rows:
+                        result = cur.execute(verification_sql, row)
+                        if result.rowcount != 1:
+                            raise ValueError(
+                                "Verification refers to a HashArchive that is not stored in the database"
+                            )
 
     def load(self, storage_path: Path, path: PurePath | str) -> RealFile:
         """Load one RealFile (including all Verification records)."""
@@ -207,6 +209,7 @@ class RealFileRepository:
             hash_archive_path: str | None = None
             hash_archive_storage: str | None = None
             if verification.hash_archive is not None:
+                self._hash_archive_repo.save(verification.hash_archive)
                 hash_archive_path = str(verification.hash_archive.path)
                 hash_archive_storage = str(
                     verification.hash_archive.storage_path.resolve()
