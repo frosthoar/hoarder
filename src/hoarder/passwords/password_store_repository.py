@@ -1,13 +1,12 @@
 import abc
 import json
-from pathlib import Path
+import sqlite3
 
 try:
     from typing import override  # type: ignore [attr-defined]
 except ImportError:
     from typing_extensions import override
 
-from ..utils import Sqlite3FK
 from .password_store import PasswordStore
 
 
@@ -15,20 +14,18 @@ class PasswordRepository(abc.ABC):
     """Abstract base class for a password storage backend."""
 
     @abc.abstractmethod
-    def load(self) -> PasswordStore:
+    def load(self, con: sqlite3.Connection) -> PasswordStore:
         """Load all passwords and return them as a PasswordStore."""
         raise NotImplementedError
 
     @abc.abstractmethod
-    def save(self, store: PasswordStore) -> None:
+    def save(self, store: PasswordStore, con: sqlite3.Connection) -> None:
         """Save the given PasswordStore to persistent storage."""
         raise NotImplementedError
 
 
 class PasswordSqlite3Repository(PasswordRepository):
     """Repository for PasswordStore using SQLite3 backend."""
-
-    _db_path: str | Path
 
     _CREATE_TITLES: str = """
     CREATE TABLE IF NOT EXISTS titles (
@@ -52,44 +49,38 @@ class PasswordSqlite3Repository(PasswordRepository):
     """
 
     @staticmethod
-    def _create_tables(db_path: str | Path) -> None:
+    def ensure_tables(con: sqlite3.Connection) -> None:
         """Create the database tables if they don't exist."""
-        with Sqlite3FK(db_path) as con:
-            cur = con.cursor()
-            _ = cur.execute(PasswordSqlite3Repository._CREATE_TITLES)
-            _ = cur.execute(PasswordSqlite3Repository._CREATE_PASSWORDS)
-
-    def __init__(self, db_path: str | Path) -> None:
-        """Initialize the repository with the given database path."""
-        self._db_path = db_path
-        self._create_tables(self._db_path)
+        cur = con.cursor()
+        _ = cur.execute(PasswordSqlite3Repository._CREATE_TITLES)
+        _ = cur.execute(PasswordSqlite3Repository._CREATE_PASSWORDS)
 
     @override
-    def save(self, store: PasswordStore) -> None:
+    def save(self, store: PasswordStore, con: sqlite3.Connection) -> None:
         """Save the given PasswordStore to persistent storage."""
-        with Sqlite3FK(self._db_path) as con:
-            cur = con.cursor()
-            for title, passwords in store:
+        self.ensure_tables(con)
+        cur = con.cursor()
+        for title, passwords in store:
+            _ = cur.execute(
+                "INSERT INTO titles (title) VALUES (:title) ON CONFLICT DO NOTHING;",
+                {"title": title},
+            )
+            for password in passwords:
                 _ = cur.execute(
-                    "INSERT INTO titles (title) VALUES (:title) ON CONFLICT DO NOTHING;",
-                    {"title": title},
+                    "INSERT INTO passwords(title_id, password) SELECT id AS title_id, :password AS password "
+                    "FROM titles WHERE title = :title",
+                    {"password": password, "title": title},
                 )
-                for password in passwords:
-                    _ = cur.execute(
-                        "INSERT INTO passwords(title_id, password) SELECT id AS title_id, :password AS password "
-                        "FROM titles WHERE title = :title",
-                        {"password": password, "title": title},
-                    )
 
     @override
-    def load(self) -> PasswordStore:
+    def load(self, con: sqlite3.Connection) -> PasswordStore:
         """Load all passwords and return them as a PasswordStore."""
-        with Sqlite3FK(self._db_path) as con:
-            cur = con.cursor()
-            _ = cur.execute(
-                "SELECT title, json_group_array(password) FROM titles JOIN passwords ON titles.id = passwords.title_id "
-                "GROUP BY title ORDER BY title;"
-            )
-            ret = cur.fetchall()
+        self.ensure_tables(con)
+        cur = con.cursor()
+        _ = cur.execute(
+            "SELECT title, json_group_array(password) FROM titles JOIN passwords ON titles.id = passwords.title_id "
+            "GROUP BY title ORDER BY title;"
+        )
+        ret = cur.fetchall()
         data = {title: set(json.loads(passwords)) for title, passwords in ret}
         return PasswordStore(data)

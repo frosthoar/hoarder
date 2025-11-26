@@ -6,6 +6,8 @@ from pathlib import Path, PurePath
 
 from hoarder.archives.hash_archive import HashArchive
 from hoarder.archives.hash_archive_repository import HashArchiveRepository
+from hoarder.passwords.password_store import PasswordStore
+from hoarder.passwords.password_store_repository import PasswordSqlite3Repository
 from hoarder.realfiles.real_file import RealFile
 from hoarder.realfiles.real_file_repository import RealFileRepository
 from hoarder.utils.db_schema import ensure_repository_tables
@@ -25,8 +27,10 @@ class HoarderRepository:
 
         self.hash_repo = HashArchiveRepository()
         self.real_file_repo = RealFileRepository()
+        self.password_repo = PasswordSqlite3Repository()
 
         self._initialize_storage_paths()
+        self._initialize_password_tables()
 
     def save_hash_archive(self, archive: HashArchive) -> None:
         normalized_storage_path = self._check_storage_path_allowed(
@@ -58,10 +62,24 @@ class HoarderRepository:
                 normalized_storage_path, path, con, self.hash_repo
             )
 
+    def save_password_store(self, store: PasswordStore) -> None:
+        with Sqlite3FK(self.db_path) as con:
+            self.password_repo.ensure_tables(con)
+            self.password_repo.save(store, con)
+
+    def load_password_store(self) -> PasswordStore:
+        with Sqlite3FK(self.db_path) as con:
+            self.password_repo.ensure_tables(con)
+            return self.password_repo.load(con)
+
     def _initialize_storage_paths(self) -> None:
         with Sqlite3FK(self.db_path) as con:
             for storage_path in self.allowed_storage_paths:
                 self._ensure_storage_path(con, storage_path)
+
+    def _initialize_password_tables(self) -> None:
+        with Sqlite3FK(self.db_path) as con:
+            self.password_repo.ensure_tables(con)
 
     @staticmethod
     def _normalize_paths(
