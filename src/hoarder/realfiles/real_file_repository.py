@@ -23,6 +23,7 @@ class RealFileRepository:
         storage_path_str = str(real_file.storage_path.resolve())
         real_file_row = self._build_real_file_row(real_file)
 
+        self._ensure_storage_path(con, real_file.storage_path)
         cur = con.cursor()
         _ = cur.execute(
             """
@@ -68,6 +69,9 @@ class RealFileRepository:
                 )
             )
             if verification_rows:
+                self._persist_missing_hash_archives(
+                    real_file.verification, con, hash_repo
+                )
                 expected_rows = len(verification_rows)
                 _ = cur.executemany(
                     """
@@ -237,6 +241,35 @@ class RealFileRepository:
         if hash_archive_row is None:
             return None
         return HashArchiveRepository._fill_archive(hash_archive_row)
+
+    @staticmethod
+    def _persist_missing_hash_archives(
+        verifications: Iterable[Verification],
+        con: sqlite3.Connection,
+        hash_repo: HashArchiveRepository | None,
+    ) -> None:
+        if hash_repo is None:
+            if any(v.hash_archive is not None for v in verifications):
+                raise ValueError(
+                    "hash_repo must be provided to save verifications referencing archives"
+                )
+            return
+
+        for verification in verifications:
+            if verification.hash_archive is None:
+                continue
+            RealFileRepository._ensure_storage_path(
+                con, verification.hash_archive.storage_path
+            )
+            hash_repo.save(verification.hash_archive, con)
+
+    @staticmethod
+    def _ensure_storage_path(con: sqlite3.Connection, storage_path: Path) -> None:
+        cur = con.cursor()
+        _ = cur.execute(
+            "INSERT OR IGNORE INTO storage_paths (storage_path) VALUES (?);",
+            (str(storage_path.resolve()),),
+        )
 
     @staticmethod
     def _row_to_real_file(row: sqlite3.Row) -> RealFile:
