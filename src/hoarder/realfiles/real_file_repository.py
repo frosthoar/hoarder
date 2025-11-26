@@ -88,10 +88,10 @@ class RealFileRepository:
                         real_file.verification,
                         str(real_file.path),
                         storage_path_str,
-                        cur,
                     )
                 )
                 if verification_rows:
+                    expected_rows = len(verification_rows)
                     _ = cur.executemany(
                         """
                         INSERT INTO verifications (
@@ -105,7 +105,17 @@ class RealFileRepository:
                         SELECT
                             real_files.id,
                             :source_type,
-                            :hash_archive_id,
+                            CASE
+                                WHEN :hash_archive_path IS NULL THEN NULL
+                                ELSE (
+                                    SELECT ha.id
+                                    FROM hash_archives ha
+                                    JOIN storage_paths ha_sp
+                                      ON ha.storage_path_id = ha_sp.id
+                                    WHERE ha_sp.storage_path = :hash_archive_storage_path
+                                      AND ha.path = :hash_archive_path
+                                )
+                            END AS hash_archive_id,
                             :hash_value,
                             :algo,
                             :comment
@@ -117,6 +127,10 @@ class RealFileRepository:
                         """,
                         verification_rows,
                     )
+                    if cur.rowcount != expected_rows:
+                        raise ValueError(
+                            "Verification refers to a HashArchive that is not stored in the database"
+                        )
 
     def load(self, storage_path: Path, path: PurePath | str) -> RealFile:
         """Load one RealFile (including all Verification records)."""
@@ -188,45 +202,26 @@ class RealFileRepository:
         verifications: Iterable[Verification],
         path: str,
         storage_path: str,
-        cursor: sqlite3.Cursor,
     ) -> collections.abc.Iterator[dict[str, object | None]]:
         for verification in verifications:
+            hash_archive_path: str | None = None
+            hash_archive_storage: str | None = None
+            if verification.hash_archive is not None:
+                hash_archive_path = str(verification.hash_archive.path)
+                hash_archive_storage = str(
+                    verification.hash_archive.storage_path.resolve()
+                )
+
             yield {
                 "source_type": verification.source_type.value,
-                "hash_archive_id": self._lookup_hash_archive_id(
-                    cursor, verification.hash_archive
-                ),
                 "hash_value": verification.hash_value,
                 "algo": verification.algo.value,
                 "comment": verification.comment,
                 "path": path,
                 "storage_path": storage_path,
+                "hash_archive_path": hash_archive_path,
+                "hash_archive_storage_path": hash_archive_storage,
             }
-
-    def _lookup_hash_archive_id(
-        self, cursor: sqlite3.Cursor, hash_archive: HashArchive | None
-    ) -> int | None:
-        if hash_archive is None:
-            return None
-
-        storage_path_str = str(hash_archive.storage_path.resolve())
-        path_str = str(hash_archive.path)
-        row = cursor.execute(
-            """
-            SELECT hash_archives.id
-            FROM hash_archives
-            JOIN storage_paths ON hash_archives.storage_path_id = storage_paths.id
-            WHERE storage_paths.storage_path = ? AND hash_archives.path = ?;
-            """,
-            (storage_path_str, path_str),
-        ).fetchone()
-
-        if row is None:
-            raise ValueError(
-                "Verification refers to a HashArchive that is not stored in the database: "
-                f"{storage_path_str}/{path_str}"
-            )
-        return int(row[0])
 
     def _load_verifications(
         self, cursor: sqlite3.Cursor, real_file_db_id: int, real_file: RealFile
