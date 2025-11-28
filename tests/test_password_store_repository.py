@@ -339,4 +339,3 @@ def test_create_tables_idempotent(temp_db_path):
             "SELECT name FROM sqlite_master WHERE type='table' AND name='passwords';"
         )
         assert cur.fetchone() is not None
-
