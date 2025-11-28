@@ -15,7 +15,7 @@ class Download:
     path: PurePath
     first_seen: dt.datetime
     last_seen: dt.datetime
-    comment: str
+    comment: str | None = None
     processed: bool
-    real_files: RealFile | None = None
+    real_files: list[RealFile] = dataclasses.field(default_factory=list)
 
