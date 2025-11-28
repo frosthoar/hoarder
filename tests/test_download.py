@@ -4,7 +4,6 @@ import datetime as dt
 from pathlib import Path
 
 import pytest
-from hoarder.archives import HashArchive
 from hoarder.downloads import Download, RealFile
 
 FROZEN_TS = dt.datetime(2024, 1, 1, tzinfo=dt.timezone.utc)
