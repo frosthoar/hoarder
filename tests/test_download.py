@@ -136,4 +136,3 @@ def test_download_title_cannot_be_empty() -> None:
             last_seen=FROZEN_TS,
             processed=False,
         )
-

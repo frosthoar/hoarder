@@ -229,9 +229,6 @@ def test_download_repository_persists_hash_archives(
     hoarder_repo: HoarderRepository, compare_storage_path: Path
 ) -> None:
     """Test that hash_archives associated with a download are persisted correctly."""
-    # Load an SFV archive from test files
-    if not Path("./test_files/sfv").exists():
-        pytest.skip("SFV test files not found")
 
     if not Path("./test_files/sfv/files.sfv").exists():
         pytest.skip("SFV file not found")
@@ -274,10 +271,6 @@ def test_download_repository_persists_real_files_and_hash_archives(
 
     # Take a small subset
     test_files = real_files[:3] if len(real_files) >= 3 else real_files
-
-    # Load an SFV archive
-    if not Path("./test_files/sfv").exists():
-        pytest.skip("SFV test files not found")
 
     if not Path("./test_files/sfv/files.sfv").exists():
         pytest.skip("SFV file not found")
