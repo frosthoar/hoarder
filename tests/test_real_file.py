@@ -3,7 +3,6 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
-
 import tests.test_case_file_info as case_files
 from hoarder.archives import Algo
 from hoarder.realfiles import RealFile
