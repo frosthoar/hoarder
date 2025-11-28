@@ -95,7 +95,12 @@ class HashArchive(abc.ABC):
         return self.storage_path / self.path
 
     @classmethod
-    def from_path(cls: typing.Type[T], storage_path: str | pathlib.Path, path: str | pathlib.PurePath, **kwargs) -> T:
+    def from_path(
+        cls: typing.Type[T],
+        storage_path: str | pathlib.Path,
+        path: str | pathlib.PurePath,
+        **kwargs,
+    ) -> T:
         """Create a HashArchive object by reading information from an hash file given its storage_path and path.
 
         Args:
