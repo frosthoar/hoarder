@@ -89,16 +89,11 @@ CREATE TABLE IF NOT EXISTS verifications (
 _CREATE_DOWNLOADS = """
 CREATE TABLE IF NOT EXISTS downloads (
     id              INTEGER PRIMARY KEY AUTOINCREMENT,
-    storage_path_id INTEGER NOT NULL,
-    path            TEXT NOT NULL,
+    title           TEXT NOT NULL UNIQUE,
     first_seen      TEXT NOT NULL,
     last_seen       TEXT NOT NULL,
     comment         TEXT,
-    processed       INTEGER NOT NULL,
-    FOREIGN KEY (storage_path_id)
-      REFERENCES storage_paths(id)
-      ON DELETE CASCADE,
-    UNIQUE(storage_path_id, path)
+    processed       INTEGER NOT NULL
 );
 """
 

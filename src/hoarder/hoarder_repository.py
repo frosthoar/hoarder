@@ -73,27 +73,25 @@ class HoarderRepository:
             return self.password_repo.load(con)
 
     def save_download(self, download: Download) -> None:
-        normalized_storage_path = self._check_storage_path_allowed(
-            download.storage_path
-        )
-        download.storage_path = normalized_storage_path
+        # Validate storage paths from real_files
         for real_file in download.real_files:
-            real_file.storage_path = self._check_storage_path_allowed(
+            normalized_storage_path = self._check_storage_path_allowed(
                 real_file.storage_path
             )
+            real_file.storage_path = normalized_storage_path
             for verification in real_file.verification:
                 verification.source_storage_path = self._check_storage_path_allowed(
                     verification.source_storage_path
                 )
         with Sqlite3FK(self.db_path) as con:
-            self._ensure_storage_path(con, normalized_storage_path)
+            # Ensure all storage paths exist
+            for real_file in download.real_files:
+                self._ensure_storage_path(con, real_file.storage_path)
             self.download_repo.save(download, con)
 
-    def load_download(self, storage_path: Path, path: PurePath | str) -> Download:
-        normalized_storage_path = self._check_storage_path_allowed(storage_path)
+    def load_download(self, title: str) -> Download:
         with Sqlite3FK(self.db_path) as con:
-            self._ensure_storage_path(con, normalized_storage_path)
-            return self.download_repo.load(normalized_storage_path, path, con)
+            return self.download_repo.load(title, con)
 
     def _initialize_storage_paths(self) -> None:
         with Sqlite3FK(self.db_path) as con:

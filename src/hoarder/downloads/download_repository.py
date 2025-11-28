@@ -3,7 +3,7 @@ from __future__ import annotations
 import collections.abc
 import datetime as dt
 import sqlite3
-from pathlib import Path, PurePath
+from pathlib import Path
 
 from .download import Download
 from .real_file import RealFile
@@ -24,8 +24,11 @@ class DownloadRepository:
 
     def save(self, download: Download, con: sqlite3.Connection) -> None:
         """Insert or replace a Download and its associated RealFiles."""
-        storage_path_str = str(download.storage_path.resolve())
-        self._ensure_storage_path(con, download.storage_path)
+        # Ensure storage paths exist for all real_files
+        for real_file in download.real_files:
+            self._ensure_storage_path(con, real_file.storage_path)
+            for verification in real_file.verification:
+                self._ensure_storage_path(con, verification.source_storage_path)
 
         # Save all real_files first using real_file_repository
         for real_file in download.real_files:
@@ -36,33 +39,29 @@ class DownloadRepository:
         _ = cur.execute(
             """
             DELETE FROM downloads
-            WHERE storage_path_id = (SELECT id FROM storage_paths WHERE storage_path = ?)
-              AND path = ?;
+            WHERE title = ?;
             """,
-            (storage_path_str, str(download.path)),
+            (download.title,),
         )
         _ = cur.execute(
             """
             INSERT INTO downloads (
-                storage_path_id,
-                path,
+                title,
                 first_seen,
                 last_seen,
                 comment,
                 processed
             )
-            SELECT storage_paths.id AS storage_path_id,
-                   :path AS path,
-                   :first_seen AS first_seen,
-                   :last_seen AS last_seen,
-                   :comment AS comment,
-                   :processed AS processed
-            FROM storage_paths
-            WHERE storage_path = :storage_path;
+            VALUES (
+                :title,
+                :first_seen,
+                :last_seen,
+                :comment,
+                :processed
+            );
             """,
             {
-                "storage_path": storage_path_str,
-                "path": str(download.path),
+                "title": download.title,
                 "first_seen": download.first_seen.isoformat(),
                 "last_seen": download.last_seen.isoformat(),
                 "comment": download.comment,
@@ -77,21 +76,16 @@ class DownloadRepository:
             WHERE download_id = (
                 SELECT downloads.id
                 FROM downloads
-                JOIN storage_paths ON downloads.storage_path_id = storage_paths.id
-                WHERE storage_paths.storage_path = ? AND downloads.path = ?
+                WHERE downloads.title = ?
             );
             """,
-            (storage_path_str, str(download.path)),
+            (download.title,),
         )
 
         # Create associations between download and real_files using SQL
         if download.real_files:
             association_rows = list(
-                self._build_association_rows(
-                    download.real_files,
-                    storage_path_str,
-                    str(download.path),
-                )
+                self._build_association_rows(download.real_files, download.title)
             )
             if association_rows:
                 expected_rows = len(association_rows)
@@ -105,9 +99,7 @@ class DownloadRepository:
                         (
                             SELECT downloads.id
                             FROM downloads
-                            JOIN storage_paths ON downloads.storage_path_id = storage_paths.id
-                            WHERE storage_paths.storage_path = :download_storage_path
-                              AND downloads.path = :download_path
+                            WHERE downloads.title = :download_title
                         ) AS download_id,
                         (
                             SELECT real_files.id
@@ -122,32 +114,21 @@ class DownloadRepository:
                 if cur.rowcount != expected_rows:
                     raise ValueError("Failed to insert download-real_file associations")
 
-    def load(
-        self,
-        storage_path: Path,
-        path: PurePath | str,
-        con: sqlite3.Connection,
-    ) -> Download:
+    def load(self, title: str, con: sqlite3.Connection) -> Download:
         """Load one Download (including all associated RealFile records)."""
-        storage_path_str = str(storage_path.resolve())
-        path_str = str(path)
-
         con.row_factory = sqlite3.Row
         cur = con.cursor()
         download_row = cur.execute(
             """
-            SELECT downloads.*, storage_paths.storage_path
+            SELECT downloads.*
             FROM downloads
-            JOIN storage_paths ON downloads.storage_path_id = storage_paths.id
-            WHERE storage_paths.storage_path = ? AND downloads.path = ?;
+            WHERE downloads.title = ?;
             """,
-            (storage_path_str, path_str),
+            (title,),
         ).fetchone()
 
         if download_row is None:
-            raise FileNotFoundError(
-                f"Download not found: {storage_path_str}/{path_str}"
-            )
+            raise FileNotFoundError(f"Download not found: {title}")
 
         download = self._row_to_download(download_row)
         real_files = self._load_real_files(con, download_row["id"])
@@ -157,14 +138,12 @@ class DownloadRepository:
     def _build_association_rows(
         self,
         real_files: list[RealFile],
-        download_storage_path: str,
-        download_path: str,
+        download_title: str,
     ) -> collections.abc.Iterator[dict[str, str]]:
         """Build rows for inserting download-real_file associations."""
         for real_file in real_files:
             yield {
-                "download_storage_path": download_storage_path,
-                "download_path": download_path,
+                "download_title": download_title,
                 "real_file_storage_path": str(real_file.storage_path.resolve()),
                 "real_file_path": str(real_file.path),
             }
@@ -210,8 +189,7 @@ class DownloadRepository:
     @staticmethod
     def _row_to_download(row: sqlite3.Row) -> Download:
         return Download(
-            storage_path=Path(row["storage_path"]),
-            path=PurePath(row["path"]),
+            title=row["title"],
             first_seen=DownloadRepository._parse_datetime(row["first_seen"]),
             last_seen=DownloadRepository._parse_datetime(row["last_seen"]),
             comment=row["comment"],

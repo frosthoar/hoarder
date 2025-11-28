@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import datetime as dt
-from pathlib import Path, PurePath
+from pathlib import Path
 
 import pytest
 from hoarder.downloads import Download, RealFile
@@ -11,11 +11,8 @@ FROZEN_TS = dt.datetime(2024, 1, 1, tzinfo=dt.timezone.utc)
 
 def test_download_creation() -> None:
     """Test basic Download creation."""
-    storage_path = Path("/test/storage")
-    path = PurePath("test/path")
     download = Download(
-        storage_path=storage_path,
-        path=path,
+        title="test download",
         first_seen=FROZEN_TS,
         last_seen=FROZEN_TS,
         comment="test comment",
@@ -23,8 +20,7 @@ def test_download_creation() -> None:
         real_files=[],
     )
 
-    assert download.storage_path == storage_path
-    assert download.path == path
+    assert download.title == "test download"
     assert download.first_seen == FROZEN_TS
     assert download.last_seen == FROZEN_TS
     assert download.comment == "test comment"
@@ -37,20 +33,19 @@ def test_download_with_real_files() -> None:
     storage_path = Path("/test/storage")
     real_file1 = RealFile(
         storage_path=storage_path,
-        path=PurePath("file1.dat"),
+        path=Path("file1.dat"),
         size=100,
         is_dir=False,
     )
     real_file2 = RealFile(
         storage_path=storage_path,
-        path=PurePath("file2.bin"),
+        path=Path("file2.bin"),
         size=200,
         is_dir=False,
     )
 
     download = Download(
-        storage_path=storage_path,
-        path=PurePath("download"),
+        title="download with files",
         first_seen=FROZEN_TS,
         last_seen=FROZEN_TS,
         comment=None,
@@ -67,12 +62,8 @@ def test_download_with_real_files() -> None:
 
 def test_download_equality() -> None:
     """Test Download equality comparison."""
-    storage_path = Path("/test/storage")
-    path = PurePath("test/path")
-
     download1 = Download(
-        storage_path=storage_path,
-        path=path,
+        title="test download",
         first_seen=FROZEN_TS,
         last_seen=FROZEN_TS,
         comment="comment",
@@ -81,8 +72,7 @@ def test_download_equality() -> None:
     )
 
     download2 = Download(
-        storage_path=storage_path,
-        path=path,
+        title="test download",
         first_seen=FROZEN_TS,
         last_seen=FROZEN_TS,
         comment="comment",
@@ -95,11 +85,8 @@ def test_download_equality() -> None:
 
 def test_download_inequality() -> None:
     """Test Download inequality when attributes differ."""
-    storage_path = Path("/test/storage")
-
     download1 = Download(
-        storage_path=storage_path,
-        path=PurePath("path1"),
+        title="download 1",
         first_seen=FROZEN_TS,
         last_seen=FROZEN_TS,
         comment="comment",
@@ -108,8 +95,7 @@ def test_download_inequality() -> None:
     )
 
     download2 = Download(
-        storage_path=storage_path,
-        path=PurePath("path2"),
+        title="download 2",
         first_seen=FROZEN_TS,
         last_seen=FROZEN_TS,
         comment="comment",
@@ -118,4 +104,15 @@ def test_download_inequality() -> None:
     )
 
     assert download1 != download2
+
+
+def test_download_title_cannot_be_empty() -> None:
+    """Test that Download title cannot be empty."""
+    with pytest.raises(ValueError, match="Download title cannot be empty"):
+        Download(
+            title="",
+            first_seen=FROZEN_TS,
+            last_seen=FROZEN_TS,
+            processed=False,
+        )
 

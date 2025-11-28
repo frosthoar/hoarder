@@ -28,7 +28,7 @@ def hoarder_repo(tmp_path, compare_storage_path: Path) -> HoarderRepository:
 
 
 def _collect_files_from_directory(
-    storage_path: Path, directory_path: Path
+    storage_path: Path, directory_path: Path | str
 ) -> list[RealFile]:
     """Collect all files from a directory and create RealFile instances."""
     real_files: list[RealFile] = []
@@ -53,13 +53,10 @@ def _collect_files_from_directory(
     return sorted(real_files, key=lambda rf: str(rf.path))
 
 
-def _build_download(
-    storage_path: Path, path: PurePath, real_files: list[RealFile]
-) -> Download:
+def _build_download(title: str, real_files: list[RealFile]) -> Download:
     """Build a Download instance with the given real files."""
     return Download(
-        storage_path=storage_path,
-        path=path,
+        title=title,
         first_seen=FROZEN_TS,
         last_seen=FROZEN_TS,
         comment="test download",
@@ -74,22 +71,19 @@ def test_download_repository_roundtrip(
     """Test that a download can be saved and loaded correctly."""
     # Collect all files from test_files/compare/files
     real_files = _collect_files_from_directory(
-        compare_storage_path, PurePath("compare/files")
+        compare_storage_path, Path("compare/files")
     )
     if not real_files:
         pytest.skip("No files found in test_files/compare/files")
 
     # Create a download named "files"
-    original = _build_download(
-        compare_storage_path, PurePath("compare/files"), real_files
-    )
+    original = _build_download("files", real_files)
 
     hoarder_repo.save_download(original)
 
-    loaded = hoarder_repo.load_download(compare_storage_path, "compare/files")
+    loaded = hoarder_repo.load_download("files")
 
-    assert loaded.storage_path == compare_storage_path
-    assert loaded.path == PurePath("compare/files")
+    assert loaded.title == "files"
     assert loaded.first_seen == FROZEN_TS
     assert loaded.last_seen == FROZEN_TS
     assert loaded.comment == "test download"
@@ -128,12 +122,10 @@ def test_download_repository_persists_real_files(
     # Take a subset for this test
     test_files = real_files[:5] if len(real_files) >= 5 else real_files
 
-    download = _build_download(
-        compare_storage_path, PurePath("compare/files"), test_files
-    )
+    download = _build_download("files", test_files)
 
     hoarder_repo.save_download(download)
-    loaded = hoarder_repo.load_download(compare_storage_path, "compare/files")
+    loaded = hoarder_repo.load_download("files")
 
     assert len(loaded.real_files) == len(test_files)
     for original_file in test_files:
@@ -150,8 +142,7 @@ def test_download_repository_empty_real_files(
 ) -> None:
     """Test that a download with no real_files can be saved and loaded."""
     download = Download(
-        storage_path=compare_storage_path,
-        path=PurePath("compare/empty_download"),
+        title="empty download",
         first_seen=FROZEN_TS,
         last_seen=FROZEN_TS,
         comment="empty download",
@@ -160,12 +151,9 @@ def test_download_repository_empty_real_files(
     )
 
     hoarder_repo.save_download(download)
-    loaded = hoarder_repo.load_download(
-        compare_storage_path, "compare/empty_download"
-    )
+    loaded = hoarder_repo.load_download("empty download")
 
-    assert loaded.storage_path == compare_storage_path
-    assert loaded.path == PurePath("compare/empty_download")
+    assert loaded.title == "empty download"
     assert loaded.comment == "empty download"
     assert loaded.processed is True
     assert loaded.real_files == []
@@ -182,24 +170,20 @@ def test_download_repository_updates_existing_download(
         pytest.skip("No files found in test_files/compare/files")
 
     # Create initial download
-    download1 = _build_download(
-        compare_storage_path, PurePath("compare/files"), real_files[:3]
-    )
+    download1 = _build_download("files", real_files[:3])
     download1.comment = "initial comment"
     download1.processed = False
 
     hoarder_repo.save_download(download1)
 
     # Update with different data
-    download2 = _build_download(
-        compare_storage_path, PurePath("compare/files"), real_files
-    )
+    download2 = _build_download("files", real_files)
     download2.comment = "updated comment"
     download2.processed = True
 
     hoarder_repo.save_download(download2)
 
-    loaded = hoarder_repo.load_download(compare_storage_path, "compare/files")
+    loaded = hoarder_repo.load_download("files")
 
     assert loaded.comment == "updated comment"
     assert loaded.processed is True
@@ -209,29 +193,25 @@ def test_download_repository_updates_existing_download(
 def test_download_repository_disallows_unknown_storage_path_on_save(
     hoarder_repo: HoarderRepository, compare_storage_path: Path
 ) -> None:
-    """Test that saving a download with a disallowed storage path raises ValueError."""
+    """Test that saving a download with real_files from disallowed storage path raises ValueError."""
     disallowed_storage = compare_storage_path.parent
-    download = Download(
+    real_file = RealFile(
         storage_path=disallowed_storage,
-        path=PurePath("nonexistent"),
+        path=Path("nonexistent.dat"),
+        size=0,
+        is_dir=False,
+    )
+    download = Download(
+        title="test download",
         first_seen=FROZEN_TS,
         last_seen=FROZEN_TS,
         comment=None,
         processed=False,
-        real_files=[],
+        real_files=[real_file],
     )
 
     with pytest.raises(ValueError):
         hoarder_repo.save_download(download)
-
-
-def test_download_repository_disallows_unknown_storage_path_on_load(
-    hoarder_repo: HoarderRepository, compare_storage_path: Path
-) -> None:
-    """Test that loading a download with a disallowed storage path raises ValueError."""
-    disallowed_storage = compare_storage_path.parent
-    with pytest.raises(ValueError):
-        hoarder_repo.load_download(disallowed_storage, PurePath("missing"))
 
 
 def test_download_repository_file_not_found(
@@ -239,7 +219,5 @@ def test_download_repository_file_not_found(
 ) -> None:
     """Test that loading a non-existent download raises FileNotFoundError."""
     with pytest.raises(FileNotFoundError):
-        hoarder_repo.load_download(
-            compare_storage_path, PurePath("compare/nonexistent")
-        )
+        hoarder_repo.load_download("nonexistent")
 
