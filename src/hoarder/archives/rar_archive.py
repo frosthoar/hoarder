@@ -74,7 +74,7 @@ class RarArchive(HashArchive):
 
     @classmethod
     @override
-    def from_path(
+    def _from_path(
         cls: type[T],
         storage_path: pathlib.Path,
         path: pathlib.PurePath,
