@@ -16,6 +16,6 @@ class Download:
     first_seen: dt.datetime
     last_seen: dt.datetime
     comment: str | None = None
-    processed: bool
+    processed: bool = False
     real_files: list[RealFile] = dataclasses.field(default_factory=list)
 
