@@ -23,4 +23,3 @@ class Download:
         """Validate that title is not empty."""
         if not self.title:
             raise ValueError("Download title cannot be empty")
-

@@ -234,7 +234,7 @@ def test_download_repository_persists_hash_archives(
         pytest.skip("SFV test files not found")
 
     if not Path("./test_files/sfv/files.sfv").exists():
-        pytest.skip(f"SFV file not found")
+        pytest.skip("SFV file not found")
 
     sfv_archive = SfvArchive.from_path(compare_storage_path, PurePath("sfv/files.sfv"))
     hoarder_repo.save_hash_archive(sfv_archive)
@@ -280,7 +280,7 @@ def test_download_repository_persists_real_files_and_hash_archives(
         pytest.skip("SFV test files not found")
 
     if not Path("./test_files/sfv/files.sfv").exists():
-        pytest.skip(f"SFV file not found")
+        pytest.skip("SFV file not found")
 
     sfv_archive = SfvArchive.from_path(compare_storage_path, PurePath("sfv/files.sfv"))
     hoarder_repo.save_hash_archive(sfv_archive)
@@ -295,4 +295,3 @@ def test_download_repository_persists_real_files_and_hash_archives(
     assert len(loaded.real_files) == len(test_files)
     assert len(loaded.hash_archives) == 1
     assert loaded.hash_archives[0].path == sfv_archive.path
-

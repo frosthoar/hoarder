@@ -5,7 +5,7 @@ import sqlite3
 from pathlib import Path, PurePath
 
 from .archives import HashArchive, HashArchiveRepository
-from .downloads import (Download, DownloadRepository, RealFile, RealFileRepository)
+from .downloads import Download, DownloadRepository, RealFile, RealFileRepository
 from .passwords import PasswordSqlite3Repository, PasswordStore
 from .utils import Sqlite3FK
 from .utils.db_schema import ensure_repository_tables
@@ -24,9 +24,7 @@ class HoarderRepository:
 
         self.hash_repo = HashArchiveRepository()
         self.real_file_repo = RealFileRepository()
-        self.download_repo = DownloadRepository(
-            self.real_file_repo, self.hash_repo
-        )
+        self.download_repo = DownloadRepository(self.real_file_repo, self.hash_repo)
         self.password_repo = PasswordSqlite3Repository()
 
         self._initialize_storage_paths()
