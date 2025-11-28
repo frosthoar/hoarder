@@ -99,4 +99,3 @@ def ensure_repository_tables(db_path: str | Path) -> None:
 
 
 __all__ = ["ensure_repository_tables"]
-

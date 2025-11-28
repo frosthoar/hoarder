@@ -124,7 +124,9 @@ class RealFileRepository:
         ).fetchone()
 
         if rf_row is None:
-            raise FileNotFoundError(f"Real file not found: {storage_path_str}/{path_str}")
+            raise FileNotFoundError(
+                f"Real file not found: {storage_path_str}/{path_str}"
+            )
 
         real_file = self._row_to_real_file(rf_row)
         verifications = self._load_verifications(con, rf_row["id"], real_file)

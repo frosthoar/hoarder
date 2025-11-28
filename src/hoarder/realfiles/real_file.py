@@ -7,7 +7,7 @@ from pathlib import Path, PurePath
 from typing import ClassVar, Type
 
 from ..archives import Algo
-from .contents_hasher import CRC32Hasher, ContentsHasher
+from .contents_hasher import ContentsHasher, CRC32Hasher
 
 
 class VerificationSource(enum.IntEnum):

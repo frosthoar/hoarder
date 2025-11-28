@@ -30,14 +30,14 @@ class HoarderRepository:
         self._initialize_password_tables()
 
     def save_hash_archive(self, archive: HashArchive) -> None:
-        normalized_storage_path = self._check_storage_path_allowed(
-            archive.storage_path
-        )
+        normalized_storage_path = self._check_storage_path_allowed(archive.storage_path)
         with Sqlite3FK(self.db_path) as con:
             self._ensure_storage_path(con, normalized_storage_path)
             self.hash_repo.save(archive, con)
 
-    def load_hash_archive(self, storage_path: Path, path: PurePath | str) -> HashArchive:
+    def load_hash_archive(
+        self, storage_path: Path, path: PurePath | str
+    ) -> HashArchive:
         normalized_storage_path = self._check_storage_path_allowed(storage_path)
         with Sqlite3FK(self.db_path) as con:
             self._ensure_storage_path(con, normalized_storage_path)
@@ -96,9 +96,7 @@ class HoarderRepository:
             raise ValueError("At least one allowed storage path is required")
         return normalized_paths
 
-    def _ensure_storage_path(
-        self, con: sqlite3.Connection, storage_path: Path
-    ) -> None:
+    def _ensure_storage_path(self, con: sqlite3.Connection, storage_path: Path) -> None:
         cur = con.cursor()
         _ = cur.execute(
             "INSERT OR IGNORE INTO storage_paths (storage_path) VALUES (?);",
@@ -116,4 +114,3 @@ class HoarderRepository:
 
 
 __all__ = ["HoarderRepository"]
-
