@@ -95,8 +95,27 @@ class HashArchive(abc.ABC):
         return self.storage_path / self.path
 
     @classmethod
-    @abstractmethod
     def from_path(
+        cls: typing.Type[T], storage_path: str, path: str, **kwargs
+    ) -> T:
+        """Create a HashArchive object by reading information from an hash file given its storage_path and path.
+
+        Args:
+            storage_path: The storage directory path (explicitly set, not inferred)
+            path: The relative path from storage_path (as PurePath)
+        """
+        _storage_path: pathlib.Path = pathlib.Path(storage_path)
+        _path: pathlib.PurePath = pathlib.PurePath(path)
+
+        full_path = _storage_path / _path
+        if not full_path.is_file():
+            raise FileNotFoundError(f"{full_path} does not exist")
+
+        return cls._from_path(_storage_path, _path, **kwargs)
+
+    @classmethod
+    @abstractmethod
+    def _from_path(
         cls: typing.Type[T], storage_path: pathlib.Path, path: pathlib.PurePath
     ) -> T:
         """Create a HashArchive object by reading information from an hash file given its storage_path and path.

@@ -73,7 +73,7 @@ class HashNameArchive(HashArchive):
 
     @classmethod
     @override
-    def from_path(
+    def _from_path(
         cls: type[T], storage_path: pathlib.Path, path: pathlib.PurePath
     ) -> T:
         """Create a HashNameArchive object by reading information from a file name given its storage_path and path.
