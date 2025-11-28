@@ -5,8 +5,8 @@ import sqlite3
 from pathlib import Path, PurePath
 
 from .archives import HashArchive, HashArchiveRepository
+from .downloads import (Download, DownloadRepository, RealFile, RealFileRepository)
 from .passwords import PasswordSqlite3Repository, PasswordStore
-from .downloads import Download, DownloadRepository, RealFile, RealFileRepository
 from .utils import Sqlite3FK
 from .utils.db_schema import ensure_repository_tables
 

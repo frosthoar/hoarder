@@ -29,7 +29,7 @@ def hoarder_repo(tmp_path, compare_storage_path: Path) -> HoarderRepository:
 
 
 def _collect_files_from_directory(
-    storage_path: Path, directory_path: Path | str
+    storage_path: Path, directory_path: PurePath | str
 ) -> list[RealFile]:
     """Collect all files from a directory and create RealFile instances."""
     real_files: list[RealFile] = []
