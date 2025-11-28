@@ -3,7 +3,7 @@ from pathlib import Path
 import pytest
 import tests.test_case_file_info
 from hoarder.archives import FileEntry
-from hoarder.contents_hasher import CRC32Hasher
+from hoarder.realfiles.contents_hasher import CRC32Hasher
 
 
 def test_crc32_hasher_nonexistent_file():

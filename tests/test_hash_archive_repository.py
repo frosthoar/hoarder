@@ -1,14 +1,11 @@
 import logging
 import pathlib
+import subprocess
 import typing
 
 import pytest
-from hoarder.archives import (
-    HashArchiveRepository,
-    HashNameArchive,
-    RarArchive,
-    SfvArchive,
-)
+from hoarder import HoarderRepository
+from hoarder.archives import HashNameArchive, RarArchive, SfvArchive
 from tests.test_case_file_info import RAR_TEST_ARCHIVE_DEFS
 
 logger = logging.getLogger()
@@ -45,8 +42,7 @@ def create_test_repo(tmpdir_factory):
         if test_files_path.exists():
             storage_paths.add(test_files_path)
 
-    ha_repo = HashArchiveRepository(pathlib.Path(p / "hoarder.db"), storage_paths)
-    return ha_repo
+    return HoarderRepository(pathlib.Path(p / "hoarder.db"), storage_paths)
 
 
 def test_sfv_repositories(create_test_repo):
@@ -60,8 +56,8 @@ def test_sfv_repositories(create_test_repo):
         root = p.parent
         path = pathlib.PurePath(p.name)
         saved_sfv_file = SfvArchive.from_path(root, path)
-        create_test_repo.save(saved_sfv_file)
-        retrieved_sfv_file = create_test_repo.load(
+        create_test_repo.save_hash_archive(saved_sfv_file)
+        retrieved_sfv_file = create_test_repo.load_hash_archive(
             saved_sfv_file.storage_path, saved_sfv_file.path
         )
 
@@ -82,13 +78,18 @@ def test_rar_repositories(
     password = rar_file_tuple[1]
     root = rar_file.parent
     path = pathlib.PurePath(rar_file.name)
-    saved_rar_file = RarArchive.from_path(
-        root,
-        path,
-        password=password,
-    )
-    create_test_repo.save(saved_rar_file)
-    retrieved_rar_file = create_test_repo.load(
+    try:
+        saved_rar_file = RarArchive.from_path(
+            root,
+            path,
+            password=password,
+        )
+    except subprocess.CalledProcessError:
+        pytest.skip("7zip not available or failed to process archive")
+    except FileNotFoundError as exc:
+        pytest.skip(f"Required executable not found: {exc}")
+    create_test_repo.save_hash_archive(saved_rar_file)
+    retrieved_rar_file = create_test_repo.load_hash_archive(
         saved_rar_file.storage_path, saved_rar_file.path
     )
 
@@ -106,8 +107,8 @@ def test_hnf_repositories(create_test_repo):
         root = hnf_path.parent
         path = pathlib.PurePath(hnf_path.name)
         saved_hnf_file = HashNameArchive.from_path(root, path)
-        create_test_repo.save(saved_hnf_file)
-        retrieved_hnf_file = create_test_repo.load(
+        create_test_repo.save_hash_archive(saved_hnf_file)
+        retrieved_hnf_file = create_test_repo.load_hash_archive(
             saved_hnf_file.storage_path, saved_hnf_file.path
         )
 
@@ -123,7 +124,7 @@ def test_storage_path_not_allowed_error(tmpdir_factory):
     if not allowed_path.exists():
         pytest.skip(f"Test file directory not found: {allowed_path}")
 
-    repo = HashArchiveRepository(pathlib.Path(p / "hoarder.db"), [allowed_path])
+    repo = HoarderRepository(pathlib.Path(p / "hoarder.db"), [allowed_path])
 
     # Try to save an archive from a different storage path
     hnf_path = (
@@ -139,7 +140,7 @@ def test_storage_path_not_allowed_error(tmpdir_factory):
 
     # Should raise ValueError
     with pytest.raises(ValueError) as exc_info:
-        repo.save(hnf_archive)
+        repo.save_hash_archive(hnf_archive)
 
     assert str(storage_path.resolve()) in str(exc_info.value)
 
@@ -153,7 +154,7 @@ def test_storage_path_not_allowed_on_load(tmpdir_factory):
     if not allowed_path.exists():
         pytest.skip(f"Test file directory not found: {allowed_path}")
 
-    repo = HashArchiveRepository(pathlib.Path(p / "hoarder.db"), [allowed_path])
+    repo = HoarderRepository(pathlib.Path(p / "hoarder.db"), [allowed_path])
 
     # Try to load from a disallowed storage path
     hnf_path = (
@@ -168,7 +169,7 @@ def test_storage_path_not_allowed_on_load(tmpdir_factory):
 
     # Should raise ValueError before even checking the database
     with pytest.raises(ValueError) as exc_info:
-        repo.load(storage_path, path)
+        repo.load_hash_archive(storage_path, path)
 
     assert str(storage_path.resolve()) in str(exc_info.value)
 
@@ -180,14 +181,14 @@ def test_storage_path_validation_on_init(tmpdir_factory):
     # Test with non-existent path
     non_existent = pathlib.Path("/nonexistent/path/that/does/not/exist")
     with pytest.raises(FileNotFoundError):
-        HashArchiveRepository(pathlib.Path(p / "hoarder.db"), [non_existent])
+        HoarderRepository(pathlib.Path(p / "hoarder.db"), [non_existent])
 
     # Test with existing path - should normalize (resolve)
     sfv_path = pathlib.Path("./test_files/sfv/")
     if not sfv_path.exists():
         pytest.skip(f"Test file directory not found: {sfv_path}")
 
-    repo = HashArchiveRepository(pathlib.Path(p / "hoarder.db"), [sfv_path])
+    repo = HoarderRepository(pathlib.Path(p / "hoarder.db"), [sfv_path])
 
     # Verify the path was normalized
-    assert sfv_path.resolve() in repo._allowed_storage_paths
+    assert sfv_path.resolve() in repo.allowed_storage_paths

@@ -3,7 +3,9 @@
 import pathlib
 
 import pytest
+from hoarder import HoarderRepository
 from hoarder.passwords import PasswordSqlite3Repository, PasswordStore
+from hoarder.utils import Sqlite3FK
 
 
 @pytest.fixture(scope="function")
@@ -13,21 +15,26 @@ def temp_db_path(tmp_path):
 
 
 @pytest.fixture(scope="function")
-def password_repo(temp_db_path):
-    """Create a PasswordSqlite3Repository instance for each test."""
-    return PasswordSqlite3Repository(temp_db_path)
+def allowed_storage_path(tmp_path: pathlib.Path) -> pathlib.Path:
+    storage_path = tmp_path / "storage"
+    storage_path.mkdir()
+    return storage_path
 
 
-def test_init_creates_tables(temp_db_path):
+@pytest.fixture(scope="function")
+def hoarder_repo(temp_db_path, allowed_storage_path):
+    """Create a HoarderRepository instance wired for password storage."""
+    return HoarderRepository(temp_db_path, [allowed_storage_path])
+
+
+def test_init_creates_tables(temp_db_path, allowed_storage_path):
     """Test that initialization creates the database tables."""
-    _ = PasswordSqlite3Repository(temp_db_path)
+    _ = HoarderRepository(temp_db_path, [allowed_storage_path])
 
     # Verify database file exists
     assert temp_db_path.exists()
 
     # Verify tables exist by trying to query them
-    from hoarder.utils import Sqlite3FK
-
     with Sqlite3FK(temp_db_path) as con:
         cur = con.cursor()
         # Check titles table exists
@@ -46,29 +53,31 @@ def test_init_creates_tables(temp_db_path):
 def test_init_with_string_path(tmp_path):
     """Test that initialization works with string path."""
     db_path = str(tmp_path / "test.db")
-    _ = PasswordSqlite3Repository(db_path)
+    storage_path = tmp_path / "storage"
+    storage_path.mkdir()
+    _ = HoarderRepository(db_path, [storage_path])
     assert pathlib.Path(db_path).exists()
 
 
-def test_save_empty_store(password_repo: PasswordSqlite3Repository):
+def test_save_empty_store(hoarder_repo: HoarderRepository):
     """Test saving an empty PasswordStore."""
     store = PasswordStore()
-    password_repo.save(store)
+    hoarder_repo.save_password_store(store)
 
     # Should not raise an error
-    loaded = password_repo.load()
+    loaded = hoarder_repo.load_password_store()
     assert len(loaded) == 0
 
 
 def test_save_and_load_single_title_single_password(
-    password_repo: PasswordSqlite3Repository,
+    hoarder_repo: HoarderRepository,
 ):
     """Test saving and loading a store with one title and one password."""
     store = PasswordStore()
     store.add_password("title1", "password1")
 
-    password_repo.save(store)
-    loaded = password_repo.load()
+    hoarder_repo.save_password_store(store)
+    loaded = hoarder_repo.load_password_store()
 
     assert len(loaded) == 1
     assert "title1" in loaded
@@ -76,7 +85,7 @@ def test_save_and_load_single_title_single_password(
 
 
 def test_save_and_load_single_title_multiple_passwords(
-    password_repo: PasswordSqlite3Repository,
+    hoarder_repo: HoarderRepository,
 ):
     """Test saving and loading a store with one title and multiple passwords."""
     store = PasswordStore()
@@ -84,8 +93,8 @@ def test_save_and_load_single_title_multiple_passwords(
     store.add_password("title1", "password2")
     store.add_password("title1", "password3")
 
-    password_repo.save(store)
-    loaded = password_repo.load()
+    hoarder_repo.save_password_store(store)
+    loaded = hoarder_repo.load_password_store()
 
     assert len(loaded) == 1
     assert "title1" in loaded
@@ -93,7 +102,7 @@ def test_save_and_load_single_title_multiple_passwords(
 
 
 def test_save_and_load_multiple_titles(
-    password_repo: PasswordSqlite3Repository,
+    hoarder_repo: HoarderRepository,
 ):
     """Test saving and loading a store with multiple titles."""
     store = PasswordStore()
@@ -101,8 +110,8 @@ def test_save_and_load_multiple_titles(
     store.add_password("title2", "password2")
     store.add_password("title3", "password3")
 
-    password_repo.save(store)
-    loaded = password_repo.load()
+    hoarder_repo.save_password_store(store)
+    loaded = hoarder_repo.load_password_store()
 
     assert len(loaded) == 3
     assert loaded["title1"] == {"password1"}
@@ -111,7 +120,7 @@ def test_save_and_load_multiple_titles(
 
 
 def test_save_and_load_complex_store(
-    password_repo: PasswordSqlite3Repository,
+    hoarder_repo: HoarderRepository,
 ):
     """Test saving and loading a complex store with multiple titles and passwords."""
     store = PasswordStore()
@@ -122,8 +131,8 @@ def test_save_and_load_complex_store(
     store.add_password("title2", "password5")
     store.add_password("title3", "password6")
 
-    password_repo.save(store)
-    loaded = password_repo.load()
+    hoarder_repo.save_password_store(store)
+    loaded = hoarder_repo.load_password_store()
 
     assert len(loaded) == 3
     assert loaded["title1"] == {"password1", "password2"}
@@ -132,7 +141,7 @@ def test_save_and_load_complex_store(
 
 
 def test_save_duplicate_title_ignored(
-    password_repo: PasswordSqlite3Repository,
+    hoarder_repo: HoarderRepository,
 ):
     """Test that saving the same title twice doesn't create duplicates."""
     store1 = PasswordStore()
@@ -141,32 +150,32 @@ def test_save_duplicate_title_ignored(
     store2 = PasswordStore()
     store2.add_password("title1", "password2")
 
-    password_repo.save(store1)
-    password_repo.save(store2)
+    hoarder_repo.save_password_store(store1)
+    hoarder_repo.save_password_store(store2)
 
-    loaded = password_repo.load()
+    loaded = hoarder_repo.load_password_store()
     # Should have both passwords for the same title
     assert len(loaded) == 1
     assert loaded["title1"] == {"password1", "password2"}
 
 
 def test_save_duplicate_password_ignored(
-    password_repo: PasswordSqlite3Repository,
+    hoarder_repo: HoarderRepository,
 ):
     """Test that saving the same password twice for a title is ignored."""
     store = PasswordStore()
     store.add_password("title1", "password1")
 
-    password_repo.save(store)
-    password_repo.save(store)  # Save again
+    hoarder_repo.save_password_store(store)
+    hoarder_repo.save_password_store(store)  # Save again
 
-    loaded = password_repo.load()
+    loaded = hoarder_repo.load_password_store()
     assert len(loaded) == 1
     assert loaded["title1"] == {"password1"}
 
 
 def test_save_appends_passwords(
-    password_repo: PasswordSqlite3Repository,
+    hoarder_repo: HoarderRepository,
 ):
     """Test that saving appends passwords rather than replacing."""
     store1 = PasswordStore()
@@ -176,24 +185,24 @@ def test_save_appends_passwords(
     store2.add_password("title1", "password2")
     store2.add_password("title2", "password3")
 
-    password_repo.save(store1)
-    password_repo.save(store2)
+    hoarder_repo.save_password_store(store1)
+    hoarder_repo.save_password_store(store2)
 
-    loaded = password_repo.load()
+    loaded = hoarder_repo.load_password_store()
     assert len(loaded) == 2
     assert loaded["title1"] == {"password1", "password2"}
     assert loaded["title2"] == {"password3"}
 
 
-def test_load_empty_database(password_repo: PasswordSqlite3Repository):
+def test_load_empty_database(hoarder_repo: HoarderRepository):
     """Test loading from an empty database."""
-    loaded = password_repo.load()
+    loaded = hoarder_repo.load_password_store()
     assert isinstance(loaded, PasswordStore)
     assert len(loaded) == 0
 
 
 def test_save_and_load_preserves_order(
-    password_repo: PasswordSqlite3Repository,
+    hoarder_repo: HoarderRepository,
 ):
     """Test that load returns titles in sorted order."""
     store = PasswordStore()
@@ -201,8 +210,8 @@ def test_save_and_load_preserves_order(
     store.add_password("alpha", "password2")
     store.add_password("beta", "password3")
 
-    password_repo.save(store)
-    loaded = password_repo.load()
+    hoarder_repo.save_password_store(store)
+    loaded = hoarder_repo.load_password_store()
 
     # Titles should be in sorted order when iterating
     titles = [title for title, _ in loaded]
@@ -210,7 +219,7 @@ def test_save_and_load_preserves_order(
 
 
 def test_save_with_existing_data_from_dict(
-    password_repo: PasswordSqlite3Repository,
+    hoarder_repo: HoarderRepository,
 ):
     """Test saving a PasswordStore initialized from a dictionary."""
     data = {
@@ -219,8 +228,8 @@ def test_save_with_existing_data_from_dict(
     }
     store = PasswordStore(data)
 
-    password_repo.save(store)
-    loaded = password_repo.load()
+    hoarder_repo.save_password_store(store)
+    loaded = hoarder_repo.load_password_store()
 
     assert len(loaded) == 2
     assert loaded["title1"] == {"password1", "password2"}
@@ -228,47 +237,47 @@ def test_save_with_existing_data_from_dict(
 
 
 def test_round_trip_multiple_operations(
-    password_repo: PasswordSqlite3Repository,
+    hoarder_repo: HoarderRepository,
 ):
     """Test multiple save/load operations maintain consistency."""
     # First save
     store1 = PasswordStore()
     store1.add_password("title1", "password1")
-    password_repo.save(store1)
+    hoarder_repo.save_password_store(store1)
 
-    loaded1 = password_repo.load()
+    loaded1 = hoarder_repo.load_password_store()
     assert loaded1["title1"] == {"password1"}
 
     # Second save - add more
     store2 = PasswordStore()
     store2.add_password("title1", "password2")
     store2.add_password("title2", "password3")
-    password_repo.save(store2)
+    hoarder_repo.save_password_store(store2)
 
-    loaded2 = password_repo.load()
+    loaded2 = hoarder_repo.load_password_store()
     assert loaded2["title1"] == {"password1", "password2"}
     assert loaded2["title2"] == {"password3"}
 
     # Third save - add to existing title
     store3 = PasswordStore()
     store3.add_password("title1", "password4")
-    password_repo.save(store3)
+    hoarder_repo.save_password_store(store3)
 
-    loaded3 = password_repo.load()
+    loaded3 = hoarder_repo.load_password_store()
     assert loaded3["title1"] == {"password1", "password2", "password4"}
     assert loaded3["title2"] == {"password3"}
 
 
 def test_load_returns_new_instance(
-    password_repo: PasswordSqlite3Repository,
+    hoarder_repo: HoarderRepository,
 ):
     """Test that load returns a new PasswordStore instance."""
     store = PasswordStore()
     store.add_password("title1", "password1")
-    password_repo.save(store)
+    hoarder_repo.save_password_store(store)
 
-    loaded1 = password_repo.load()
-    loaded2 = password_repo.load()
+    loaded1 = hoarder_repo.load_password_store()
+    loaded2 = hoarder_repo.load_password_store()
 
     # Should be different instances
     assert loaded1 is not loaded2
@@ -277,7 +286,7 @@ def test_load_returns_new_instance(
 
 
 def test_save_with_special_characters(
-    password_repo: PasswordSqlite3Repository,
+    hoarder_repo: HoarderRepository,
 ):
     """Test saving and loading titles and passwords with special characters."""
     store = PasswordStore()
@@ -286,8 +295,8 @@ def test_save_with_special_characters(
     store.add_password('title"with"double', 'password"with"double')
     store.add_password("title\nwith\nnewlines", "password\nwith\nnewlines")
 
-    password_repo.save(store)
-    loaded = password_repo.load()
+    hoarder_repo.save_password_store(store)
+    loaded = hoarder_repo.load_password_store()
 
     assert len(loaded) == 4
     assert loaded["title with spaces"] == {"password with spaces"}
@@ -297,7 +306,7 @@ def test_save_with_special_characters(
 
 
 def test_save_with_unicode_characters(
-    password_repo: PasswordSqlite3Repository,
+    hoarder_repo: HoarderRepository,
 ):
     """Test saving and loading titles and passwords with unicode characters."""
     store = PasswordStore()
@@ -305,8 +314,8 @@ def test_save_with_unicode_characters(
     store.add_password("タイトル", "パスワード")
     store.add_password("заголовок", "пароль")
 
-    password_repo.save(store)
-    loaded = password_repo.load()
+    hoarder_repo.save_password_store(store)
+    loaded = hoarder_repo.load_password_store()
 
     assert len(loaded) == 3
     assert loaded["título"] == {"contraseña"}
@@ -315,15 +324,12 @@ def test_save_with_unicode_characters(
 
 
 def test_create_tables_idempotent(temp_db_path):
-    """Test that _create_tables can be called multiple times safely."""
-    PasswordSqlite3Repository._create_tables(temp_db_path)
-    PasswordSqlite3Repository._create_tables(temp_db_path)
-    PasswordSqlite3Repository._create_tables(temp_db_path)
-
-    # Should not raise an error and tables should exist
-    from hoarder.utils import Sqlite3FK
-
+    """Test that ensure_tables can be called multiple times safely."""
     with Sqlite3FK(temp_db_path) as con:
+        PasswordSqlite3Repository.ensure_tables(con)
+        PasswordSqlite3Repository.ensure_tables(con)
+        PasswordSqlite3Repository.ensure_tables(con)
+
         cur = con.cursor()
         cur.execute(
             "SELECT name FROM sqlite_master WHERE type='table' AND name='titles';"
