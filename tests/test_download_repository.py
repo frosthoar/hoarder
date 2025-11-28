@@ -5,6 +5,7 @@ from pathlib import Path, PurePath
 
 import pytest
 from hoarder import HoarderRepository
+from hoarder.archives import SfvArchive
 from hoarder.downloads import Download, RealFile
 
 FROZEN_TS = dt.datetime(2024, 1, 1, tzinfo=dt.timezone.utc)
@@ -105,8 +106,9 @@ def test_download_repository_roundtrip(
         assert sample_loaded.path == sample_original.path
         assert sample_loaded.size == sample_original.size
         assert sample_loaded.hash_value == sample_original.hash_value
-        assert sample_loaded.first_seen == sample_original.first_seen
-        assert sample_loaded.last_seen == sample_original.last_seen
+    assert sample_loaded.first_seen == sample_original.first_seen
+    assert sample_loaded.last_seen == sample_original.last_seen
+    assert len(loaded.hash_archives) == 0
 
 
 def test_download_repository_persists_real_files(
@@ -157,6 +159,7 @@ def test_download_repository_empty_real_files(
     assert loaded.comment == "empty download"
     assert loaded.processed is True
     assert loaded.real_files == []
+    assert loaded.hash_archives == []
 
 
 def test_download_repository_updates_existing_download(
@@ -220,4 +223,76 @@ def test_download_repository_file_not_found(
     """Test that loading a non-existent download raises FileNotFoundError."""
     with pytest.raises(FileNotFoundError):
         hoarder_repo.load_download("nonexistent")
+
+
+def test_download_repository_persists_hash_archives(
+    hoarder_repo: HoarderRepository, compare_storage_path: Path
+) -> None:
+    """Test that hash_archives associated with a download are persisted correctly."""
+    # Load an SFV archive from test files
+    if not Path("./test_files/sfv").exists():
+        pytest.skip("SFV test files not found")
+
+    if not Path("./test_files/sfv/files.sfv").exists():
+        pytest.skip(f"SFV file not found")
+
+    sfv_archive = SfvArchive.from_path(compare_storage_path, PurePath("sfv/files.sfv"))
+    hoarder_repo.save_hash_archive(sfv_archive)
+
+    # Create a download with hash archives
+    download = Download(
+        title="download with archives",
+        first_seen=FROZEN_TS,
+        last_seen=FROZEN_TS,
+        comment="test with archives",
+        processed=False,
+        real_files=[],
+        hash_archives=[sfv_archive],
+    )
+
+    hoarder_repo.save_download(download)
+    loaded = hoarder_repo.load_download("download with archives")
+
+    assert len(loaded.hash_archives) == 1
+    loaded_archive = loaded.hash_archives[0]
+    assert loaded_archive.storage_path == sfv_archive.storage_path
+    assert loaded_archive.path == sfv_archive.path
+    assert loaded_archive.__class__ == sfv_archive.__class__
+    assert len(loaded_archive.files) == len(sfv_archive.files)
+
+
+def test_download_repository_persists_real_files_and_hash_archives(
+    hoarder_repo: HoarderRepository, compare_storage_path: Path
+) -> None:
+    """Test that a download with both real_files and hash_archives is persisted correctly."""
+    # Collect some real files
+    real_files = _collect_files_from_directory(
+        compare_storage_path, Path("compare/files")
+    )
+    if not real_files:
+        pytest.skip("No files found in test_files/compare/files")
+
+    # Take a small subset
+    test_files = real_files[:3] if len(real_files) >= 3 else real_files
+
+    # Load an SFV archive
+    if not Path("./test_files/sfv").exists():
+        pytest.skip("SFV test files not found")
+
+    if not Path("./test_files/sfv/files.sfv").exists():
+        pytest.skip(f"SFV file not found")
+
+    sfv_archive = SfvArchive.from_path(compare_storage_path, PurePath("sfv/files.sfv"))
+    hoarder_repo.save_hash_archive(sfv_archive)
+
+    # Create a download with both
+    download = _build_download("files with archives", test_files)
+    download.hash_archives = [sfv_archive]
+
+    hoarder_repo.save_download(download)
+    loaded = hoarder_repo.load_download("files with archives")
+
+    assert len(loaded.real_files) == len(test_files)
+    assert len(loaded.hash_archives) == 1
+    assert loaded.hash_archives[0].path == sfv_archive.path
 

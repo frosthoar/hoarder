@@ -4,6 +4,7 @@ import datetime as dt
 from pathlib import Path
 
 import pytest
+from hoarder.archives import HashArchive
 from hoarder.downloads import Download, RealFile
 
 FROZEN_TS = dt.datetime(2024, 1, 1, tzinfo=dt.timezone.utc)
@@ -26,6 +27,7 @@ def test_download_creation() -> None:
     assert download.comment == "test comment"
     assert download.processed is False
     assert download.real_files == []
+    assert download.hash_archives == []
 
 
 def test_download_with_real_files() -> None:
@@ -58,6 +60,25 @@ def test_download_with_real_files() -> None:
     assert download.real_files[1] == real_file2
     assert download.processed is True
     assert download.comment is None
+    assert download.hash_archives == []
+
+
+def test_download_with_hash_archives() -> None:
+    """Test Download with associated HashArchives."""
+    # Note: This test doesn't create actual HashArchive instances
+    # since they require file system access. We just test the field exists.
+    download = Download(
+        title="download with archives",
+        first_seen=FROZEN_TS,
+        last_seen=FROZEN_TS,
+        comment=None,
+        processed=True,
+        real_files=[],
+        hash_archives=[],
+    )
+
+    assert len(download.hash_archives) == 0
+    assert download.processed is True
 
 
 def test_download_equality() -> None:

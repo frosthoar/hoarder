@@ -111,6 +111,20 @@ CREATE TABLE IF NOT EXISTS download_real_files (
 );
 """
 
+_CREATE_DOWNLOAD_HASH_ARCHIVES = """
+CREATE TABLE IF NOT EXISTS download_hash_archives (
+    download_id     INTEGER NOT NULL,
+    hash_archive_id INTEGER NOT NULL,
+    FOREIGN KEY (download_id)
+      REFERENCES downloads(id)
+      ON DELETE CASCADE,
+    FOREIGN KEY (hash_archive_id)
+      REFERENCES hash_archives(id)
+      ON DELETE CASCADE,
+    UNIQUE(download_id, hash_archive_id)
+);
+"""
+
 
 def ensure_repository_tables(db_path: str | Path) -> None:
     """Create all shared repository tables if needed."""
@@ -123,6 +137,7 @@ def ensure_repository_tables(db_path: str | Path) -> None:
         _ = cur.execute(_CREATE_VERIFICATIONS)
         _ = cur.execute(_CREATE_DOWNLOADS)
         _ = cur.execute(_CREATE_DOWNLOAD_REAL_FILES)
+        _ = cur.execute(_CREATE_DOWNLOAD_HASH_ARCHIVES)
 
 
 __all__ = ["ensure_repository_tables"]

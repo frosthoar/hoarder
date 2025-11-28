@@ -24,7 +24,9 @@ class HoarderRepository:
 
         self.hash_repo = HashArchiveRepository()
         self.real_file_repo = RealFileRepository()
-        self.download_repo = DownloadRepository(self.real_file_repo)
+        self.download_repo = DownloadRepository(
+            self.real_file_repo, self.hash_repo
+        )
         self.password_repo = PasswordSqlite3Repository()
 
         self._initialize_storage_paths()
@@ -83,10 +85,18 @@ class HoarderRepository:
                 verification.source_storage_path = self._check_storage_path_allowed(
                     verification.source_storage_path
                 )
+        # Validate storage paths from hash_archives
+        for hash_archive in download.hash_archives:
+            normalized_storage_path = self._check_storage_path_allowed(
+                hash_archive.storage_path
+            )
+            hash_archive.storage_path = normalized_storage_path
         with Sqlite3FK(self.db_path) as con:
             # Ensure all storage paths exist
             for real_file in download.real_files:
                 self._ensure_storage_path(con, real_file.storage_path)
+            for hash_archive in download.hash_archives:
+                self._ensure_storage_path(con, hash_archive.storage_path)
             self.download_repo.save(download, con)
 
     def load_download(self, title: str) -> Download:
