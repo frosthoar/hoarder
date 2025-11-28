@@ -5,7 +5,7 @@ from pathlib import Path
 import pytest
 import tests.test_case_file_info as case_files
 from hoarder.archives import Algo
-from hoarder.realfiles import RealFile
+from hoarder.downloads import RealFile
 
 STORAGE_ROOT = Path("test_files/compare")
 CRC32_SAMPLE_FILES = [fe for fe in case_files.TEST_FILES if not fe.is_dir][:10]

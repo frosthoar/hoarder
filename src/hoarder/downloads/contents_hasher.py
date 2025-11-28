@@ -11,7 +11,7 @@ try:
 except ImportError:
     from typing_extensions import override
 
-logger = logging.getLogger("hoarder.realfiles.contents_hasher")
+logger = logging.getLogger("hoarder.downloads.contents_hasher")
 
 
 class ContentsHasher(ABC):

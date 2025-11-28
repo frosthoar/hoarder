@@ -7,7 +7,7 @@ import pytest
 import tests.test_case_file_info as case_files
 from hoarder import HoarderRepository
 from hoarder.archives import Algo
-from hoarder.realfiles import RealFile, Verification, VerificationSource
+from hoarder.downloads import RealFile, Verification, VerificationSource
 
 FROZEN_TS = dt.datetime(2024, 1, 1, tzinfo=dt.timezone.utc)
 

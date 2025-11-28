@@ -86,6 +86,45 @@ CREATE TABLE IF NOT EXISTS verifications (
 );
 """
 
+_CREATE_DOWNLOADS = """
+CREATE TABLE IF NOT EXISTS downloads (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    title           TEXT NOT NULL UNIQUE,
+    first_seen      TEXT NOT NULL,
+    last_seen       TEXT NOT NULL,
+    comment         TEXT,
+    processed       INTEGER NOT NULL
+);
+"""
+
+_CREATE_DOWNLOAD_REAL_FILES = """
+CREATE TABLE IF NOT EXISTS download_real_files (
+    download_id     INTEGER NOT NULL,
+    real_file_id    INTEGER NOT NULL,
+    FOREIGN KEY (download_id)
+      REFERENCES downloads(id)
+      ON DELETE CASCADE,
+    FOREIGN KEY (real_file_id)
+      REFERENCES real_files(id)
+      ON DELETE CASCADE,
+    UNIQUE(download_id, real_file_id)
+);
+"""
+
+_CREATE_DOWNLOAD_HASH_ARCHIVES = """
+CREATE TABLE IF NOT EXISTS download_hash_archives (
+    download_id     INTEGER NOT NULL,
+    hash_archive_id INTEGER NOT NULL,
+    FOREIGN KEY (download_id)
+      REFERENCES downloads(id)
+      ON DELETE CASCADE,
+    FOREIGN KEY (hash_archive_id)
+      REFERENCES hash_archives(id)
+      ON DELETE CASCADE,
+    UNIQUE(download_id, hash_archive_id)
+);
+"""
+
 
 def ensure_repository_tables(db_path: str | Path) -> None:
     """Create all shared repository tables if needed."""
@@ -96,6 +135,9 @@ def ensure_repository_tables(db_path: str | Path) -> None:
         _ = cur.execute(_CREATE_FILE_ENTRIES)
         _ = cur.execute(_CREATE_REAL_FILES)
         _ = cur.execute(_CREATE_VERIFICATIONS)
+        _ = cur.execute(_CREATE_DOWNLOADS)
+        _ = cur.execute(_CREATE_DOWNLOAD_REAL_FILES)
+        _ = cur.execute(_CREATE_DOWNLOAD_HASH_ARCHIVES)
 
 
 __all__ = ["ensure_repository_tables"]
