@@ -6,7 +6,7 @@ from pathlib import Path, PurePath
 
 from .archives import HashArchive, HashArchiveRepository
 from .passwords import PasswordSqlite3Repository, PasswordStore
-from .realfiles import RealFile, RealFileRepository
+from .downloads import RealFile, RealFileRepository
 from .utils import Sqlite3FK
 from .utils.db_schema import ensure_repository_tables
 
