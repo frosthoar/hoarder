@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import collections.abc
 import datetime as dt
 import sqlite3
 from pathlib import Path, PurePath
@@ -69,54 +70,57 @@ class DownloadRepository:
             },
         )
 
-        # Get the download ID
-        download_id = cur.lastrowid
-        if download_id is None:
-            # If lastrowid is None, fetch the ID we just inserted
-            row = cur.execute(
-                """
-                SELECT id FROM downloads
-                WHERE storage_path_id = (SELECT id FROM storage_paths WHERE storage_path = ?)
-                  AND path = ?;
-                """,
-                (storage_path_str, str(download.path)),
-            ).fetchone()
-            if row:
-                download_id = row[0]
+        # Delete existing associations using SQL
+        _ = cur.execute(
+            """
+            DELETE FROM download_real_files
+            WHERE download_id = (
+                SELECT downloads.id
+                FROM downloads
+                JOIN storage_paths ON downloads.storage_path_id = storage_paths.id
+                WHERE storage_paths.storage_path = ? AND downloads.path = ?
+            );
+            """,
+            (storage_path_str, str(download.path)),
+        )
 
-        # Delete existing associations
-        if download_id:
-            _ = cur.execute(
-                "DELETE FROM download_real_files WHERE download_id = ?;",
-                (download_id,),
+        # Create associations between download and real_files using SQL
+        if download.real_files:
+            association_rows = list(
+                self._build_association_rows(
+                    download.real_files,
+                    storage_path_str,
+                    str(download.path),
+                )
             )
-
-        # Create associations between download and real_files
-        if download.real_files and download_id:
-            for real_file in download.real_files:
-                # Get the real_file ID
-                real_file_row = cur.execute(
+            if association_rows:
+                expected_rows = len(association_rows)
+                _ = cur.executemany(
                     """
-                    SELECT real_files.id
-                    FROM real_files
-                    JOIN storage_paths ON real_files.storage_path_id = storage_paths.id
-                    WHERE storage_paths.storage_path = ? AND real_files.path = ?;
-                    """,
-                    (
-                        str(real_file.storage_path.resolve()),
-                        str(real_file.path),
-                    ),
-                ).fetchone()
-
-                if real_file_row:
-                    real_file_id = real_file_row[0]
-                    _ = cur.execute(
-                        """
-                        INSERT OR IGNORE INTO download_real_files (download_id, real_file_id)
-                        VALUES (?, ?);
-                        """,
-                        (download_id, real_file_id),
+                    INSERT OR IGNORE INTO download_real_files (
+                        download_id,
+                        real_file_id
                     )
+                    SELECT
+                        (
+                            SELECT downloads.id
+                            FROM downloads
+                            JOIN storage_paths ON downloads.storage_path_id = storage_paths.id
+                            WHERE storage_paths.storage_path = :download_storage_path
+                              AND downloads.path = :download_path
+                        ) AS download_id,
+                        (
+                            SELECT real_files.id
+                            FROM real_files
+                            JOIN storage_paths ON real_files.storage_path_id = storage_paths.id
+                            WHERE storage_paths.storage_path = :real_file_storage_path
+                              AND real_files.path = :real_file_path
+                        ) AS real_file_id;
+                    """,
+                    association_rows,
+                )
+                if cur.rowcount != expected_rows:
+                    raise ValueError("Failed to insert download-real_file associations")
 
     def load(
         self,
@@ -149,6 +153,21 @@ class DownloadRepository:
         real_files = self._load_real_files(con, download_row["id"])
         download.real_files = real_files
         return download
+
+    def _build_association_rows(
+        self,
+        real_files: list[RealFile],
+        download_storage_path: str,
+        download_path: str,
+    ) -> collections.abc.Iterator[dict[str, str]]:
+        """Build rows for inserting download-real_file associations."""
+        for real_file in real_files:
+            yield {
+                "download_storage_path": download_storage_path,
+                "download_path": download_path,
+                "real_file_storage_path": str(real_file.storage_path.resolve()),
+                "real_file_path": str(real_file.path),
+            }
 
     def _load_real_files(
         self,
