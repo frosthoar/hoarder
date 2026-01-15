@@ -13,6 +13,8 @@ try:
 except ImportError:
     from typing_extensions import override
 
+from hoarder.utils.presentation import PresentationSpec
+
 
 class Algo(enum.IntEnum):
     """This class contains the possible hash algorithms."""
@@ -152,6 +154,38 @@ class HashArchive(abc.ABC):
             d[attr] = getattr(self, attr)
         d["files"] = sorted([repr(f) for f in self.files])
         return str(dict(sorted(d.items())))
+
+    def to_presentation(self) -> PresentationSpec:
+        """Convert this archive to a presentation specification.
+
+        Returns:
+            A PresentationSpec with archive metadata as scalars and files as collection rows.
+        """
+        # Build scalar metadata
+        scalar: dict[str, str | int | bool | None] = {
+            "type": self.__class__.__name__,
+            "path": str(self.full_path),
+        }
+        header_fields = self._printable_attributes()
+        for field in ("files", "path"):
+            if field in header_fields:
+                header_fields.remove(field)
+        for attr in header_fields:
+            scalar[attr] = getattr(self, attr)
+
+        # Build collection rows for files
+        collection: list[dict[str, str | int | bool | None]] = []
+        for file in sorted(self):
+            row: dict[str, str | int | bool | None] = {
+                "path": str(file.path),
+                "type": "D" if file.is_dir else "F",
+                "size": file.size,
+                "hash": file.hash_value.hex() if file.hash_value else None,
+                "algo": file.algo.name if file.algo else None,
+            }
+            collection.append(row)
+
+        return PresentationSpec(scalar=scalar, collection=collection)
 
     def pretty_print(self) -> str:
         placeholder = "-"

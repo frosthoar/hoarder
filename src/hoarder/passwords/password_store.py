@@ -5,6 +5,8 @@ import copy
 from collections import defaultdict
 from collections.abc import Iterator
 
+from hoarder.utils.presentation import PresentationSpec
+
 
 class PasswordStore:
     """A store that associates titles with multiple passwords using sets."""
@@ -71,6 +73,30 @@ class PasswordStore:
         """Clear all passwords for the specified title."""
         if title in self._store:
             del self._store[title]
+
+    def to_presentation(self) -> PresentationSpec:
+        """Convert this password store to a presentation specification.
+
+        Returns:
+            A PresentationSpec with store metadata as scalars and title-password pairs as collection rows.
+        """
+        scalar: dict[str, str | int | None] = {
+            "type": "PasswordStore",
+            "entries": len(self._store),
+        }
+
+        collection: list[dict[str, str | None]] = []
+        for title in sorted(self._store.keys()):
+            passwords = sorted(self._store[title])
+            for i, password in enumerate(passwords):
+                row: dict[str, str | None] = {
+                    # Only show title on first row for this title group
+                    "title": title if i == 0 else None,
+                    "password": password,
+                }
+                collection.append(row)
+
+        return PresentationSpec(scalar=scalar, collection=collection)
 
     def pretty_print(self) -> str:
         """Return a pretty-formatted string representation of the password store."""
