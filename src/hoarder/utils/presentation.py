@@ -51,6 +51,15 @@ class TableFormatter:
     PLACEHOLDER = "-"
     MAX_COL_WIDTH = 80
 
+    def __init__(self, merge_first_column: bool = False) -> None:
+        """Initialize the table formatter.
+
+        Args:
+            merge_first_column: If True, merge cells in the first column when consecutive
+                                rows have the same value. Defaults to False.
+        """
+        self.merge_first_column = merge_first_column
+
     def format(self, spec: PresentationSpec) -> str:
         """Format a PresentationSpec as a table string.
 
@@ -83,7 +92,7 @@ class TableFormatter:
             if lines:
                 # Add separator between header and table
                 lines.append("")
-            lines.extend(self._format_table(collection))
+            lines.extend(self._format_table(collection, self.merge_first_column))
 
         return "\n".join(lines)
 
@@ -108,24 +117,51 @@ class TableFormatter:
             return "yes" if value else "no"
         return str(value)
 
-    def _format_table(self, rows: Sequence[Mapping[str, ScalarValue]]) -> list[str]:
-        """Format collection rows as a box-drawing table."""
+    def _format_table(
+        self, rows: Sequence[Mapping[str, ScalarValue]], merge_first_column: bool
+    ) -> list[str]:
+        """Format collection rows as a box-drawing table.
+
+        Args:
+            rows: The collection rows to format.
+            merge_first_column: If True, merge cells in the first column when consecutive
+                              rows have the same value.
+        """
         if not rows:
             return ["(empty)"]
 
-        # Get all column names from all rows
+        # Get all column names from all rows (preserving insertion order)
         columns: list[str] = []
         for row in rows:
             for key in row.keys():
                 if key not in columns:
                     columns.append(key)
 
-        # Calculate column widths
+        # If merging first column, prepare rows with merged values
+        processed_rows: list[dict[str, ScalarValue]] = []
+        if merge_first_column and columns:
+            first_col = columns[0]
+            previous_value: ScalarValue = None
+            for row in rows:
+                current_value = row.get(first_col)
+                # If current value equals previous, replace with None to indicate merge
+                if current_value == previous_value and previous_value is not None:
+                    # Create a new dict with merged cell
+                    merged_row = dict(row)
+                    merged_row[first_col] = None
+                    processed_rows.append(merged_row)
+                else:
+                    processed_rows.append(dict(row))
+                    previous_value = current_value
+        else:
+            processed_rows = [dict(row) for row in rows]
+
+        # Calculate column widths (using processed rows for accurate width calculation)
         col_widths: dict[str, int] = {}
         for col in columns:
             header_width = len(col)
             max_value_width = max(
-                len(self._format_value(row.get(col))) for row in rows
+                len(self._format_value(row.get(col))) for row in processed_rows
             )
             col_widths[col] = min(self.MAX_COL_WIDTH, max(header_width, max_value_width))
 
@@ -145,7 +181,7 @@ class TableFormatter:
         lines.append(f"┣{'╇'.join(sep_segments)}┫")
 
         # Data rows
-        for i, row in enumerate(rows):
+        for i, row in enumerate(processed_rows):
             if i > 0:
                 # Row separator
                 row_sep_segments = [f"─{'─' * col_widths[col]}─" for col in columns]

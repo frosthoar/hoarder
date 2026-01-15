@@ -88,10 +88,9 @@ class PasswordStore:
         collection: list[dict[str, ScalarValue]] = []
         for title in sorted(self._store.keys()):
             passwords = sorted(self._store[title])
-            for i, password in enumerate(passwords):
+            for password in passwords:
                 row: dict[str, ScalarValue] = {
-                    # Only show title on first row for this title group
-                    "title": title if i == 0 else None,
+                    "title": title,
                     "password": password,
                 }
                 collection.append(row)
