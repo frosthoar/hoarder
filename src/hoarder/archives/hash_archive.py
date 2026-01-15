@@ -167,10 +167,8 @@ class HashArchive(abc.ABC):
             "path": str(self.full_path),
         }
         header_fields = self._printable_attributes()
-        for field in ("files", "path"):
-            if field in header_fields:
-                header_fields.remove(field)
-        for attr in header_fields:
+        excluded_fields = {"files", "path"}
+        for attr in filter(lambda a: a not in excluded_fields, header_fields):
             scalar[attr] = getattr(self, attr)
 
         # Build collection rows for files
