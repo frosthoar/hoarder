@@ -137,24 +137,22 @@ class TableFormatter:
                 if key not in columns:
                     columns.append(key)
 
-        # If merging first column, prepare rows with merged values
-        processed_rows: list[dict[str, ScalarValue]] = []
+        # If merging first column, track which rows should be visually merged
+        processed_rows: list[dict[str, ScalarValue]] = [dict(row) for row in rows]
+        is_merged_row: list[bool] = [False] * len(rows)
+        
         if merge_first_column and columns:
             first_col = columns[0]
             previous_value: ScalarValue = None
-            for row in rows:
+            for i, row in enumerate(rows):
                 current_value = row.get(first_col)
-                # If current value equals previous, replace with None to indicate merge
+                # If current value equals previous, mark as merged
                 if current_value == previous_value and previous_value is not None:
-                    # Create a new dict with merged cell
-                    merged_row = dict(row)
-                    merged_row[first_col] = None
-                    processed_rows.append(merged_row)
+                    is_merged_row[i] = True
+                    # Set merged cell to None (will be displayed as empty space)
+                    processed_rows[i][first_col] = None
                 else:
-                    processed_rows.append(dict(row))
                     previous_value = current_value
-        else:
-            processed_rows = [dict(row) for row in rows]
 
         # Calculate column widths (using processed rows for accurate width calculation)
         col_widths: dict[str, int] = {}
@@ -182,17 +180,23 @@ class TableFormatter:
 
         # Data rows
         for i, row in enumerate(processed_rows):
-            if i > 0:
+            # Skip row separator if this row is merged with the previous one
+            if i > 0 and not is_merged_row[i]:
                 # Row separator
                 row_sep_segments = [f"─{'─' * col_widths[col]}─" for col in columns]
                 lines.append(f"┠{'┼'.join(row_sep_segments)}┨")
 
             cells: list[str] = []
             for col in columns:
-                value = self._format_value(row.get(col))
-                if len(value) > self.MAX_COL_WIDTH:
-                    value = value[: self.MAX_COL_WIDTH - 3] + "..."
-                cells.append(f" {value.ljust(col_widths[col])} ")
+                value = row.get(col)
+                # For merged cells (None), use empty space instead of placeholder
+                if value is None and merge_first_column and col == columns[0]:
+                    formatted_value = " " * col_widths[col]
+                else:
+                    formatted_value = self._format_value(value)
+                    if len(formatted_value) > self.MAX_COL_WIDTH:
+                        formatted_value = formatted_value[: self.MAX_COL_WIDTH - 3] + "..."
+                cells.append(f" {formatted_value.ljust(col_widths[col])} ")
             lines.append(f"┃{'│'.join(cells)}┃")
 
         # Bottom border
