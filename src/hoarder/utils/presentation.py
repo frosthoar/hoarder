@@ -117,10 +117,10 @@ class TableFormatter:
             return "yes" if value else "no"
         return str(value)
 
-    def _draw_line_above(self, first_col: str, i: int, rows: Sequence[Mapping[str, ScalarValue]]) -> bool:
+    def _draw_line_above(self, first_col: str | None, i: int, rows: Sequence[Mapping[str, ScalarValue]]) -> bool:
         if i == 0:
             return False
-        if not self.merge_first_column:
+        if not self.merge_first_column or first_col is None:
             return True
 
         previous_row = rows[i-1]
@@ -180,12 +180,11 @@ class TableFormatter:
         sep_segments = [f"━{'━' * col_widths[col]}━" for col in columns]
         lines.append(f"┣{'╇'.join(sep_segments)}┫")
 
-        first_col = list(rows[0].keys())[0]
+        first_col = columns[0] if columns else None
 
         # Data rows
         for i in range(len(rows)):
             # Skip row separator if this row is merged with the previous one
-
             if self._draw_line_above(first_col, i, rows):
                 # Row separator
                 row_sep_segments = [f"─{'─' * col_widths[col]}─" for col in columns]
@@ -194,8 +193,13 @@ class TableFormatter:
             cells: list[str] = []
             for col in columns:
                 value = rows[i].get(col)
-                # For merged cells (None), use empty space instead of placeholder
-                if value is None and merge_first_column and col == columns[0]:
+                # For merged cells in first column, use empty space instead of value
+                if (
+                    merge_first_column
+                    and col == first_col
+                    and i > 0
+                    and rows[i - 1].get(first_col) == value
+                ):
                     formatted_value = " " * col_widths[col]
                 else:
                     formatted_value = self._format_value(value)
