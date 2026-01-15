@@ -92,7 +92,7 @@ class TableFormatter:
             if lines:
                 # Add separator between header and table
                 lines.append("")
-            lines.extend(self._format_table(collection, self.merge_first_column))
+            lines.extend(self._format_table(collection))
 
         return "\n".join(lines)
 
@@ -129,21 +129,16 @@ class TableFormatter:
         prev: ScalarValue = previous_row.get(first_col)
         cur: ScalarValue = current_row.get(first_col)
 
-        if prev == cur:
-            return False
-        else:
-            return True
+        return prev != cur
 
 
     def _format_table(
-        self, rows: Sequence[Mapping[str, ScalarValue]], merge_first_column: bool
+        self, rows: Sequence[Mapping[str, ScalarValue]]
     ) -> list[str]:
         """Format collection rows as a box-drawing table.
 
         Args:
             rows: The collection rows to format.
-            merge_first_column: If True, merge cells in the first column when consecutive
-                              rows have the same value.
         """
         if not rows:
             return ["(empty)"]
@@ -155,8 +150,7 @@ class TableFormatter:
                 if key not in columns:
                     columns.append(key)
 
-        # If merging first column, track which rows should be visually merged
-        # Calculate column widths (using processed rows for accurate width calculation)
+        # Calculate column widths
         col_widths: dict[str, int] = {}
         for col in columns:
             header_width = len(col)
@@ -184,8 +178,11 @@ class TableFormatter:
 
         # Data rows
         for i in range(len(rows)):
+            # Cache the result of _draw_line_above since we use it twice
+            draw_line = self._draw_line_above(first_col, i, rows)
+            
             # Skip row separator if this row is merged with the previous one
-            if self._draw_line_above(first_col, i, rows):
+            if draw_line:
                 # Row separator
                 row_sep_segments = [f"─{'─' * col_widths[col]}─" for col in columns]
                 lines.append(f"┠{'┼'.join(row_sep_segments)}┨")
@@ -195,11 +192,7 @@ class TableFormatter:
                 value = rows[i].get(col)
                 # For merged cells in first column, use empty space instead of value
                 # If _draw_line_above returns False, the row is merged with the previous one
-                if (
-                    col == first_col
-                    and i > 0
-                    and not self._draw_line_above(first_col, i, rows)
-                ):
+                if col == first_col and i > 0 and not draw_line:
                     formatted_value = " " * col_widths[col]
                 else:
                     formatted_value = self._format_value(value)
