@@ -5,7 +5,7 @@ import copy
 from collections import defaultdict
 from collections.abc import Iterator
 
-from hoarder.utils.presentation import PresentationSpec
+from hoarder.utils.presentation import PresentationSpec, ScalarValue
 
 
 class PasswordStore:
@@ -80,16 +80,16 @@ class PasswordStore:
         Returns:
             A PresentationSpec with store metadata as scalars and title-password pairs as collection rows.
         """
-        scalar: dict[str, str | int | None] = {
+        scalar: dict[str, ScalarValue] = {
             "type": "PasswordStore",
             "entries": len(self._store),
         }
 
-        collection: list[dict[str, str | None]] = []
+        collection: list[dict[str, ScalarValue]] = []
         for title in sorted(self._store.keys()):
             passwords = sorted(self._store[title])
             for i, password in enumerate(passwords):
-                row: dict[str, str | None] = {
+                row: dict[str, ScalarValue] = {
                     # Only show title on first row for this title group
                     "title": title if i == 0 else None,
                     "password": password,

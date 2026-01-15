@@ -13,7 +13,7 @@ try:
 except ImportError:
     from typing_extensions import override
 
-from hoarder.utils.presentation import PresentationSpec
+from hoarder.utils.presentation import PresentationSpec, ScalarValue
 
 
 class Algo(enum.IntEnum):
@@ -162,7 +162,7 @@ class HashArchive(abc.ABC):
             A PresentationSpec with archive metadata as scalars and files as collection rows.
         """
         # Build scalar metadata
-        scalar: dict[str, str | int | bool | None] = {
+        scalar: dict[str, ScalarValue] = {
             "type": self.__class__.__name__,
             "path": str(self.full_path),
         }
@@ -172,9 +172,9 @@ class HashArchive(abc.ABC):
             scalar[attr] = getattr(self, attr)
 
         # Build collection rows for files
-        collection: list[dict[str, str | int | bool | None]] = []
+        collection: list[dict[str, ScalarValue]] = []
         for file in sorted(self):
-            row: dict[str, str | int | bool | None] = {
+            row: dict[str, ScalarValue] = {
                 "path": str(file.path),
                 "type": "D" if file.is_dir else "F",
                 "size": file.size,
