@@ -194,11 +194,11 @@ class TableFormatter:
             for col in columns:
                 value = rows[i].get(col)
                 # For merged cells in first column, use empty space instead of value
+                # If _draw_line_above returns False, the row is merged with the previous one
                 if (
-                    merge_first_column
-                    and col == first_col
+                    col == first_col
                     and i > 0
-                    and rows[i - 1].get(first_col) == value
+                    and not self._draw_line_above(first_col, i, rows)
                 ):
                     formatted_value = " " * col_widths[col]
                 else:
