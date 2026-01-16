@@ -117,13 +117,15 @@ class TableFormatter:
             return "yes" if value else "no"
         return str(value)
 
-    def _draw_line_above(self, first_col: str | None, i: int, rows: Sequence[Mapping[str, ScalarValue]]) -> bool:
+    def _draw_line_above(
+        self, first_col: str | None, i: int, rows: Sequence[Mapping[str, ScalarValue]]
+    ) -> bool:
         if i == 0:
             return False
         if not self.merge_first_column or first_col is None:
             return True
 
-        previous_row = rows[i-1]
+        previous_row = rows[i - 1]
         current_row = rows[i]
 
         prev: ScalarValue = previous_row.get(first_col)
@@ -131,10 +133,7 @@ class TableFormatter:
 
         return prev != cur
 
-
-    def _format_table(
-        self, rows: Sequence[Mapping[str, ScalarValue]]
-    ) -> list[str]:
+    def _format_table(self, rows: Sequence[Mapping[str, ScalarValue]]) -> list[str]:
         """Format collection rows as a box-drawing table.
 
         Args:
@@ -154,10 +153,10 @@ class TableFormatter:
         col_widths: dict[str, int] = {}
         for col in columns:
             header_width = len(col)
-            max_value_width = max(
-                len(self._format_value(row.get(col))) for row in rows
+            max_value_width = max(len(self._format_value(row.get(col))) for row in rows)
+            col_widths[col] = min(
+                self.MAX_COL_WIDTH, max(header_width, max_value_width)
             )
-            col_widths[col] = min(self.MAX_COL_WIDTH, max(header_width, max_value_width))
 
         # Build table
         lines: list[str] = []
@@ -180,7 +179,7 @@ class TableFormatter:
         for i in range(len(rows)):
             # Cache the result of _draw_line_above since we use it twice
             draw_line = self._draw_line_above(first_col, i, rows)
-            
+
             # Skip row separator if this row is merged with the previous one
             if draw_line:
                 # Row separator
@@ -197,7 +196,9 @@ class TableFormatter:
                 else:
                     formatted_value = self._format_value(value)
                     if len(formatted_value) > self.MAX_COL_WIDTH:
-                        formatted_value = formatted_value[: self.MAX_COL_WIDTH - 3] + "..."
+                        formatted_value = (
+                            formatted_value[: self.MAX_COL_WIDTH - 3] + "..."
+                        )
                 cells.append(f" {formatted_value.ljust(col_widths[col])} ")
             lines.append(f"┃{'│'.join(cells)}┃")
 
@@ -206,4 +207,3 @@ class TableFormatter:
         lines.append(f"┗{'┷'.join(bottom_segments)}┛")
 
         return lines
-

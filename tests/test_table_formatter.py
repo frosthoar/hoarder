@@ -46,8 +46,7 @@ def test_hash_archive_table_formatter(sfv_data_tuple):
     # (we know the test file has files, so we should see at least one)
     assert len(sfv_archive.files) > 0
     # Check that at least one file path appears in the output
-    file_paths_in_output = any(
-        str(file.path) in output for file in sfv_archive.files
-    )
-    assert file_paths_in_output, "At least one file path should appear in the formatted output"
-
+    file_paths_in_output = any(str(file.path) in output for file in sfv_archive.files)
+    assert (
+        file_paths_in_output
+    ), "At least one file path should appear in the formatted output"

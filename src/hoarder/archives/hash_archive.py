@@ -6,7 +6,6 @@ import dataclasses
 import enum
 import pathlib
 import typing
-from collections.abc import Mapping
 from abc import abstractmethod
 
 try:
