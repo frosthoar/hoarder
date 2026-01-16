@@ -185,32 +185,3 @@ class HashArchive(abc.ABC):
             collection.append(row)
 
         return PresentationSpec(scalar=scalar, collection=collection)
-
-    def pretty_print(self) -> str:
-        placeholder = "-"
-        maxlen_path = max([0] + [len(str(file.path)) for file in self])
-        maxlen_size = max([0] + [len(str(file.size or placeholder)) for file in self])
-        maxlen_hash = 8 if any(file.hash_value for file in self) else 0
-        maxlen_algo = 5 if any(file.algo for file in self) else 0
-        class_name = self.__class__.__name__
-        ret = f"{class_name}: {self.full_path}\n"
-
-        cols = 0
-        header_fields = self._printable_attributes()
-        header_fields.remove("files")
-        header_fields.remove("path")
-
-        for attr in header_fields:
-            line = f"  {attr}: {getattr(self, attr)}"
-            ret += line + "\n"
-            cols = max(cols, len(line))
-
-        ret += "=" * cols + "\n"
-        for file in sorted(self):
-            hash_str = file.hash_value.hex() if file.hash_value else placeholder
-            algo_str = file.algo.name if file.algo else placeholder
-            ret += (
-                f"  {str(file.path):<{maxlen_path}}  {'D' if file.is_dir else 'F':1} "
-                f"{file.size or placeholder:>{maxlen_size}} {hash_str:<{maxlen_hash}} {algo_str:<{maxlen_algo}}\n"
-            )
-        return ret

@@ -6,6 +6,7 @@ import pathlib
 
 import pytest
 from hoarder.passwords import NzbPasswordPlugin, PasswordStore
+from hoarder.utils import TableFormatter
 
 logger = logging.getLogger("hoarder.tests.test_nzb_plugin")
 
@@ -21,7 +22,8 @@ def nzb_plugin() -> NzbPasswordPlugin:
 
 def test_nzb_plugin(nzb_plugin: NzbPasswordPlugin) -> None:
     password_store: PasswordStore = nzb_plugin.extract_passwords()
-    logger.info(password_store.pretty_print())
+    formatter = TableFormatter(merge_first_column=True)
+    logger.info(formatter.format_presentable(password_store))
     assert len(password_store) == 4
 
     assert password_store.add_password
