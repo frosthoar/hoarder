@@ -5,3 +5,9 @@ pythonpath = "src"
 # optional extras:
 typeguard-collection-check-strategy = "ALL_ITEMS"
 typeguard-debug-instrumentation    = true
+
+[tool.isort]
+profile = "black"
+line_length = 88
+multi_line_output = 0  # Single line output to match GitHub super-linter
+force_single_line = false
