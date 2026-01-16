@@ -6,6 +6,7 @@ import dataclasses
 import enum
 import pathlib
 import typing
+from collections.abc import Mapping
 from abc import abstractmethod
 
 try:
@@ -167,7 +168,7 @@ class HashArchive(abc.ABC):
             "path": str(self.full_path),
         }
         header_fields = self._printable_attributes()
-        excluded_fields = {"files", "path"}
+        excluded_fields = {"files", "path", "storage_path"}
         for attr in filter(lambda a: a not in excluded_fields, header_fields):
             scalar[attr] = getattr(self, attr)
 
