@@ -9,6 +9,7 @@ import xml.etree.ElementTree as ET
 from typing import Callable, NamedTuple
 
 from ..archives.rar_archive import RarArchive
+from ..utils import TableFormatter
 from .password_plugin import PasswordPlugin
 from .password_store import PasswordStore
 
@@ -200,4 +201,5 @@ if __name__ == "__main__":
     config = {"nzb_paths": [r"D:\nzbs"]}
     plug_instance = NzbPasswordPlugin(config)
     password_store = plug_instance.extract_passwords()
-    print(password_store.pretty_print())
+    formatter = TableFormatter(merge_first_column=True)
+    print(formatter.format_presentable(password_store))

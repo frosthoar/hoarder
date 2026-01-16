@@ -5,6 +5,8 @@ import copy
 from collections import defaultdict
 from collections.abc import Iterator
 
+from hoarder.utils.presentation import PresentationSpec, ScalarValue
+
 
 class PasswordStore:
     """A store that associates titles with multiple passwords using sets."""
@@ -72,57 +74,25 @@ class PasswordStore:
         if title in self._store:
             del self._store[title]
 
-    def pretty_print(self) -> str:
-        """Return a pretty-formatted string representation of the password store."""
-        if not self._store:
-            return "PasswordStore (empty)"
+    def to_presentation(self) -> PresentationSpec:
+        """Convert this password store to a presentation specification.
 
-        MAX_COL_WIDTH: int = 83
+        Returns:
+            A PresentationSpec with store metadata as scalars and title-password pairs as collection rows.
+        """
+        scalar: dict[str, ScalarValue] = {
+            "type": "PasswordStore",
+            "entries": len(self._store),
+        }
 
-        # Calculate column widths
-        max_title_length = min(MAX_COL_WIDTH, len(max(self._store.keys(), key=len)))
-        # Filter out empty password sets to avoid ValueError from max() on empty sequence
-        non_empty_passwords = [
-            passwords for passwords in self._store.values() if passwords
-        ]
-        max_password_length = (
-            max(len(max(passwords, key=len)) for passwords in non_empty_passwords)
-            if non_empty_passwords
-            else 0
-        )
-
-        title_width = max(max_title_length, len("Title"))
-        password_width = max(max_password_length, len("Password"))
-
-        top_line = f"┏━{'━' * title_width}━┳━{'━' * password_width}━┓"
-        header_line = (
-            f"┃ {'Title'.ljust(title_width)} ┃ {'Password'.ljust(password_width)} ┃"
-        )
-        header_separator_line = f"┣━{'━' * title_width}━╇━{'━' * password_width}━┫"
-        separator_line = f"┠─{'─' * title_width}─┼─{'─' * password_width}─┨"
-        bottom_line = f"┗━{'━' * title_width}━┷━{'━' * password_width}━┛"
-
-        lines = [top_line, header_line, header_separator_line]
-
-        first_entry = True
+        collection: list[dict[str, ScalarValue]] = []
         for title in sorted(self._store.keys()):
-            if len(title) > MAX_COL_WIDTH:
-                display_title = title[0 : (MAX_COL_WIDTH - 3)] + "..."
-            else:
-                display_title = title
             passwords = sorted(self._store[title])
-            if not first_entry:
-                # no need to add a separator for the first line
-                lines.append(separator_line)
-            for i, password in enumerate(passwords):
-                if i == 0:
-                    # First password for this title:
-                    line = f"┃ {display_title.ljust(title_width)} │ {password.ljust(password_width)} ┃"
-                else:
-                    # Additional passwords for same title:
-                    line = f"┃ {' ' * title_width} │ {password.ljust(password_width)} ┃"
-                lines.append(line)
-            first_entry = False
+            for password in passwords:
+                row: dict[str, ScalarValue] = {
+                    "title": title,
+                    "password": password,
+                }
+                collection.append(row)
 
-        lines.append(bottom_line)
-        return "\n".join(lines)
+        return PresentationSpec(scalar=scalar, collection=collection)

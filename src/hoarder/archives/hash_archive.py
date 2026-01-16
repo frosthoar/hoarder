@@ -13,6 +13,8 @@ try:
 except ImportError:
     from typing_extensions import override
 
+from hoarder.utils.presentation import PresentationSpec, ScalarValue
+
 
 class Algo(enum.IntEnum):
     """This class contains the possible hash algorithms."""
@@ -153,31 +155,32 @@ class HashArchive(abc.ABC):
         d["files"] = sorted([repr(f) for f in self.files])
         return str(dict(sorted(d.items())))
 
-    def pretty_print(self) -> str:
-        placeholder = "-"
-        maxlen_path = max([0] + [len(str(file.path)) for file in self])
-        maxlen_size = max([0] + [len(str(file.size or placeholder)) for file in self])
-        maxlen_hash = 8 if any(file.hash_value for file in self) else 0
-        maxlen_algo = 5 if any(file.algo for file in self) else 0
-        class_name = self.__class__.__name__
-        ret = f"{class_name}: {self.full_path}\n"
+    def to_presentation(self) -> PresentationSpec:
+        """Convert this archive to a presentation specification.
 
-        cols = 0
+        Returns:
+            A PresentationSpec with archive metadata as scalars and files as collection rows.
+        """
+        # Build scalar metadata
+        scalar: dict[str, ScalarValue] = {
+            "type": self.__class__.__name__,
+            "path": str(self.full_path),
+        }
         header_fields = self._printable_attributes()
-        header_fields.remove("files")
-        header_fields.remove("path")
+        excluded_fields = {"files", "path", "storage_path"}
+        for attr in filter(lambda a: a not in excluded_fields, header_fields):
+            scalar[attr] = getattr(self, attr)
 
-        for attr in header_fields:
-            line = f"  {attr}: {getattr(self, attr)}"
-            ret += line + "\n"
-            cols = max(cols, len(line))
-
-        ret += "=" * cols + "\n"
+        # Build collection rows for files
+        collection: list[dict[str, ScalarValue]] = []
         for file in sorted(self):
-            hash_str = file.hash_value.hex() if file.hash_value else placeholder
-            algo_str = file.algo.name if file.algo else placeholder
-            ret += (
-                f"  {str(file.path):<{maxlen_path}}  {'D' if file.is_dir else 'F':1} "
-                f"{file.size or placeholder:>{maxlen_size}} {hash_str:<{maxlen_hash}} {algo_str:<{maxlen_algo}}\n"
-            )
-        return ret
+            row: dict[str, ScalarValue] = {
+                "path": str(file.path),
+                "type": "D" if file.is_dir else "F",
+                "size": file.size,
+                "hash": file.hash_value.hex() if file.hash_value else None,
+                "algo": file.algo.name if file.algo else None,
+            }
+            collection.append(row)
+
+        return PresentationSpec(scalar=scalar, collection=collection)
