@@ -4,11 +4,10 @@ import pathlib
 
 import pytest
 import tests.test_case_file_info
-from hoarder.archives import SfvArchive, FileEntry
+from hoarder.archives import SfvArchive
 from hoarder.utils.presentation import TableFormatter
-from collections.abc import Iterator
 
-SFV_TUPLES: list[tuple[pathlib.Path, Iterator[FileEntry]]] = [
+SFV_TUPLES = [
     (
         pathlib.Path("./test_files/sfv/files.sfv"),
         filter(lambda x: not x.is_dir, tests.test_case_file_info.TEST_FILES),

@@ -81,10 +81,10 @@ class TableFormatter:
             elif type_:
                 lines.append(str(type_))
 
+            excluded_keys = {"type", "path"}
             for key, value in scalar.items():
-                if key in ("type", "path"):
-                    continue
-                lines.append(f"  {key}: {self._format_value(value)}")
+                if key not in excluded_keys:
+                    lines.append(f"  {key}: {self._format_value(value)}")
 
         # Format collection as table
         collection = spec["collection"]
