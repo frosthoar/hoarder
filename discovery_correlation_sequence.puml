@@ -1,0 +1,138 @@
+@startuml Discovery and Correlation Sequence
+
+skinparam backgroundColor #FEFEFE
+skinparam shadowing false
+skinparam defaultFontName Monospaced
+
+skinparam participant {
+    BackgroundColor #E8F4FD
+    BorderColor #2E86AB
+}
+
+skinparam note {
+    BackgroundColor #FFF3CD
+    BorderColor #856404
+}
+
+title ScanTarget Processing: Discovery & Correlation Phases
+
+participant "Orchestrator" as Orch
+participant "ScanTarget" as Unit
+participant "SfvArchive" as Sfv
+participant "RarArchive" as Rar
+participant "HashNameArchive" as Hnf
+participant "discover_real_files()" as DRF
+participant "correlate_archives()" as CA
+participant "correlate_files_to_entries()" as CFE
+
+== Phase 1: Archive Discovery ==
+
+Orch -> Unit : get_archive_search_paths()
+activate Unit
+
+Unit --> Orch : [unit.path, unit.path.parent, ...]
+deactivate Unit
+
+note right of Orch
+    Search paths determined by:
+    - Unit path (always)
+    - Parent dir (if config.search_parent)
+    - Additional configured paths
+end note
+
+loop for each search_path
+    loop for each archive_type
+
+        Orch -> Sfv : discover(search_path)
+        activate Sfv
+        Sfv --> Orch : list[SfvArchive]
+        deactivate Sfv
+
+        Orch -> Rar : discover(search_path)
+        activate Rar
+        note right of Rar
+            Uses find_rar_files()
+            Returns first volume only
+            Handles both naming schemes
+        end note
+        Rar --> Orch : list[RarArchive]
+        deactivate Rar
+
+        Orch -> Hnf : discover(search_path)
+        activate Hnf
+        note right of Hnf
+            Matches [hash] or (hash)
+            patterns in filenames
+        end note
+        Hnf --> Orch : list[HashNameArchive]
+        deactivate Hnf
+
+    end
+end
+
+Orch -> Orch : collect_archive_paths(archives)
+note right
+    Gather all archive volume paths
+    (RAR sets have multiple volumes)
+    Used as exclusion set
+end note
+
+== Phase 1b: Real File Discovery ==
+
+Orch -> Unit : get_file_search_paths()
+activate Unit
+Unit --> Orch : [unit.path]
+deactivate Unit
+
+Orch -> DRF : discover_real_files(\n  search_paths,\n  exclude=archive_paths)
+activate DRF
+
+note right of DRF
+    Recursive scan if directory
+    Single file if unit is file
+    Skips archive volumes
+end note
+
+DRF --> Orch : list[RealFile]
+deactivate DRF
+
+== Phase 2: Correlation ==
+
+Orch -> CA : correlate_archives(\n  archives,\n  real_files,\n  unit)
+activate CA
+
+note right of CA
+    Filter archives to those
+    whose FileEntry paths
+    intersect with RealFile paths
+end note
+
+CA --> Orch : relevant_archives
+deactivate CA
+
+Orch -> CFE : correlate_files_to_entries(\n  real_files,\n  relevant_archives)
+activate CFE
+
+note right of CFE
+    Build path -> FileEntry lookup
+    Match each RealFile by path
+    One file may match multiple entries
+    (same file in SFV and HashName)
+end note
+
+CFE --> Orch : dict[RealFile, list[FileEntry]]
+deactivate CFE
+
+== Result ==
+
+Orch -> Orch : ProcessingResult(\n  unit,\n  relevant_archives,\n  real_files,\n  matches)
+
+note right of Orch #D4EDDA
+    Ready for Verification Phase:
+    - Know which files exist
+    - Know which archives apply
+    - Know file -> entry mappings
+    - Can extract hash expectations
+end note
+
+@enduml

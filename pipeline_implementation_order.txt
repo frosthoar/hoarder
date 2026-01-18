@@ -1,0 +1,76 @@
+Pipeline Implementation Order
+=============================
+
+1. DecisionHandler protocol
+   - Define the interface first
+   - Methods: on_online_lookup_needed, on_hash_mismatch, on_extraction_needed,
+     on_cleanup_ready, on_error
+
+2. VerificationProvider protocol
+   - Base class with can_verify() / get_verification()
+   - Define provider priority system
+
+3. ArchiveVerificationProvider
+   - Easiest provider, uses existing archive classes
+   - Source: ARCHIVE, Priority: 1, Trusted
+
+4. Discovery + Correlation phases
+   - archive_discovery: find SFV, RAR, HashName archives
+   - real_file_scanner: scan for actual files
+   - correlator: match real_files to FileEntry by path
+
+5. Hash computation phase
+   - hash_verifier component
+   - Uses existing ContentsHasher
+   - Compare actual hashes against verification.hash_value
+
+6. SelfHashProvider
+   - Fallback provider using ContentsHasher
+   - Source: SELF_HASH, Priority: 4, Untrusted
+
+7. FilenameVerificationProvider
+   - Leverage existing HashNameArchive logic
+   - Source: FILENAME, Priority: 2, Trusted
+
+8. Extraction phase
+   - extractor component
+   - Uses RarArchive.read_file()
+   - Re-runs scanner/correlator/verification for extracted files
+
+9. Cleanup phase
+   - cleanup component
+   - Delete archives when all files verified & trusted
+   - Respects HashArchive.DELETABLE flag
+
+10. OnlineVerificationProvider
+    - External API calls (most complex)
+    - Privacy gate via DecisionHandler
+    - Cache responses to .hoarder/online_cache/{service}/{hash}.json
+    - Source: ONLINE, Priority: 3, Trusted
+
+11. PhaseOrchestrator
+    - Tie everything together
+    - run(config, decision_handler, verification_providers)
+    - Enumerate scan targets, coordinate phases, handle errors
+
+
+Proposed Directory Structure
+============================
+
+src/hoarder/phases/
+├── __init__.py
+├── orchestrator.py           # PhaseOrchestrator
+├── scan_target.py            # ScanTarget, DiscoveryConfig
+├── decision_handler.py       # DecisionHandler protocol
+├── verification_provider.py  # Base class + protocol
+├── discovery.py              # Archive and file discovery
+├── correlator.py             # Match files to entries
+├── verifier.py               # Hash computation and comparison
+├── extractor.py              # Archive extraction
+├── cleanup.py                # Archive deletion
+└── providers/
+    ├── __init__.py
+    ├── archive_provider.py
+    ├── filename_provider.py
+    ├── online_provider.py
+    └── self_hash_provider.py

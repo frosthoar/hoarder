@@ -22,7 +22,7 @@ title Hoarder Pipeline Execution Flow\n(Provider-Based Verification)
 |Orchestrator|
 start
 
-:PipelineOrchestrator.run(
+:PhaseOrchestrator.run(
     config,
     decision_handler,
     verification_providers
