@@ -1,0 +1,246 @@
+@startuml Pipeline Execution Flow
+
+skinparam backgroundColor #FEFEFE
+skinparam shadowing false
+skinparam defaultFontName Monospaced
+skinparam activity {
+    BackgroundColor #E8F4FD
+    BorderColor #2E86AB
+    DiamondBackgroundColor #FFF3CD
+    DiamondBorderColor #856404
+}
+skinparam note {
+    BackgroundColor #F8F9FA
+    BorderColor #6C757D
+}
+skinparam partition {
+    BorderColor #2E86AB
+}
+
+title Hoarder Pipeline Execution Flow\n(Provider-Based Verification)
+
+|Orchestrator|
+start
+
+:PipelineOrchestrator.run(
+    config,
+    decision_handler,
+    verification_providers
+);
+
+note right
+    **Injected components:**
+    ├─ DecisionHandler (user interaction)
+    └─ VerificationProvider[] (ordered by priority)
+        ├─ ArchiveVerificationProvider
+        ├─ FilenameVerificationProvider
+        ├─ OnlineVerificationProvider
+        └─ SelfHashProvider (fallback)
+end note
+
+:Enumerate download units
+in storage_path;
+
+while (next download unit?) is (yes)
+
+    |#E8F4FD|Download Unit Processing|
+
+    partition "1. Discovery Phase" {
+        :archive_discovery|
+        note right
+            Find SFV, RAR, HashName
+            archives in this unit
+        end note
+
+        :real_file_scanner|
+        note right
+            Scan for actual files
+            **(always runs)**
+        end note
+    }
+
+    partition "2. Correlation Phase" {
+        :correlator|
+        note right
+            Match real_files to
+            FileEntry records
+            by path (local archives)
+        end note
+    }
+
+    partition "3. Verification Phase" #E0F0E0 {
+
+        while (unverified files remain?) is (yes)
+
+            :get next unverified file;
+
+            |#D4EDDA|VerificationProvider Chain|
+
+            while (next provider?) is (yes)
+
+                :provider.can_verify(file)?;
+
+                if (can verify?) then (yes)
+
+                    if (provider is OnlineVerificationProvider?) then (yes)
+                        |#FFF3CD|DecisionHandler|
+                        :decision_handler.on_online_lookup_needed(
+                            file, service)|
+                        note right
+                            Privacy gate:
+                            user approves sending
+                            file info externally
+                        end note
+
+                        if (approved?) then (no)
+                            |#D4EDDA|VerificationProvider Chain|
+                            :skip to next provider;
+                        else (yes)
+                            |#D4EDDA|VerificationProvider Chain|
+                        endif
+                    endif
+
+                    :verification = provider.get_verification(file);
+
+                    if (verification found?) then (yes)
+                        :file.verification.append(verification);
+
+                        if (provider is OnlineVerificationProvider?) then (yes)
+                            :dump response to local file;
+                            note right
+                                .hoarder/online_cache/
+                                  service_name/
+                                    {query_hash}.json
+                                ─────────────────────
+                                source_path = cache file
+                                source_storage_path = .hoarder/
+                            end note
+                        endif
+
+                        break
+                    endif
+
+                else (no)
+                endif
+
+            endwhile (no more providers)
+
+            |#E8F4FD|Download Unit Processing|
+
+        endwhile (all files processed)
+
+    }
+
+    partition "4. Hash Computation" {
+        :hash_verifier|
+        note right
+            Compute actual hashes,
+            compare against
+            verification.hash_value
+        end note
+
+        if (hash mismatch?) then (yes)
+            |#FFF3CD|DecisionHandler|
+            :decision_handler.on_hash_mismatch(
+                file, expected, actual)|
+
+            switch (decision?)
+                case (RETRY)
+                    |#E8F4FD|Download Unit Processing|
+                    :retry verification;
+                case (SKIP)
+                    |#E8F4FD|Download Unit Processing|
+                    :mark skipped;
+                case (QUARANTINE)
+                    |#E8F4FD|Download Unit Processing|
+                    :move to quarantine;
+            endswitch
+        else (match)
+        endif
+    }
+
+    partition "5. Extraction Phase" {
+        if (missing files?) then (yes)
+            |#FFF3CD|DecisionHandler|
+            :decision_handler.on_extraction_needed(
+                archive, missing_files)|
+
+            if (approved?) then (yes)
+                |#E8F4FD|Download Unit Processing|
+                :extractor|
+
+                :real_file_scanner|
+
+                :correlator|
+
+                :run verification phase
+                for extracted files;
+            else (denied)
+                |#E8F4FD|Download Unit Processing|
+            endif
+        else (no missing)
+        endif
+    }
+
+    partition "6. Cleanup Phase" {
+        if (all files verified\n& trusted?) then (yes)
+            |#FFF3CD|DecisionHandler|
+            :decision_handler.on_cleanup_ready(
+                archives, total_size)|
+
+            switch (decision?)
+                case (DELETE)
+                    |#E8F4FD|Download Unit Processing|
+                    :cleanup|
+                    note right
+                        Delete archives
+                        (respects DELETABLE)
+                    end note
+                case (KEEP)
+                    |#E8F4FD|Download Unit Processing|
+                    :retain archives;
+            endswitch
+        else (not ready)
+            |#E8F4FD|Download Unit Processing|
+        endif
+    }
+
+    |Orchestrator|
+
+    if (error occurred?) then (yes)
+        |#FFF3CD|DecisionHandler|
+        :decision_handler.on_error(unit, error)|
+        switch (decision?)
+            case (CONTINUE)
+                |Orchestrator|
+            case (STOP)
+                |Orchestrator|
+                :abort pipeline;
+                stop
+        endswitch
+    else (no)
+    endif
+
+    :log_processed(unit)|
+
+endwhile (no more units\nor batch limit)
+
+:Return ProcessorResults;
+
+stop
+
+legend right
+    |= VerificationProvider |= SourceType |= Priority |= Trust |
+    | ArchiveVerificationProvider | ARCHIVE | 1 (highest) | Trusted |
+    | FilenameVerificationProvider | FILENAME | 2 | Trusted |
+    | OnlineVerificationProvider | ONLINE | 3 | Trusted |
+    | SelfHashProvider | SELF_HASH | 4 (fallback) | **Untrusted** |
+
+    |= Online Response Storage |
+    | Response dumped to: .hoarder/online_cache/{service}/{hash}.json |
+    | source_path = path to cached response file |
+    | source_storage_path = .hoarder/ directory |
+    | Provides audit trail + keeps Path types intact |
+endlegend
+
+@enduml
