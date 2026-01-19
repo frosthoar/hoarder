@@ -53,7 +53,7 @@ package "Utils" #F0F0F0 {
 package "Scan Target" #E0F0E0 {
     class DiscoveryConfig {
         +search_parent: bool = True
-        +additional_paths: list[PurePath]
+        +additional_paths: list[AnchoredPath]
     }
 
     class ScanTarget <<dataclass>> {

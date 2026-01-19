@@ -123,7 +123,7 @@ Component Design
    @dataclass
    class DiscoveryConfig:
        search_parent: bool = True          # look in parent directory
-       additional_paths: list[PurePath] = field(default_factory=list)
+       additional_paths: list[AnchoredPath] = field(default_factory=list)
 
    @dataclass
    class ScanTarget(AnchoredPathMixin):
@@ -136,8 +136,7 @@ Component Design
            paths = [AnchoredPath(self.storage_path, self.path)]
            if self.config.search_parent and self.path != PurePath("."):
                paths.append(AnchoredPath(self.storage_path, self.path.parent))
-           for additional in self.config.additional_paths:
-               paths.append(AnchoredPath(self.storage_path, additional))
+           paths.extend(self.config.additional_paths)
            return paths
 
        def get_file_search_paths(self) -> list[AnchoredPath]:
