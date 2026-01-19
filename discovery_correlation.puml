@@ -24,24 +24,51 @@ skinparam note {
 
 title Discovery and Correlation Architecture\n(ScanTarget Scoped Processing)
 
+package "Utils" #F0F0F0 {
+    class AnchoredPathMixin <<mixin>> {
+        +storage_path: Path {type hint}
+        +path: PurePath {type hint}
+        --
+        +full_path: Path {property}
+    }
+
+    class AnchoredPath {
+        +storage_path: Path
+        +path: PurePath
+    }
+
+    note right of AnchoredPathMixin
+        Mixin providing full_path property.
+        Works with regular classes and dataclasses.
+        Subclass defines the actual fields.
+    end note
+
+    note right of AnchoredPath
+        Concrete dataclass for direct use.
+    end note
+
+    AnchoredPathMixin <|-- AnchoredPath
+}
+
 package "Scan Target" #E0F0E0 {
     class DiscoveryConfig {
         +search_parent: bool = True
-        +search_depth: int = 0
-        +additional_paths: list[Path]
+        +additional_paths: list[PurePath]
     }
 
-    class ScanTarget {
-        +path: Path
+    class ScanTarget <<dataclass>> {
         +storage_path: Path
+        +path: PurePath
         +config: DiscoveryConfig
         --
-        +get_archive_search_paths(): list[Path]
-        +get_file_search_paths(): list[Path]
+        +get_archive_search_paths(): list[AnchoredPath]
+        +get_file_search_paths(): list[AnchoredPath]
     }
 
     ScanTarget *-- DiscoveryConfig
 }
+
+AnchoredPathMixin <|-- ScanTarget
 
 package "Archive Hierarchy" #E8F4FD {
     abstract class HashArchive {
@@ -50,12 +77,18 @@ package "Archive Hierarchy" #E8F4FD {
         +files: set[FileEntry]
         {static} +DELETABLE: bool = True
         --
-        {abstract} {static} +from_path(storage_path, path): Self
-        {abstract} {static} +discover(search_path): list[Self]
+        {static} +from_path(location: AnchoredPath): Self
+        {abstract} {static} +discover(scope: AnchoredPath): list[Self]
     }
+    note left of HashArchive
+        Regular class (not dataclass).
+        Inherits full_path from mixin
+        (same name, no code change needed).
+        from_path refactored to use AnchoredPath.
+    end note
 
     class SfvArchive {
-        {static} +discover(search_path): list[SfvArchive]
+        {static} +discover(scope: AnchoredPath): list[SfvArchive]
         --
         Glob: *.sfv
     }
@@ -66,7 +99,7 @@ package "Archive Hierarchy" #E8F4FD {
         +version: str
         +n_volumes: int
         --
-        {static} +discover(search_path): list[RarArchive]
+        {static} +discover(scope: AnchoredPath): list[RarArchive]
         --
         Uses find_rar_files()
         Returns first volume only
@@ -76,7 +109,7 @@ package "Archive Hierarchy" #E8F4FD {
         +hash_enclosure: HashEnclosure
         {static} +DELETABLE: bool = False
         --
-        {static} +discover(search_path): list[HashNameArchive]
+        {static} +discover(scope: AnchoredPath): list[HashNameArchive]
         --
         Regex: [hash] or (hash)
     }
@@ -88,12 +121,12 @@ package "Archive Hierarchy" #E8F4FD {
 
 package "Discovery Phase" #D4EDDA {
     class "discover_real_files()" as DiscoverFiles <<function>> {
-        search_paths: list[Path]
+        scopes: list[AnchoredPath]
         exclude: set[Path]
         --
         Returns: list[RealFile]
         --
-        Recursive scan within paths
+        Recursive scan within scopes
         Excludes archive volumes
     }
 
@@ -139,12 +172,17 @@ package "Domain Objects" #F0E8F0 {
         +algo: Algo | None
     }
 
-    class RealFile {
+    class RealFile <<dataclass>> {
         +storage_path: Path
         +path: PurePath
         +size: int
         +verification: list[Verification]
     }
+    note right of RealFile
+        Dataclass with slots=True.
+        Inherits full_path from mixin
+        (same name, no code change needed).
+    end note
 
     class Verification {
         +source: VerificationSource
@@ -156,6 +194,9 @@ package "Domain Objects" #F0E8F0 {
     HashArchive "1" *-- "*" FileEntry : contains
     RealFile "1" *-- "*" Verification : has
 }
+
+AnchoredPathMixin <|-- HashArchive
+AnchoredPathMixin <|-- RealFile
 
 ' Relationships
 ScanTarget ..> HashArchive : "get_archive_search_paths()\n-> discover()"

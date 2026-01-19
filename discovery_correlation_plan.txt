@@ -23,99 +23,153 @@ Separation of Concerns
 Component Design
 ----------------
 
+0. AnchoredPathMixin and AnchoredPath (path-in-storage pattern)
+   - Mixin provides the full_path property
+   - Works with both regular classes and dataclasses
+   - Concrete AnchoredPath class for direct use
+   - Located in src/hoarder/utils/path_utils.py
+
+   ```python
+   class AnchoredPathMixin:
+       """Mixin providing full_path for classes with storage_path and path."""
+       storage_path: Path      # type hint only, subclass defines field
+       path: PurePath          # type hint only, subclass defines field
+
+       @property
+       def full_path(self) -> Path:
+           """Resolve to concrete path for filesystem I/O."""
+           return self.storage_path / self.path
+
+   @dataclass
+   class AnchoredPath(AnchoredPathMixin):
+       """Concrete class for direct use."""
+       storage_path: Path
+       path: PurePath
+   ```
+
+   Used as mixin by:
+   - HashArchive (existing, regular class - to be refactored)
+   - RealFile (existing, dataclass - to be refactored)
+   - ScanTarget (new, dataclass)
+
+   Note: Existing `full_path` properties will be inherited from mixin (no code change needed).
+
+
 1. Archive Discovery (classmethod on each archive type)
-   - Simple: finds archives of that type in a given path
-   - No knowledge of download units
+   - Receives AnchoredPath scope for consistent API
+   - No knowledge of scan targets
    - Non-recursive by default
 
    ```python
-   class HashArchive(ABC):
+   class HashArchive(AnchoredPathMixin, ABC):
+       @classmethod
+       def from_path(cls, location: AnchoredPath, **kwargs) -> Self:
+           """Create archive from location. Refactored to use AnchoredPath."""
+           ...
+
        @classmethod
        @abstractmethod
-       def discover(cls, search_path: Path) -> list[Self]:
-           """Find archives of this type in search_path."""
+       def discover(cls, scope: AnchoredPath) -> list[Self]:
+           """Find archives of this type within scope."""
            ...
 
    class SfvArchive(HashArchive):
        @classmethod
-       def discover(cls, search_path: Path) -> list[SfvArchive]:
+       def discover(cls, scope: AnchoredPath) -> list[SfvArchive]:
+           search_path = scope.full_path
            if search_path.is_file():
                if search_path.suffix.lower() == ".sfv":
-                   return [cls.from_path(search_path.parent, search_path)]
+                   return [cls.from_path(scope)]
                return []
-           return [cls.from_path(search_path, p) for p in search_path.glob("*.sfv")]
+           results = []
+           for p in search_path.glob("*.sfv"):
+               relative = p.relative_to(scope.storage_path)
+               results.append(cls.from_path(AnchoredPath(scope.storage_path, relative)))
+           return results
 
    class RarArchive(HashArchive):
        @classmethod
-       def discover(cls, search_path: Path) -> list[RarArchive]:
+       def discover(cls, scope: AnchoredPath) -> list[RarArchive]:
+           search_path = scope.full_path
            # Uses existing find_rar_files() logic from rar_path.py
            rar_sets = find_rar_files(search_path)
-           return [cls.from_path(search_path, first_vol) for first_vol in rar_sets]
+           results = []
+           for first_vol in rar_sets:
+               relative = first_vol.relative_to(scope.storage_path)
+               results.append(cls.from_path(AnchoredPath(scope.storage_path, relative)))
+           return results
 
    class HashNameArchive(HashArchive):
        @classmethod
-       def discover(cls, search_path: Path) -> list[HashNameArchive]:
+       def discover(cls, scope: AnchoredPath) -> list[HashNameArchive]:
+           search_path = scope.full_path
            results = []
            candidates = [search_path] if search_path.is_file() else search_path.iterdir()
            for p in candidates:
                if p.is_file() and cls._matches_hash_pattern(p.name):
-                   results.append(cls.from_path(search_path, p))
+                   relative = p.relative_to(scope.storage_path)
+                   results.append(cls.from_path(AnchoredPath(scope.storage_path, relative)))
            return results
    ```
 
 
 2. ScanTarget (determines search scope)
    - Represents a single unit to process (file or directory)
+   - Inherits from AnchoredPathMixin (gets full_path property)
+   - Returns AnchoredPath from search methods for consistent API
    - Provides configurable search paths for archive discovery
-   - Provides search paths for real file discovery
 
    ```python
    @dataclass
    class DiscoveryConfig:
        search_parent: bool = True          # look in parent directory
-       search_depth: int = 0               # 0 = non-recursive
-       additional_paths: list[Path] = field(default_factory=list)
+       additional_paths: list[PurePath] = field(default_factory=list)
 
    @dataclass
-   class ScanTarget:
-       path: Path                          # the unit itself (file or directory)
-       storage_path: Path                  # root storage path
+   class ScanTarget(AnchoredPathMixin):
+       storage_path: Path
+       path: PurePath
        config: DiscoveryConfig = field(default_factory=DiscoveryConfig)
 
-       def get_archive_search_paths(self) -> list[Path]:
+       def get_archive_search_paths(self) -> list[AnchoredPath]:
            """Where to look for archives related to this unit."""
-           paths = [self.path]
-           if self.config.search_parent and self.path != self.storage_path:
-               paths.append(self.path.parent)
-           paths.extend(self.config.additional_paths)
+           paths = [AnchoredPath(self.storage_path, self.path)]
+           if self.config.search_parent and self.path != PurePath("."):
+               paths.append(AnchoredPath(self.storage_path, self.path.parent))
+           for additional in self.config.additional_paths:
+               paths.append(AnchoredPath(self.storage_path, additional))
            return paths
 
-       def get_file_search_paths(self) -> list[Path]:
+       def get_file_search_paths(self) -> list[AnchoredPath]:
            """Where to look for real files belonging to this unit."""
-           return [self.path]  # recursive if directory, single file otherwise
+           return [AnchoredPath(self.storage_path, self.path)]
    ```
 
 
 3. Real File Discovery (simple function)
-   - Scans for files in given paths
+   - Receives AnchoredPath scopes for consistent API
    - Excludes known archive files
 
    ```python
    def discover_real_files(
-       search_paths: list[Path],
+       scopes: list[AnchoredPath],
        exclude: set[Path] | None = None
    ) -> list[RealFile]:
        """Scan for real files, excluding archive paths."""
        exclude = exclude or set()
        results = []
-       for search_path in search_paths:
+       for scope in scopes:
+           search_path = scope.full_path
            if search_path.is_file():
                if search_path not in exclude:
-                   results.append(RealFile.from_path(search_path.parent, search_path))
+                   results.append(RealFile.from_path(scope))
            else:
                for p in search_path.rglob("*"):
                    if p.is_file() and p not in exclude:
-                       results.append(RealFile.from_path(search_path, p))
+                       relative = p.relative_to(scope.storage_path)
+                       results.append(RealFile.from_path(
+                           AnchoredPath(scope.storage_path, relative)
+                       ))
        return results
    ```
 
@@ -160,34 +214,35 @@ Component Design
 
 
 5. Orchestrator Integration
-   - Coordinates discovery and correlation per download unit
+   - Coordinates discovery and correlation per scan target
+   - All methods use AnchoredPath for consistent API
 
    ```python
    ARCHIVE_TYPES: list[type[HashArchive]] = [SfvArchive, RarArchive, HashNameArchive]
 
-   def process_unit(unit: ScanTarget) -> ProcessingResult:
-       # 1. Discover archives from all search paths
+   def process_target(target: ScanTarget) -> ProcessingResult:
+       # 1. Discover archives from all search scopes
        archives: list[HashArchive] = []
-       for search_path in unit.get_archive_search_paths():
+       for scope in target.get_archive_search_paths():
            for archive_cls in ARCHIVE_TYPES:
-               archives.extend(archive_cls.discover(search_path))
+               archives.extend(archive_cls.discover(scope))
 
        # 2. Discover real files
        archive_volume_paths = collect_archive_paths(archives)
        real_files = discover_real_files(
-           unit.get_file_search_paths(),
+           target.get_file_search_paths(),
            exclude=archive_volume_paths
        )
 
        # 3. Correlate - filter to relevant archives
-       relevant_archives = correlate_archives(archives, real_files, unit)
+       relevant_archives = correlate_archives(archives, real_files, target)
 
        # 4. Match files to entries
        file_matches = correlate_files_to_entries(real_files, relevant_archives)
 
        # Continue to verification phase...
        return ProcessingResult(
-           unit=unit,
+           target=target,
            archives=relevant_archives,
            real_files=real_files,
            matches=file_matches
@@ -216,7 +271,9 @@ New files to create:
   └── correlator.py           # correlate_archives(), correlate_files_to_entries()
 
 Modifications to existing files:
-  src/hoarder/archives/hash_archive.py      # Add abstract discover() method
+  src/hoarder/utils/path_utils.py           # Add AnchoredPathMixin and AnchoredPath
+  src/hoarder/archives/hash_archive.py      # Inherit from AnchoredPathMixin, add discover()
   src/hoarder/archives/sfv_archive.py       # Implement discover()
   src/hoarder/archives/rar_archive.py       # Implement discover()
   src/hoarder/archives/hash_name_archive.py # Implement discover()
+  src/hoarder/downloads/real_file.py        # Inherit from AnchoredPathMixin, remove full_path

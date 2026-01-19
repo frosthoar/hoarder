@@ -1,6 +1,14 @@
 Pipeline Implementation Order
 =============================
 
+0. AnchoredPathMixin and AnchoredPath (prerequisite)
+   - Add to src/hoarder/utils/path_utils.py
+   - AnchoredPathMixin: provides full_path property (no fields)
+   - AnchoredPath: concrete dataclass for direct use
+   - Works with both regular classes and dataclasses
+   - Refactor HashArchive and RealFile to use the mixin
+   - Replace existing full_path properties with inherited full_path
+
 1. DecisionHandler protocol
    - Define the interface first
    - Methods: on_online_lookup_needed, on_hash_mismatch, on_extraction_needed,
@@ -57,6 +65,15 @@ Pipeline Implementation Order
 Proposed Directory Structure
 ============================
 
+Modifications to existing files:
+  src/hoarder/utils/path_utils.py      # Add AnchoredPathMixin and AnchoredPath
+  src/hoarder/archives/hash_archive.py # Inherit from AnchoredPathMixin, inherit full_path from mixin,
+                                       # refactor from_path(location: AnchoredPath)
+  src/hoarder/downloads/real_file.py   # Inherit from AnchoredPathMixin, inherit full_path from mixin,
+                                       # refactor from_path(location: AnchoredPath)
+  + Update 17 call sites to use AnchoredPath (4 production, 13 tests)
+
+New package:
 src/hoarder/phases/
 ├── __init__.py
 ├── orchestrator.py           # PhaseOrchestrator
