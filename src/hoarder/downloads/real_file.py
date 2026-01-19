@@ -7,6 +7,7 @@ from pathlib import Path, PurePath
 from typing import ClassVar, Type
 
 from ..archives import Algo
+from ..utils.path_utils import AnchoredPathMixin
 from .contents_hasher import ContentsHasher, CRC32Hasher
 
 
@@ -21,7 +22,7 @@ class VerificationSource(enum.IntEnum):
 
 
 @dataclasses.dataclass(slots=True, eq=True)
-class RealFile:
+class RealFile(AnchoredPathMixin):
     """Represents a file or directory we encountered in storage."""
 
     storage_path: Path
@@ -42,11 +43,6 @@ class RealFile:
     _HASHERS: ClassVar[dict[Algo, Type[ContentsHasher]]] = {
         Algo.CRC32: CRC32Hasher,
     }
-
-    @property
-    def full_path(self) -> Path:
-        """Return the resolved path on disk."""
-        return self.storage_path / self.path
 
     def calculate_hash(self, algo: Algo = Algo.CRC32) -> bytes:
         """Calculate and assign hash/algo for this real file."""

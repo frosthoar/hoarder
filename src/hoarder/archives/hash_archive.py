@@ -13,6 +13,7 @@ try:
 except ImportError:
     from typing_extensions import override
 
+from hoarder.utils.path_utils import AnchoredPathMixin
 from hoarder.utils.presentation import PresentationSpec, ScalarValue
 
 
@@ -59,7 +60,7 @@ class FileEntry:
 T = typing.TypeVar("T", bound="HashArchive")
 
 
-class HashArchive(abc.ABC):
+class HashArchive(AnchoredPathMixin, abc.ABC):
     """This class contains information about an hash file."""
 
     storage_path: pathlib.Path
@@ -90,11 +91,6 @@ class HashArchive(abc.ABC):
         self.storage_path = storage_path.resolve()
         self.path = path
         self.is_deleted = True
-
-    @property
-    def full_path(self) -> pathlib.Path:
-        """Calculate the full path by combining storage_path and path."""
-        return self.storage_path / self.path
 
     @classmethod
     def from_path(
