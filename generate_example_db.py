@@ -9,6 +9,7 @@ import sys
 
 from hoarder import HoarderRepository
 from hoarder.archives import HashNameArchive, RarArchive, SfvArchive
+from hoarder.utils.path_utils import AnchoredPath
 
 
 def main() -> None:
@@ -57,7 +58,7 @@ def main() -> None:
         storage_path = sfv_file.parent
         path = pathlib.PurePath(sfv_file.name)
         try:
-            sfv_archive = SfvArchive.from_path(storage_path, path)
+            sfv_archive = SfvArchive.from_path(AnchoredPath(storage_path, path))
             repo.save_hash_archive(sfv_archive)
             print(f"  ✓ Saved SFV archive with {len(sfv_archive.files)} file entries")
             archives_created += 1
@@ -75,7 +76,7 @@ def main() -> None:
             storage_path = hnf_file.parent
             path = pathlib.PurePath(hnf_file.name)
             try:
-                hnf_archive = HashNameArchive.from_path(storage_path, path)
+                hnf_archive = HashNameArchive.from_path(AnchoredPath(storage_path, path))
                 repo.save_hash_archive(hnf_archive)
                 print(
                     f"  ✓ Saved HashNameArchive with {len(hnf_archive.files)} file entry"
@@ -100,7 +101,7 @@ def main() -> None:
                 path = pathlib.PurePath(rar_file.name)
                 try:
                     rar_archive = RarArchive.from_path(
-                        storage_path, path, password=None
+                        AnchoredPath(storage_path, path), password=None
                     )
                     repo.save_hash_archive(rar_archive)
                     print(

@@ -6,6 +6,7 @@ import typing
 import pytest
 from hoarder import HoarderRepository
 from hoarder.archives import HashNameArchive, RarArchive, SfvArchive
+from hoarder.utils.path_utils import AnchoredPath
 from tests.test_case_file_info import RAR_TEST_ARCHIVE_DEFS
 
 logger = logging.getLogger()
@@ -55,7 +56,7 @@ def test_sfv_repositories(create_test_repo):
 
         root = p.parent
         path = pathlib.PurePath(p.name)
-        saved_sfv_file = SfvArchive.from_path(root, path)
+        saved_sfv_file = SfvArchive.from_path(AnchoredPath(root, path))
         create_test_repo.save_hash_archive(saved_sfv_file)
         retrieved_sfv_file = create_test_repo.load_hash_archive(
             saved_sfv_file.storage_path, saved_sfv_file.path
@@ -80,8 +81,7 @@ def test_rar_repositories(
     path = pathlib.PurePath(rar_file.name)
     try:
         saved_rar_file = RarArchive.from_path(
-            root,
-            path,
+            AnchoredPath(root, path),
             password=password,
         )
     except subprocess.CalledProcessError:
@@ -106,7 +106,7 @@ def test_hnf_repositories(create_test_repo):
         hnf_path = pathlib.Path("./test_files/hnf/") / hnf_fn
         root = hnf_path.parent
         path = pathlib.PurePath(hnf_path.name)
-        saved_hnf_file = HashNameArchive.from_path(root, path)
+        saved_hnf_file = HashNameArchive.from_path(AnchoredPath(root, path))
         create_test_repo.save_hash_archive(saved_hnf_file)
         retrieved_hnf_file = create_test_repo.load_hash_archive(
             saved_hnf_file.storage_path, saved_hnf_file.path
@@ -136,7 +136,7 @@ def test_storage_path_not_allowed_error(tmpdir_factory):
 
     storage_path = hnf_path.parent
     path = pathlib.PurePath(hnf_path.name)
-    hnf_archive = HashNameArchive.from_path(storage_path, path)
+    hnf_archive = HashNameArchive.from_path(AnchoredPath(storage_path, path))
 
     # Should raise ValueError
     with pytest.raises(ValueError) as exc_info:

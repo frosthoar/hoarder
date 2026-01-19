@@ -13,7 +13,7 @@ try:
 except ImportError:
     from typing_extensions import override
 
-from hoarder.utils.path_utils import AnchoredPathMixin
+from hoarder.utils.path_utils import AnchoredPath, AnchoredPathMixin
 from hoarder.utils.presentation import PresentationSpec, ScalarValue
 
 
@@ -95,24 +95,18 @@ class HashArchive(AnchoredPathMixin, abc.ABC):
     @classmethod
     def from_path(
         cls: typing.Type[T],
-        storage_path: str | pathlib.Path,
-        path: str | pathlib.PurePath,
+        location: AnchoredPath,
         **kwargs,
     ) -> T:
-        """Create a HashArchive object by reading information from an hash file given its storage_path and path.
+        """Create a HashArchive object by reading information from an hash file.
 
         Args:
-            storage_path: The storage directory path (explicitly set, not inferred)
-            path: The relative path from storage_path
+            location: AnchoredPath with storage_path and relative path
         """
-        _storage_path: pathlib.Path = pathlib.Path(storage_path)
-        _path: pathlib.PurePath = pathlib.PurePath(path)
+        if not location.full_path.is_file():
+            raise FileNotFoundError(f"{location.full_path} does not exist")
 
-        full_path = _storage_path / _path
-        if not full_path.is_file():
-            raise FileNotFoundError(f"{full_path} does not exist")
-
-        return cls._from_path(_storage_path, _path, **kwargs)
+        return cls._from_path(location.storage_path, location.path, **kwargs)
 
     @classmethod
     @abstractmethod

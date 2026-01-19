@@ -10,6 +10,7 @@ from typing import Callable, NamedTuple
 
 from ..archives.rar_archive import RarArchive
 from ..utils import TableFormatter
+from ..utils.path_utils import AnchoredPath
 from .password_plugin import PasswordPlugin
 from .password_store import PasswordStore
 
@@ -170,8 +171,10 @@ class NzbPasswordPlugin(PasswordPlugin):
                         dir_store.add_password(*title_password)
                 elif full_path.suffix == ".rar":
                     logger.debug(f"Processing RARed NZB(s) {full_path}")
-                    path = pathlib.PurePath(full_path)
-                    rar_file: RarArchive = RarArchive.from_path(nzb_directory, path)
+                    relative_path = full_path.relative_to(nzb_directory)
+                    rar_file: RarArchive = RarArchive.from_path(
+                        AnchoredPath(nzb_directory, relative_path)
+                    )
                     for file_entry in rar_file.files:
                         logger.debug(f"Read {file_entry.path}... extracting passwords")
                         title_password = NzbPasswordPlugin._process_file(

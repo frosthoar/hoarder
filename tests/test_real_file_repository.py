@@ -8,6 +8,7 @@ import tests.test_case_file_info as case_files
 from hoarder import HoarderRepository
 from hoarder.archives import Algo
 from hoarder.downloads import RealFile, Verification, VerificationSource
+from hoarder.utils.path_utils import AnchoredPath
 
 FROZEN_TS = dt.datetime(2024, 1, 1, tzinfo=dt.timezone.utc)
 
@@ -31,8 +32,7 @@ def hoarder_repo(tmp_path, compare_storage_path: Path) -> HoarderRepository:
 
 def _build_real_file(entry: case_files.FileEntry, storage_path: Path) -> RealFile:
     real_file = RealFile.from_path(
-        storage_path=storage_path,
-        path=Path("compare") / entry.path,
+        AnchoredPath(storage_path, Path("compare") / entry.path),
         include_hash=not entry.is_dir,
     )
     real_file.first_seen = FROZEN_TS

@@ -3,6 +3,7 @@ import pathlib
 import pytest
 import tests.test_case_file_info
 from hoarder.archives import SfvArchive
+from hoarder.utils.path_utils import AnchoredPath
 
 SFV_TUPLES = [
     (
@@ -17,7 +18,7 @@ def test_sfv_files(sfv_data_tuple):
     full_path = sfv_data_tuple[0].resolve()
     root = full_path.parent
     path = pathlib.PurePath(full_path.name)
-    sfv_archive = SfvArchive.from_path(root, path)
+    sfv_archive = SfvArchive.from_path(AnchoredPath(root, path))
     for a, b in zip(sorted(sfv_archive.files), sorted(sfv_data_tuple[1])):
         assert a.path == b.path
         assert a.is_dir == b.is_dir

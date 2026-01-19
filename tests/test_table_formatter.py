@@ -5,6 +5,7 @@ import pathlib
 import pytest
 import tests.test_case_file_info
 from hoarder.archives import SfvArchive
+from hoarder.utils.path_utils import AnchoredPath
 from hoarder.utils.presentation import TableFormatter
 
 SFV_TUPLES = [
@@ -21,7 +22,7 @@ def test_hash_archive_table_formatter(sfv_data_tuple):
     full_path = sfv_data_tuple[0].resolve()
     root = full_path.parent
     path = pathlib.PurePath(full_path.name)
-    sfv_archive = SfvArchive.from_path(root, path)
+    sfv_archive = SfvArchive.from_path(AnchoredPath(root, path))
 
     formatter = TableFormatter()
     output = formatter.format_presentable(sfv_archive)

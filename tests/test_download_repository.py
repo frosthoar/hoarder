@@ -7,6 +7,7 @@ import pytest
 from hoarder import HoarderRepository
 from hoarder.archives import SfvArchive
 from hoarder.downloads import Download, RealFile
+from hoarder.utils.path_utils import AnchoredPath
 
 FROZEN_TS = dt.datetime(2024, 1, 1, tzinfo=dt.timezone.utc)
 
@@ -43,8 +44,7 @@ def _collect_files_from_directory(
         if file_path.is_file():
             relative_path = file_path.relative_to(storage_path)
             real_file = RealFile.from_path(
-                storage_path=storage_path,
-                path=relative_path,
+                AnchoredPath(storage_path, relative_path),
                 include_hash=True,
             )
             real_file.first_seen = FROZEN_TS
@@ -233,7 +233,9 @@ def test_download_repository_persists_hash_archives(
     if not Path("./test_files/sfv/files.sfv").exists():
         pytest.skip("SFV file not found")
 
-    sfv_archive = SfvArchive.from_path(compare_storage_path, PurePath("sfv/files.sfv"))
+    sfv_archive = SfvArchive.from_path(
+        AnchoredPath(compare_storage_path, PurePath("sfv/files.sfv"))
+    )
     hoarder_repo.save_hash_archive(sfv_archive)
 
     # Create a download with hash archives
@@ -275,7 +277,9 @@ def test_download_repository_persists_real_files_and_hash_archives(
     if not Path("./test_files/sfv/files.sfv").exists():
         pytest.skip("SFV file not found")
 
-    sfv_archive = SfvArchive.from_path(compare_storage_path, PurePath("sfv/files.sfv"))
+    sfv_archive = SfvArchive.from_path(
+        AnchoredPath(compare_storage_path, PurePath("sfv/files.sfv"))
+    )
     hoarder_repo.save_hash_archive(sfv_archive)
 
     # Create a download with both

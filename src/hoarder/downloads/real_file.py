@@ -7,7 +7,7 @@ from pathlib import Path, PurePath
 from typing import ClassVar, Type
 
 from ..archives import Algo
-from ..utils.path_utils import AnchoredPathMixin
+from ..utils.path_utils import AnchoredPath, AnchoredPathMixin
 from .contents_hasher import ContentsHasher, CRC32Hasher
 
 
@@ -61,25 +61,27 @@ class RealFile(AnchoredPathMixin):
     @classmethod
     def from_path(
         cls,
-        storage_path: Path | str,
-        path: PurePath | str,
+        location: AnchoredPath,
         *,
         include_hash: bool = False,
         algo: Algo = Algo.CRC32,
     ) -> RealFile:
-        """Create a RealFile instance by inspecting the filesystem."""
-        storage_path = Path(storage_path)
-        pure_path = PurePath(path)
-        full_path = storage_path / pure_path
-        if not full_path.exists():
-            raise FileNotFoundError(full_path)
+        """Create a RealFile instance by inspecting the filesystem.
 
-        stat = full_path.stat()
+        Args:
+            location: AnchoredPath with storage_path and relative path
+            include_hash: Whether to calculate and include the file hash
+            algo: Hash algorithm to use if include_hash is True
+        """
+        if not location.full_path.exists():
+            raise FileNotFoundError(location.full_path)
+
+        stat = location.full_path.stat()
         real_file = cls(
-            storage_path=storage_path,
-            path=pure_path,
+            storage_path=location.storage_path,
+            path=location.path,
             size=stat.st_size,
-            is_dir=full_path.is_dir(),
+            is_dir=location.full_path.is_dir(),
         )
 
         if include_hash and not real_file.is_dir:
