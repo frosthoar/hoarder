@@ -24,6 +24,7 @@ def determine_path_type(path: str | pathlib.Path) -> PathType:
     else:
         return PathType.AMBIVALENT
 
+
 class AnchoredPathMixin(abc.ABC):
     storage_path: pathlib.Path
     path: pathlib.PurePath
@@ -32,6 +33,7 @@ class AnchoredPathMixin(abc.ABC):
     def full_path(self) -> pathlib.Path:
         """Calculate the full path by combining storage_path and path."""
         return self.storage_path / self.path
+
 
 @dataclasses.dataclass
 class AnchoredPath(AnchoredPathMixin):
