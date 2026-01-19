@@ -1,3 +1,5 @@
+import abc
+import dataclasses
 import enum
 import pathlib
 
@@ -21,3 +23,17 @@ def determine_path_type(path: str | pathlib.Path) -> PathType:
         return PathType.POSIX
     else:
         return PathType.AMBIVALENT
+
+class AnchoredPathMixin(abc.ABC):
+    storage_path: pathlib.Path
+    path: pathlib.PurePath
+
+    @property
+    def full_path(self) -> pathlib.Path:
+        """Calculate the full path by combining storage_path and path."""
+        return self.storage_path / self.path
+
+@dataclasses.dataclass
+class AnchoredPath(AnchoredPathMixin):
+    storage_path: pathlib.Path
+    path: pathlib.PurePath
