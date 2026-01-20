@@ -3,7 +3,6 @@ import dataclasses
 import enum
 import pathlib
 
-
 class PathType(enum.IntEnum):
     UNRESOLVABLE = -1
     AMBIVALENT = 0
@@ -31,11 +30,10 @@ class AnchoredPathMixin(abc.ABC):
 
     @property
     def full_path(self) -> pathlib.Path:
-        """Calculate the full path by combining storage_path and relative_path."""
         return self.storage_path / self.relative_path
 
     def _validate_containment(self) -> None:
-        resolved: pathlib.Path = (self.storage_path / self.relative_path).resolve()
+        resolved = self.full_path.resolve()
         if not resolved.is_relative_to(self.storage_path.resolve()):
             raise ValueError(
                 f"Path '{self.relative_path}' escapes storage root '{self.storage_path}'"
@@ -44,10 +42,17 @@ class AnchoredPathMixin(abc.ABC):
 
 @dataclasses.dataclass
 class AnchoredPath(AnchoredPathMixin):
-    """Concrete class representing a path anchored within a storage root."""
+    storage_path: pathlib.Path = dataclasses.field(init=False)
+    relative_path: pathlib.PurePath = dataclasses.field(init=False)
 
-    storage_path: pathlib.Path
-    relative_path: pathlib.PurePath
+    _storage_path_in: dataclasses.InitVar[str | pathlib.Path]
+    _relative_path_in: dataclasses.InitVar[str | pathlib.PurePath]
 
-    def __post_init__(self) -> None:
+    def __post_init__(
+        self,
+        _storage_path_in: str | pathlib.Path,
+        _relative_path_in: str | pathlib.PurePath,
+    ) -> None:
+        self.storage_path = pathlib.Path(_storage_path_in)
+        self.relative_path = pathlib.PurePath(_relative_path_in)
         self._validate_containment()
