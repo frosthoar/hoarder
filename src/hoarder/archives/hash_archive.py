@@ -13,8 +13,8 @@ try:
 except ImportError:
     from typing_extensions import override
 
-from hoarder.utils.path_utils import AnchoredPath, AnchoredPathMixin
 from hoarder.utils.presentation import PresentationSpec, ScalarValue
+from hoarder.utils.path_utils import AnchoredPathMixin, AnchoredPath
 
 
 class Algo(enum.IntEnum):
@@ -94,24 +94,29 @@ class HashArchive(AnchoredPathMixin, abc.ABC):
 
     @classmethod
     def from_path(
-        cls: typing.Type[T],
-        location: AnchoredPath,
-        **kwargs,
+        cls: type,
+        path: AnchoredPath,
+        **kwargs
     ) -> T:
-        """Create a HashArchive object by reading information from an hash file.
+        """Create a HashArchive object by reading information from an hash file given its storage_path and path.
 
         Args:
-            location: AnchoredPath with storage_path and relative path
+            storage_path: The storage directory path (explicitly set, not inferred)
+            path: The relative path from storage_path
         """
-        if not location.full_path.is_file():
-            raise FileNotFoundError(f"{location.full_path} does not exist")
+        _storage_path: pathlib.Path = pathlib.Path(path.storage_path)
+        _path: pathlib.PurePath = pathlib.PurePath(path.path)
 
-        return cls._from_path(location.storage_path, location.path, **kwargs)
+        full_path = _storage_path / _path
+        if not full_path.is_file():
+            raise FileNotFoundError(f"{full_path} does not exist")
+
+        return cls._from_path(_storage_path, _path, **kwargs)
 
     @classmethod
     @abstractmethod
     def _from_path(
-        cls: typing.Type[T], storage_path: pathlib.Path, path: pathlib.PurePath
+        cls: type, storage_path: pathlib.Path, path: pathlib.PurePath
     ) -> T:
         """Create a HashArchive object by reading information from an hash file given its storage_path and path.
 
