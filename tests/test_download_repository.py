@@ -116,7 +116,7 @@ def test_download_repository_persists_real_files(
 ) -> None:
     """Test that real_files associated with a download are persisted correctly."""
     real_files = _collect_files_from_directory(
-        compare_storage_path, PurePath("compare/files")
+        compare_storage_path, "compare/files"
     )
     if not real_files:
         pytest.skip("No files found in test_files/compare/files")
@@ -167,7 +167,7 @@ def test_download_repository_updates_existing_download(
 ) -> None:
     """Test that saving a download with the same path updates the existing record."""
     real_files = _collect_files_from_directory(
-        compare_storage_path, PurePath("compare/files")
+        compare_storage_path, "compare/files"
     )
     if not real_files:
         pytest.skip("No files found in test_files/compare/files")
@@ -234,7 +234,7 @@ def test_download_repository_persists_hash_archives(
         pytest.skip("SFV file not found")
 
     sfv_archive = SfvArchive.from_path(
-        AnchoredPath(compare_storage_path, PurePath("sfv/files.sfv"))
+        AnchoredPath(compare_storage_path, "sfv/files.sfv")
     )
     hoarder_repo.save_hash_archive(sfv_archive)
 
@@ -278,7 +278,7 @@ def test_download_repository_persists_real_files_and_hash_archives(
         pytest.skip("SFV file not found")
 
     sfv_archive = SfvArchive.from_path(
-        AnchoredPath(compare_storage_path, PurePath("sfv/files.sfv"))
+        AnchoredPath(compare_storage_path, "sfv/files.sfv")
     )
     hoarder_repo.save_hash_archive(sfv_archive)
 

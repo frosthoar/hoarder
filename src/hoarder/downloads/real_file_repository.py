@@ -103,12 +103,12 @@ class RealFileRepository:
 
     def load(
         self,
-        storage_path: Path,
+        storage_path: Path | str,
         path: PurePath | str,
         con: sqlite3.Connection,
     ) -> RealFile:
         """Load one RealFile (including all Verification records)."""
-        storage_path_str = str(storage_path.resolve())
+        storage_path_str = str(Path(storage_path).resolve())
         path_str = str(path)
 
         con.row_factory = sqlite3.Row

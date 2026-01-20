@@ -62,10 +62,10 @@ class HashArchiveRepository:
             )
 
     def load(
-        self, storage_path: Path, path: PurePath | str, con: sqlite3.Connection
+        self, storage_path: Path | str, path: PurePath | str, con: sqlite3.Connection
     ) -> HashArchive:
         """Return the archive (plus its FileEntry set) previously stored."""
-        storage_path_str = str(storage_path.resolve())
+        storage_path_str = str(Path(storage_path).resolve())
         path_str = str(path)
 
         con.row_factory = sqlite3.Row
