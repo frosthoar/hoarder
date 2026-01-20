@@ -55,7 +55,7 @@ def test_real_file_repository_roundtrip(
     loaded = hoarder_repo.load_real_file(compare_storage_path, "compare" / entry.path)
 
     assert loaded.storage_path == compare_storage_path
-    assert loaded.path == "compare" / entry.path
+    assert loaded.relative_path == "compare" / entry.path
     assert loaded.size == original.size
     assert loaded.hash_value == original.hash_value
     assert loaded.first_seen == FROZEN_TS
@@ -101,7 +101,7 @@ def test_real_file_repository_disallows_unknown_storage_path_on_save(
     disallowed_storage = compare_storage_path.parent
     real_file = RealFile(
         storage_path=disallowed_storage,
-        path=PurePath("nonexistent.dat"),
+        relative_path=PurePath("nonexistent.dat"),
         size=0,
         is_dir=False,
         algo=None,

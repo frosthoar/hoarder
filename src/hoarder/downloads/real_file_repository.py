@@ -26,7 +26,7 @@ class RealFileRepository:
             WHERE storage_path_id = (SELECT id FROM storage_paths WHERE storage_path = ?)
               AND path = ?;
             """,
-            (storage_path_str, str(real_file.path)),
+            (storage_path_str, str(real_file.relative_path)),
         )
         _ = cur.execute(
             """
@@ -61,7 +61,7 @@ class RealFileRepository:
             verification_rows = list(
                 self._build_verification_rows(
                     real_file.verification,
-                    str(real_file.path),
+                    str(real_file.relative_path),
                     storage_path_str,
                 )
             )
@@ -136,7 +136,7 @@ class RealFileRepository:
     @staticmethod
     def _build_real_file_row(real_file: RealFile) -> dict[str, object]:
         return {
-            "path": str(real_file.path),
+            "path": str(real_file.relative_path),
             "size": real_file.size,
             "is_dir": int(real_file.is_dir),
             "hash_value": real_file.hash_value,
@@ -213,7 +213,7 @@ class RealFileRepository:
     def _row_to_real_file(row: sqlite3.Row) -> RealFile:
         return RealFile(
             storage_path=Path(row["storage_path"]),
-            path=PurePath(row["path"]),
+            relative_path=PurePath(row["path"]),
             size=int(row["size"]),
             is_dir=bool(row["is_dir"]),
             algo=Algo(row["algo"]) if row["algo"] is not None else None,

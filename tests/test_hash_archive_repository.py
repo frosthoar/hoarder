@@ -59,7 +59,7 @@ def test_sfv_repositories(create_test_repo):
         saved_sfv_file = SfvArchive.from_path(AnchoredPath(root, path))
         create_test_repo.save_hash_archive(saved_sfv_file)
         retrieved_sfv_file = create_test_repo.load_hash_archive(
-            saved_sfv_file.storage_path, saved_sfv_file.path
+            saved_sfv_file.storage_path, saved_sfv_file.relative_path
         )
 
         print(saved_sfv_file)
@@ -90,7 +90,7 @@ def test_rar_repositories(
         pytest.skip(f"Required executable not found: {exc}")
     create_test_repo.save_hash_archive(saved_rar_file)
     retrieved_rar_file = create_test_repo.load_hash_archive(
-        saved_rar_file.storage_path, saved_rar_file.path
+        saved_rar_file.storage_path, saved_rar_file.relative_path
     )
 
     assert repr(saved_rar_file) == repr(retrieved_rar_file)
@@ -109,7 +109,7 @@ def test_hnf_repositories(create_test_repo):
         saved_hnf_file = HashNameArchive.from_path(AnchoredPath(root, path))
         create_test_repo.save_hash_archive(saved_hnf_file)
         retrieved_hnf_file = create_test_repo.load_hash_archive(
-            saved_hnf_file.storage_path, saved_hnf_file.path
+            saved_hnf_file.storage_path, saved_hnf_file.relative_path
         )
 
     assert repr(saved_hnf_file) == repr(retrieved_hnf_file)

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import datetime as dt
-from pathlib import Path
+from pathlib import Path, PurePath
 
 import pytest
 from hoarder.downloads import Download, RealFile
@@ -34,13 +34,13 @@ def test_download_with_real_files() -> None:
     storage_path = Path("/test/storage")
     real_file1 = RealFile(
         storage_path=storage_path,
-        path=Path("file1.dat"),
+        relative_path=PurePath("file1.dat"),
         size=100,
         is_dir=False,
     )
     real_file2 = RealFile(
         storage_path=storage_path,
-        path=Path("file2.bin"),
+        relative_path=PurePath("file2.bin"),
         size=200,
         is_dir=False,
     )

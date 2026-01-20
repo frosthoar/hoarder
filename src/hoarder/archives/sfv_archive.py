@@ -5,7 +5,7 @@ import os
 import pathlib
 import typing
 
-from ..utils import PathType, determine_path_type
+from ..utils import PathType, AnchoredPath, determine_path_type
 from .hash_archive import Algo, FileEntry, HashArchive
 
 logger = logging.getLogger("hoarder.archives.sfv_file")
@@ -18,15 +18,17 @@ class SfvArchive(HashArchive):
 
     @classmethod
     def _from_path(
-        cls: typing.Type[T], storage_path: pathlib.Path, path: pathlib.PurePath
+        cls: typing.Type[T],
+        storage_path: pathlib.Path,
+        relative_path: pathlib.PurePath,
     ) -> T:
-        """Create a SfvArchive object by reading information from an SFV file given its storage_path and path.
+        """Create a SfvArchive object by reading information from an SFV file.
 
         Args:
-            storage_path: The storage directory path (explicitly set, not inferred)
-            path: The relative path from storage_path (as PurePath)
+            storage_path: The storage directory path
+            relative_path: The relative path from storage_path
         """
-        full_path = storage_path / path
+        full_path = storage_path / relative_path
         files = []
         with open(full_path, "rt", encoding="utf-8") as file:
             logger.debug("Reading %s", full_path)
@@ -83,4 +85,4 @@ class SfvArchive(HashArchive):
                         "Error converting '%(line)s' to FileEntry: %(error)s",
                         {"line": line, "error": e},
                     )
-        return cls(storage_path, path, set(files))
+        return cls(storage_path, relative_path, set(files))

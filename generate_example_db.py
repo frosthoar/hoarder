@@ -131,7 +131,7 @@ def main() -> None:
                 loaded_archive = repo.load_hash_archive(storage_path, path)
                 print(f"  ✓ Successfully loaded: {loaded_archive.__class__.__name__}")
                 print(f"    Storage path: {loaded_archive.storage_path}")
-                print(f"    Path: {loaded_archive.path}")
+                print(f"    Path: {loaded_archive.relative_path}")
                 print(f"    Files: {len(loaded_archive.files)}")
             except Exception as e:
                 print(f"  ✗ Failed to load archive: {e}")

@@ -64,7 +64,7 @@ class HashArchive(AnchoredPathMixin, abc.ABC):
     """This class contains information about an hash file."""
 
     storage_path: pathlib.Path
-    path: pathlib.PurePath
+    relative_path: pathlib.PurePath
     files: set[FileEntry]
     is_deleted: bool
     info: str | None = None
@@ -77,52 +77,49 @@ class HashArchive(AnchoredPathMixin, abc.ABC):
     def __init__(
         self,
         storage_path: pathlib.Path,
-        path: pathlib.PurePath,
+        relative_path: pathlib.PurePath,
         files: set[FileEntry] | None = None,
     ) -> None:
         """Create a HashArchive object.
 
         Args:
             storage_path: The storage directory path (explicitly set, not inferred)
-            path: The relative path from storage_path (as PurePath)
+            relative_path: The relative path from storage_path (as PurePath)
             files: Optional set of FileEntry objects
         """
         self.files = files or set()
         self.storage_path = storage_path.resolve()
-        self.path = path
+        self.relative_path = relative_path
         self.is_deleted = True
 
     @classmethod
     def from_path(
         cls: type,
-        path: AnchoredPath,
-        **kwargs
+        location: AnchoredPath,
+        **kwargs,
     ) -> T:
-        """Create a HashArchive object by reading information from an hash file given its storage_path and path.
+        """Create a HashArchive object by reading information from an hash file.
 
         Args:
-            storage_path: The storage directory path (explicitly set, not inferred)
-            path: The relative path from storage_path
+            location: AnchoredPath with storage_path and relative_path
         """
-        _storage_path: pathlib.Path = pathlib.Path(path.storage_path)
-        _path: pathlib.PurePath = pathlib.PurePath(path.path)
+        if not location.full_path.is_file():
+            raise FileNotFoundError(f"{location.full_path} does not exist")
 
-        full_path = _storage_path / _path
-        if not full_path.is_file():
-            raise FileNotFoundError(f"{full_path} does not exist")
-
-        return cls._from_path(_storage_path, _path, **kwargs)
+        return cls._from_path(location.storage_path, location.relative_path, **kwargs)
 
     @classmethod
     @abstractmethod
     def _from_path(
-        cls: type, storage_path: pathlib.Path, path: pathlib.PurePath
+        cls: type,
+        storage_path: pathlib.Path,
+        relative_path: pathlib.PurePath,
     ) -> T:
-        """Create a HashArchive object by reading information from an hash file given its storage_path and path.
+        """Create a HashArchive object by reading information from an hash file.
 
         Args:
-            storage_path: The storage directory path (explicitly set, not inferred)
-            path: The relative path from storage_path (as PurePath)
+            storage_path: The storage directory path
+            relative_path: The relative path from storage_path
         """
 
     def __len__(self) -> int:
@@ -162,7 +159,7 @@ class HashArchive(AnchoredPathMixin, abc.ABC):
             "path": str(self.full_path),
         }
         header_fields = self._printable_attributes()
-        excluded_fields = {"files", "path", "storage_path"}
+        excluded_fields = {"files", "relative_path", "storage_path"}
         for attr in filter(lambda a: a not in excluded_fields, header_fields):
             scalar[attr] = getattr(self, attr)
 

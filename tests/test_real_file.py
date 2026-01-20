@@ -15,7 +15,7 @@ CRC32_SAMPLE_DIRS = [fe for fe in case_files.TEST_FILES if fe.is_dir][:5]
 def _build_real_file(entry: case_files.FileEntry) -> RealFile:
     return RealFile(
         storage_path=STORAGE_ROOT,
-        path=entry.path,
+        relative_path=entry.path,
         size=entry.size,
         is_dir=entry.is_dir,
     )

@@ -210,7 +210,7 @@ class DownloadRepository:
             yield {
                 "download_title": download_title,
                 "real_file_storage_path": str(real_file.storage_path.resolve()),
-                "real_file_path": str(real_file.path),
+                "real_file_path": str(real_file.relative_path),
             }
 
     def _build_archive_association_rows(
@@ -223,7 +223,7 @@ class DownloadRepository:
             yield {
                 "download_title": download_title,
                 "archive_storage_path": str(hash_archive.storage_path.resolve()),
-                "archive_path": str(hash_archive.path),
+                "archive_path": str(hash_archive.relative_path),
             }
 
     def _load_real_files(

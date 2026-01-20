@@ -26,7 +26,7 @@ class RealFile(AnchoredPathMixin):
     """Represents a file or directory we encountered in storage."""
 
     storage_path: Path
-    path: PurePath
+    relative_path: PurePath
     size: int
     is_dir: bool
     algo: Algo | None = None
@@ -79,7 +79,7 @@ class RealFile(AnchoredPathMixin):
         stat = location.full_path.stat()
         real_file = cls(
             storage_path=location.storage_path,
-            path=location.path,
+            relative_path=location.relative_path,
             size=stat.st_size,
             is_dir=location.full_path.is_dir(),
         )

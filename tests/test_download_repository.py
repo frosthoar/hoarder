@@ -51,7 +51,7 @@ def _collect_files_from_directory(
             real_file.last_seen = FROZEN_TS
             real_files.append(real_file)
 
-    return sorted(real_files, key=lambda rf: str(rf.path))
+    return sorted(real_files, key=lambda rf: str(rf.relative_path))
 
 
 def _build_download(title: str, real_files: list[RealFile]) -> Download:
@@ -92,18 +92,18 @@ def test_download_repository_roundtrip(
     assert len(loaded.real_files) == len(real_files)
 
     # Verify all real_files are present and correct
-    loaded_paths = {rf.path for rf in loaded.real_files}
-    original_paths = {rf.path for rf in real_files}
+    loaded_paths = {rf.relative_path for rf in loaded.real_files}
+    original_paths = {rf.relative_path for rf in real_files}
     assert loaded_paths == original_paths
 
     # Verify a sample real_file has correct attributes
     if real_files:
         sample_original = real_files[0]
         sample_loaded = next(
-            rf for rf in loaded.real_files if rf.path == sample_original.path
+            rf for rf in loaded.real_files if rf.relative_path == sample_original.relative_path
         )
         assert sample_loaded.storage_path == sample_original.storage_path
-        assert sample_loaded.path == sample_original.path
+        assert sample_loaded.relative_path == sample_original.relative_path
         assert sample_loaded.size == sample_original.size
         assert sample_loaded.hash_value == sample_original.hash_value
     assert sample_loaded.first_seen == sample_original.first_seen
@@ -132,7 +132,7 @@ def test_download_repository_persists_real_files(
     assert len(loaded.real_files) == len(test_files)
     for original_file in test_files:
         loaded_file = next(
-            rf for rf in loaded.real_files if rf.path == original_file.path
+            rf for rf in loaded.real_files if rf.relative_path == original_file.relative_path
         )
         assert loaded_file.size == original_file.size
         assert loaded_file.hash_value == original_file.hash_value
@@ -200,7 +200,7 @@ def test_download_repository_disallows_unknown_storage_path_on_save(
     disallowed_storage = compare_storage_path.parent
     real_file = RealFile(
         storage_path=disallowed_storage,
-        path=Path("nonexistent.dat"),
+        relative_path=PurePath("nonexistent.dat"),
         size=0,
         is_dir=False,
     )
@@ -255,7 +255,7 @@ def test_download_repository_persists_hash_archives(
     assert len(loaded.hash_archives) == 1
     loaded_archive = loaded.hash_archives[0]
     assert loaded_archive.storage_path == sfv_archive.storage_path
-    assert loaded_archive.path == sfv_archive.path
+    assert loaded_archive.relative_path == sfv_archive.relative_path
     assert loaded_archive.__class__ == sfv_archive.__class__
     assert len(loaded_archive.files) == len(sfv_archive.files)
 
@@ -291,4 +291,4 @@ def test_download_repository_persists_real_files_and_hash_archives(
 
     assert len(loaded.real_files) == len(test_files)
     assert len(loaded.hash_archives) == 1
-    assert loaded.hash_archives[0].path == sfv_archive.path
+    assert loaded.hash_archives[0].relative_path == sfv_archive.relative_path

@@ -32,14 +32,14 @@ class RarArchive(HashArchive):
     def __init__(
         self,
         storage_path: pathlib.Path,
-        path: pathlib.PurePath,
+        relative_path: pathlib.PurePath,
         files: set[FileEntry] | None = None,
         password: str | None = None,
         version: str | None = None,
         scheme: RarScheme | None = None,
         n_volumes: int | None = None,
     ) -> None:
-        super().__init__(storage_path, path, files)
+        super().__init__(storage_path, relative_path, files)
         self.password = password
         self.scheme = scheme
         self.n_volumes = n_volumes
@@ -54,12 +54,12 @@ class RarArchive(HashArchive):
         if self.n_volumes == 1:
             return [self.full_path]
         if self.scheme == RarScheme.DOT_RNN:
-            return [self.storage_path / f"{self.path.stem}.rar"] + [
-                self.storage_path / f"{self.path.stem}.r{index:02d}"
+            return [self.storage_path / f"{self.relative_path.stem}.rar"] + [
+                self.storage_path / f"{self.relative_path.stem}.r{index:02d}"
                 for index in range(0, self.n_volumes - 1)
             ]
         if self.scheme == RarScheme.PART_N:
-            stem = self.path.stem.split(".part")[0]
+            stem = self.relative_path.stem.split(".part")[0]
             volume_list = [
                 self.storage_path / f"{stem}.part{index}.rar"
                 for index in range(1, self.n_volumes + 1)
@@ -77,17 +77,17 @@ class RarArchive(HashArchive):
     def _from_path(
         cls: type[T],
         storage_path: pathlib.Path,
-        path: pathlib.PurePath,
+        relative_path: pathlib.PurePath,
         password: str | None = None,
     ) -> T:
-        """Create a RarArchive object by reading information from a (main) RAR file given its storage_path and path.
+        """Create a RarArchive object by reading information from a (main) RAR file.
 
         Args:
-            storage_path: The storage directory path (explicitly set, not inferred)
-            path: The relative path from storage_path (as PurePath)
+            storage_path: The storage directory path
+            relative_path: The relative path from storage_path
             password: Optional password for encrypted archives
         """
-        full_path = storage_path / path
+        full_path = storage_path / relative_path
 
         if full_path.is_dir():
             logger.debug(
@@ -113,18 +113,18 @@ class RarArchive(HashArchive):
             logger.debug("Found %d volumes in %s", n_volumes, full_path)
         elif full_path.is_file():
             logger.debug("A file %s was given, trying to find RAR files", full_path)
-            if match := PART_N_PAT.match(str(path.name)):
-                logger.debug("Path %s matches a PART_N_PAT pattern", path)
-            elif match := DOT_RNN_PAT.match(str(path.name)):
-                logger.debug("Path %s matches a DOT_RNN_PAT pattern", path)
+            if match := PART_N_PAT.match(str(relative_path.name)):
+                logger.debug("Path %s matches a PART_N_PAT pattern", relative_path)
+            elif match := DOT_RNN_PAT.match(str(relative_path.name)):
+                logger.debug("Path %s matches a DOT_RNN_PAT pattern", relative_path)
 
             if match:
                 seek_stem = match["stem"]
-                logger.debug("Path %s matches a RAR pattern", path)
-                # Search in the directory containing the file (storage_path / path.parent)
+                logger.debug("Path %s matches a RAR pattern", relative_path)
+                # Search in the directory containing the file (storage_path / relative_path.parent)
                 search_dir = (
-                    storage_path / path.parent
-                    if path.parent != pathlib.PurePath(".")
+                    storage_path / relative_path.parent
+                    if relative_path.parent != pathlib.PurePath(".")
                     else storage_path
                 )
                 logger.debug(
@@ -249,7 +249,7 @@ class RarArchive(HashArchive):
         logger.debug(
             "Processing archive %(name)s with path %(entry_path)s using password %(password)s",
             {
-                "name": self.path.name,
+                "name": self.relative_path.name,
                 "entry_path": entry_path,
                 "password": self.password,
             },
@@ -271,12 +271,12 @@ class RarArchive(HashArchive):
         if not crc_match:
             logger.error(
                 "Failed to get CRC for %(name)s: %(entry_path)s",
-                {"name": self.path.name, "entry_path": entry_path},
+                {"name": self.relative_path.name, "entry_path": entry_path},
             )
             return None
         logger.debug(
             "Got CRC %(crc_match)s for %(name)s: %(entry_path)s",
-            {"crc_match": crc_match, "name": self.path.name, "entry_path": entry_path},
+            {"crc_match": crc_match, "name": self.relative_path.name, "entry_path": entry_path},
         )
         return bytes.fromhex(crc_match)
 

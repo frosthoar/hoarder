@@ -135,7 +135,7 @@ class HashArchiveRepository:
         """Return a dict used directly with named-parameter SQL."""
         base: dict[str, str | int | None] = {
             "type": type(arch).__name__,
-            "path": str(arch.path),
+            "path": str(arch.relative_path),
             "is_deleted": int(arch.is_deleted),
             "hash_enclosure": None,
             "password": None,
