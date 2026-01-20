@@ -46,8 +46,8 @@ class AnchoredPathMixin(abc.ABC):
 class AnchoredPath(AnchoredPathMixin):
     """Concrete class representing a path anchored within a storage root."""
 
-    storage_path: str | pathlib.Path
-    relative_path: str | pathlib.PurePath
+    storage_path: pathlib.Path
+    relative_path: pathlib.PurePath
 
     def __post_init__(self) -> None:
         self._validate_containment()
