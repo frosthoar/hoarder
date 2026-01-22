@@ -16,7 +16,8 @@ class RarScheme(enum.IntEnum):
     PART_N = 5
 
 
-DOT_RNN_PAT = re.compile(r"""(?x)
+DOT_RNN_PAT = re.compile(
+    r"""(?x)
     ^       # start
     (?P<stem>
         .+  # require a stem of at least one character
@@ -29,9 +30,11 @@ DOT_RNN_PAT = re.compile(r"""(?x)
         )
     )
     $  # end
-""")
+"""
+)
 
-PART_N_PAT = re.compile(r"""(?x)
+PART_N_PAT = re.compile(
+    r"""(?x)
     ^       # start
     (?P<stem>
         .+  # require a stem of at least one character
@@ -45,7 +48,8 @@ PART_N_PAT = re.compile(r"""(?x)
         rar  # last suffix component
     )
     $        # end
-""")
+"""
+)
 
 T = typing.TypeVar("T", bound="RARPath")
 
