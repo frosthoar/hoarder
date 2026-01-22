@@ -3,6 +3,7 @@ import dataclasses
 import enum
 import pathlib
 
+
 class PathType(enum.IntEnum):
     UNRESOLVABLE = -1
     AMBIVALENT = 0
@@ -32,12 +33,14 @@ class AnchoredPathMixin(abc.ABC):
     def full_path(self) -> pathlib.Path:
         return self.storage_path / self.relative_path
 
-    def _validate_containment(self) -> None:
+    def _validate(self) -> None:
         resolved = self.full_path.resolve()
         if not resolved.is_relative_to(self.storage_path.resolve()):
             raise ValueError(
                 f"Path '{self.relative_path}' escapes storage root '{self.storage_path}'"
             )
+        if not resolved.exists():
+            raise FileExistsError(f"Path '{self.relative_path}' does not exist")
 
 
 @dataclasses.dataclass
@@ -55,4 +58,17 @@ class AnchoredPath(AnchoredPathMixin):
     ) -> None:
         self.storage_path = pathlib.Path(_storage_path_in)
         self.relative_path = pathlib.PurePath(_relative_path_in)
-        self._validate_containment()
+        self._validate()
+
+    @classmethod
+    def from_absolute_path(
+        cls: type, storage_path: pathlib.Path | str, absolute_path: pathlib.Path | str
+    ) -> "AnchoredPath":
+        ap: pathlib.Path = pathlib.Path(absolute_path).resolve()
+        sp: pathlib.Path = pathlib.Path(storage_path).resolve()
+
+        # This will raise ValueError if ap is not a subpath of sp
+        # (i.e., if ap is not contained within sp in the directory tree)
+        relative_path: pathlib.PurePath = pathlib.PurePath(ap.relative_to(sp))
+
+        return cls(sp, relative_path)
