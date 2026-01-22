@@ -1,5 +1,6 @@
 """This module contains the RarArchive class, which holds information about a RAR file"""
 
+import glob
 import logging
 import os
 import pathlib
@@ -7,8 +8,8 @@ import re
 import subprocess
 import typing
 
-from ..utils import SEVENZIP
-from .hash_archive import Algo, FileEntry, HashArchive
+from ..utils import SEVENZIP, AnchoredPath
+from .hash_archive import Algo, FileEntry, HashArchive, HashArchiveSelf
 from .rar_path import DOT_RNN_PAT, PART_N_PAT, RarScheme, find_rar_files
 
 try:
@@ -323,3 +324,15 @@ class RarArchive(HashArchive):
 
         sub = subprocess.run(command_line, capture_output=True, check=True)
         return sub.stdout
+
+    @classmethod
+    @override
+    def discover(cls: typing.Type[HashArchiveSelf], scope: AnchoredPath) -> list[HashArchiveSelf]:
+        results: list[str] = glob.glob(
+            f"{scope.full_path}/*.rar", root_dir=scope.storage_path
+        )
+        anchored_paths = [
+            AnchoredPath.from_absolute_path(scope.storage_path, pathlib.Path(p))
+            for p in results
+        ]
+        return [cls.from_path(a) for a in anchored_paths]

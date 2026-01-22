@@ -9,6 +9,11 @@ import typing
 from ..utils import PathType, AnchoredPath, determine_path_type
 from .hash_archive import Algo, FileEntry, HashArchive, HashArchiveSelf
 
+try:
+    from typing import override  # type: ignore [attr-defined]
+except ImportError:
+    from typing_extensions import override
+
 logger = logging.getLogger("hoarder.archives.sfv_file")
 
 T = typing.TypeVar("T", bound="SfvArchive")
@@ -89,6 +94,7 @@ class SfvArchive(HashArchive):
         return cls(storage_path, relative_path, set(files))
 
     @classmethod
+    @override
     def discover(cls: typing.Type[HashArchiveSelf], scope: AnchoredPath) -> list[HashArchiveSelf]:
         results: list[str] = glob.glob(
             f"{scope.full_path}/*.sfv", root_dir=scope.storage_path

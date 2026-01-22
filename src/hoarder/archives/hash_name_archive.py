@@ -7,7 +7,8 @@ import pathlib
 import re
 import typing
 
-from .hash_archive import Algo, FileEntry, HashArchive
+from ..utils import AnchoredPath
+from .hash_archive import Algo, FileEntry, HashArchive, HashArchiveSelf
 
 try:
     from typing import override  # type: ignore [attr-defined]
@@ -112,3 +113,21 @@ class HashNameArchive(HashArchive):
         }
 
         return cls(storage_path, relative_path, files, enc)
+
+    @classmethod
+    @override
+    def discover(cls: typing.Type[HashArchiveSelf], scope: AnchoredPath) -> list[HashArchiveSelf]:
+        """Discover HashNameArchive files in the given scope.
+        
+        This is a placeholder implementation. It should scan for files matching
+        the hash pattern (e.g., filename[hash].ext or filename(hash).ext).
+        
+        Args:
+            scope: AnchoredPath scope to search within
+            
+        Returns:
+            List of discovered HashNameArchive instances
+        """
+        # TODO: Implement proper discovery logic
+        # Should scan for files matching _regexes patterns
+        return []
