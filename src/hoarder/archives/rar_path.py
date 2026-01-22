@@ -16,8 +16,7 @@ class RarScheme(enum.IntEnum):
     PART_N = 5
 
 
-DOT_RNN_PAT = re.compile(
-    r"""(?x)
+DOT_RNN_PAT = re.compile(r"""(?x)
     ^       # start
     (?P<stem>
         .+  # require a stem of at least one character
@@ -30,11 +29,9 @@ DOT_RNN_PAT = re.compile(
         )
     )
     $  # end
-"""
-)
+""")
 
-PART_N_PAT = re.compile(
-    r"""(?x)
+PART_N_PAT = re.compile(r"""(?x)
     ^       # start
     (?P<stem>
         .+  # require a stem of at least one character
@@ -48,18 +45,17 @@ PART_N_PAT = re.compile(
         rar  # last suffix component
     )
     $        # end
-"""
-)
+""")
 
 T = typing.TypeVar("T", bound="RARPath")
 
-def get_match_fallback(match: re.Match, key: str, fallback:str) -> str:
+
+def get_match_fallback(match: re.Match, key: str, fallback: str) -> str:
     ret = match.groupdict().get(key)
     if ret is None:
         return fallback
     else:
         return ret
-
 
 
 class RARPath(typing.NamedTuple):
@@ -82,15 +78,14 @@ class RARPath(typing.NamedTuple):
         suffix: str
         volume_index: int
 
-
         if match_dot_rnn is None and match_part_n is None:
             raise ValueError(f'"{path}" does not match the scheme-3 pattern')
-        elif match_dot_rnn is not None and  match_part_n is None:
+        elif match_dot_rnn is not None and match_part_n is None:
             scheme = RarScheme.DOT_RNN
             stem = match_dot_rnn["stem"]
             suffix = match_dot_rnn["suffix"]
             volume_index = int(get_match_fallback(match_dot_rnn, "volume_index", "-1"))
-        elif match_dot_rnn is None and  match_part_n is not None:
+        elif match_dot_rnn is None and match_part_n is not None:
             scheme = RarScheme.PART_N
             stem = match_part_n["stem"]
             suffix = match_part_n["suffix"]
@@ -109,7 +104,7 @@ class RARPath(typing.NamedTuple):
             path=str(p),
             stem=stem,
             suffix=suffix,
-            scheme=scheme
+            scheme=scheme,
         )
 
     @override
@@ -119,7 +114,7 @@ class RARPath(typing.NamedTuple):
 
 def parse_rar_list(
     paths: collections.abc.Sequence[str | Path],
-    ) :#-> //tuple[RarScheme, list[RARPath]]:
+):  # -> //tuple[RarScheme, list[RARPath]]:
     if len(paths) == 0:
         # Since there is no non-indexed .rar, this must be interpreted as an "empty PART_N"
         return RarScheme.PART_N, []
@@ -129,12 +124,10 @@ def parse_rar_list(
     stem = parsed[0].stem
     scheme: RarScheme = parsed[0].scheme
 
-    
     if scheme == RarScheme.AMBIGUOUS and len(parsed) > 1:
         scheme = RarScheme.PART_N
 
-    print('+++', parsed, scheme)
-    
+    print("+++", parsed, scheme)
 
     for rp in parsed[1:]:
         if getattr(rp, "stem", None) != stem:
@@ -168,9 +161,9 @@ def parse_rar_list(
     expected = set(range(base, base + len(paths)))
     spurious = actual - expected
     if spurious:
-        print('actual', actual)
-        print('expected', expected)
-        print('paths', paths)
+        print("actual", actual)
+        print("expected", expected)
+        print("paths", paths)
         raise ValueError(
             "The following indices are unexpected: "
             + ", ".join(str(i) for i in spurious)
