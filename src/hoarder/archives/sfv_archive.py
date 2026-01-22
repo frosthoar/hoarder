@@ -1,12 +1,13 @@
 """This module contains the SfvArchive class, which represents a SFV file."""
 
+import glob
 import logging
 import os
 import pathlib
 import typing
 
 from ..utils import PathType, AnchoredPath, determine_path_type
-from .hash_archive import Algo, FileEntry, HashArchive
+from .hash_archive import Algo, FileEntry, HashArchive, HashArchiveSelf
 
 logger = logging.getLogger("hoarder.archives.sfv_file")
 
@@ -86,3 +87,14 @@ class SfvArchive(HashArchive):
                         {"line": line, "error": e},
                     )
         return cls(storage_path, relative_path, set(files))
+
+    @classmethod
+    def discover(cls: typing.Type[HashArchiveSelf], scope: AnchoredPath) -> list[HashArchiveSelf]:
+        results: list[str] = glob.glob(
+            f"{scope.full_path}/*.sfv", root_dir=scope.storage_path
+        )
+        anchored_paths = [
+            AnchoredPath.from_absolute_path(scope.storage_path, pathlib.Path(p))
+            for p in results
+        ]
+        return [cls.from_path(a) for a in anchored_paths]

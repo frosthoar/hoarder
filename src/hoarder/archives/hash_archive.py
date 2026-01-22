@@ -9,9 +9,9 @@ import typing
 from abc import abstractmethod
 
 try:
-    from typing import override  # type: ignore [attr-defined]
+    from typing import Self, override  # type: ignore [attr-defined]
 except ImportError:
-    from typing_extensions import override
+    from typing_extensions import Self, override
 
 from hoarder.utils.presentation import PresentationSpec, ScalarValue
 from hoarder.utils.path_utils import AnchoredPathMixin, AnchoredPath
@@ -27,7 +27,9 @@ class Algo(enum.IntEnum):
     SHA512 = 5
 
 
-Self = typing.TypeVar("Self", bound="FileEntry")
+FileEntrySelf = typing.TypeVar("FileEntrySelf", bound="FileEntry")
+
+HashArchiveSelf = typing.TypeVar("HashArchiveSelf", bound="HashArchive")
 
 
 @dataclasses.dataclass(slots=True, eq=True)
@@ -49,15 +51,12 @@ class FileEntry:
     algo: Algo | None = None
     info: str | None = None
 
-    def __lt__(self: Self, other: Self) -> bool:
+    def __lt__(self: FileEntrySelf, other: FileEntrySelf) -> bool:
         return self.path < other.path
 
     @override
     def __hash__(self) -> int:
         return hash(self.path)
-
-
-T = typing.TypeVar("T", bound="HashArchive")
 
 
 class HashArchive(AnchoredPathMixin, abc.ABC):
@@ -94,10 +93,10 @@ class HashArchive(AnchoredPathMixin, abc.ABC):
 
     @classmethod
     def from_path(
-        cls: type,
+        cls,
         location: AnchoredPath,
         **kwargs,
-    ) -> T:
+    ) -> Self:
         """Create a HashArchive object by reading information from an hash file.
 
         Args:
@@ -111,10 +110,10 @@ class HashArchive(AnchoredPathMixin, abc.ABC):
     @classmethod
     @abstractmethod
     def _from_path(
-        cls: type,
+        cls,
         storage_path: pathlib.Path,
         relative_path: pathlib.PurePath,
-    ) -> T:
+    ) -> Self:
         """Create a HashArchive object by reading information from an hash file.
 
         Args:
@@ -176,3 +175,8 @@ class HashArchive(AnchoredPathMixin, abc.ABC):
             collection.append(row)
 
         return PresentationSpec(scalar=scalar, collection=collection)
+
+    @classmethod
+    @abstractmethod
+    def discover(cls: type[HashArchiveSelf], scope: AnchoredPath) -> list[HashArchiveSelf]:
+        pass
