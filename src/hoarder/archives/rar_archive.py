@@ -328,11 +328,6 @@ class RarArchive(HashArchive):
     @classmethod
     @override
     def discover(cls: typing.Type[HashArchiveSelf], scope: AnchoredPath) -> list[HashArchiveSelf]:
-        results: list[str] = glob.glob(
-            f"{scope.full_path}/*.rar", root_dir=scope.storage_path
-        )
-        anchored_paths = [
-            AnchoredPath.from_absolute_path(scope.storage_path, pathlib.Path(p))
-            for p in results
-        ]
-        return [cls.from_path(a) for a in anchored_paths]
+        if scope.full_path.is_file():
+            raise NotADirectoryError
+
