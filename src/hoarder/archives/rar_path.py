@@ -51,10 +51,10 @@ PART_N_PAT = re.compile(
 """
 )
 
-T = typing.TypeVar("T", bound="RARPath")
+T = typing.TypeVar("T", bound="RarPath")
 
 
-class RARPath(typing.NamedTuple):
+class RarPath(typing.NamedTuple):
     volume_index: int  # type: ignore[assignment]
     path: str
     stem: str
@@ -110,12 +110,12 @@ class RARPath(typing.NamedTuple):
 
 def parse_rar_list(
     paths: collections.abc.Sequence[str | Path],
-) -> tuple[RarScheme, list[RARPath]]:
+) -> tuple[RarScheme, list[RarPath]]:
     if len(paths) == 0:
         # Since there is no non-indexed .rar, this must be interpreted as an "empty PART_N"
         return RarScheme.PART_N, []
 
-    parsed = [RARPath.from_path(p) for p in paths]
+    parsed = [RarPath.from_path(p) for p in paths]
 
     stem = parsed[0].stem
     scheme: RarScheme = parsed[0].scheme
