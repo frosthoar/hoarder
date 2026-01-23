@@ -64,7 +64,7 @@ while (next download unit?) is (yes)
         note right
             Match real_files to
             FileEntry records
-            by path (local archives)
+            by relative_path (local archives)
         end note
     }
 

@@ -30,12 +30,12 @@ participant "correlate_files_to_entries()" as CFE
 Orch -> Unit : get_archive_search_paths()
 activate Unit
 
-Unit --> Orch : [unit.path, unit.path.parent, ...]
+Unit --> Orch : [unit.relative_path, unit.relative_path.parent, ...]
 deactivate Unit
 
 note right of Orch
     Search paths determined by:
-    - Unit path (always)
+    - Unit relative_path (always)
     - Parent dir (if config.search_parent)
     - Additional configured paths
 end note
@@ -81,7 +81,7 @@ end note
 
 Orch -> Unit : get_file_search_paths()
 activate Unit
-Unit --> Orch : [unit.path]
+Unit --> Orch : [unit.relative_path]
 deactivate Unit
 
 Orch -> DRF : discover_real_files(\n  search_paths,\n  exclude=archive_paths)
@@ -104,7 +104,7 @@ activate CA
 note right of CA
     Filter archives to those
     whose FileEntry paths
-    intersect with RealFile paths
+    intersect with RealFile relative_paths
 end note
 
 CA --> Orch : relevant_archives
@@ -115,7 +115,7 @@ activate CFE
 
 note right of CFE
     Build path -> FileEntry lookup
-    Match each RealFile by path
+    Match each RealFile by relative_path
     One file may match multiple entries
     (same file in SFV and HashName)
 end note
