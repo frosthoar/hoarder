@@ -328,6 +328,8 @@ class RarArchive(HashArchive):
     @classmethod
     @override
     def discover(cls: typing.Type[HashArchiveSelf], scope: AnchoredPath) -> list[HashArchiveSelf]:
-        if scope.full_path.is_file():
-            raise NotADirectoryError
+        if not scope.full_path.is_dir():
+            raise NotADirectoryError(f'Given scope "{scope.full_path}" is a directory')
+
+        
 
