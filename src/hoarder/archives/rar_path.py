@@ -54,14 +54,6 @@ PART_N_PAT = re.compile(
 T = typing.TypeVar("T", bound="RARPath")
 
 
-def get_match_fallback(match: re.Match, key: str, fallback: str) -> str:
-    ret = match.groupdict().get(key)
-    if ret is None:
-        return fallback
-    else:
-        return ret
-
-
 class RARPath(typing.NamedTuple):
     volume_index: int  # type: ignore[assignment]
     path: str
@@ -95,7 +87,7 @@ class RARPath(typing.NamedTuple):
             suffix = match_part_n["suffix"]
             volume_index = int(match_part_n["volume_index"] or "-1")
         elif match_dot_rnn is not None and match_part_n is not None:
-            # chosing match_dot_rnn or match_part_n does not change the extracted matches
+            # choosing match_dot_rnn or match_part_n does not change the extracted matches
             stem = match_part_n["stem"]
             suffix = match_part_n["suffix"]
             volume_index = int(match_part_n["volume_index"] or "-1")
