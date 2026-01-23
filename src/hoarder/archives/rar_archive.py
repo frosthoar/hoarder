@@ -10,7 +10,7 @@ import typing
 
 from ..utils import SEVENZIP, AnchoredPath
 from .hash_archive import Algo, FileEntry, HashArchive, HashArchiveSelf
-from .rar_path import DOT_RNN_PAT, PART_N_PAT, RarScheme, find_rar_files
+from .rar_path import DOT_RNN_PAT, PART_N_PAT, RarScheme, find_rar_files, RarPath
 
 try:
     from typing import override  # type: ignore [attr-defined]
@@ -328,8 +328,10 @@ class RarArchive(HashArchive):
     @classmethod
     @override
     def discover(cls: typing.Type[HashArchiveSelf], scope: AnchoredPath) -> list[HashArchiveSelf]:
+        rar_path_list: list[RarPath] = []
         if not scope.full_path.is_dir():
             raise NotADirectoryError(f'Given scope "{scope.full_path}" is a directory')
+        rp RarPath.from_path(scope.full_path)
 
         
 

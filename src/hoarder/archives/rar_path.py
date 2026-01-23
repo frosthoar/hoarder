@@ -1,3 +1,5 @@
+"""Utilities for parsing and handling RAR archive volume paths."""
+
 import collections.abc
 import enum
 import re
@@ -11,6 +13,8 @@ except ImportError:
 
 
 class RarScheme(enum.IntEnum):
+    """RAR volume naming scheme (e.g., .r00/.r01 vs .part1.rar/.part2.rar)."""
+
     AMBIGUOUS = 0
     DOT_RNN = 3  # not easily distinguishable from V4
     PART_N = 5
@@ -55,6 +59,8 @@ T = typing.TypeVar("T", bound="RarPath")
 
 
 class RarPath(typing.NamedTuple):
+    """Parsed RAR volume path with extracted scheme and volume index."""
+
     volume_index: int  # type: ignore[assignment]
     path: str
     stem: str
@@ -63,6 +69,7 @@ class RarPath(typing.NamedTuple):
 
     @classmethod
     def from_path(cls: type[T], path: Path | str) -> T:
+        """Parse a RAR volume path and extract its components."""
         p = Path(path)
 
         name = p.name
@@ -111,6 +118,7 @@ class RarPath(typing.NamedTuple):
 def parse_rar_list(
     paths: collections.abc.Sequence[str | Path],
 ) -> tuple[RarScheme, list[RarPath]]:
+    """Parse and validate a list of RAR volume paths."""
     if len(paths) == 0:
         # Since there is no non-indexed .rar, this must be interpreted as an "empty PART_N"
         return RarScheme.PART_N, []
@@ -169,6 +177,7 @@ def parse_rar_list(
 
 
 def rar_sort(rar_paths: typing.Sequence[str | Path]) -> tuple[RarScheme, list[str]]:
+    """Sort RAR volume paths by volume index."""
     scheme, parsed = parse_rar_list(rar_paths)
     return scheme, [rar_path.path for rar_path in sorted(parsed)]
 
@@ -176,6 +185,7 @@ def rar_sort(rar_paths: typing.Sequence[str | Path]) -> tuple[RarScheme, list[st
 def find_rar_files(
     directory: Path | str, seek_stem: str | None = None
 ) -> dict[str, tuple[RarScheme, list[Path]]]:
+    """Find and group RAR archives in a directory by stem."""
     directory = Path(directory)
     rar_dict: dict[str, list[Path]] = {}
     for path in directory.iterdir():
