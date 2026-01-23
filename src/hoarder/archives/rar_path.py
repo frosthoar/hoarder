@@ -92,7 +92,6 @@ class RARPath(typing.NamedTuple):
             suffix = match_part_n["suffix"]
             volume_index = int(match_part_n["volume_index"] or "-1")
             scheme = RarScheme.AMBIGUOUS
-
         else:
             raise RuntimeError()
 
