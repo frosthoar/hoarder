@@ -121,6 +121,10 @@ class HoarderRepository:
                 raise FileNotFoundError(
                     f"Storage path does not exist on disk: {resolved}"
                 )
+            if not resolved.is_dir():
+                raise NotADirectoryError(
+                    f"Storage path is not a directory: {resolved}"
+                )
             normalized_paths.add(resolved)
         if not normalized_paths:
             raise ValueError("At least one allowed storage path is required")
