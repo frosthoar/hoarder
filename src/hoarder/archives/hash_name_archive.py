@@ -87,6 +87,8 @@ class HashNameArchive(HashArchive):
         """
         full_path = storage_path / relative_path
         if not full_path.is_file():
+            if full_path.exists() and full_path.is_dir():
+                raise IsADirectoryError(f"{full_path} is a directory, not a file")
             raise FileNotFoundError(f"File not found: {full_path}")
         logger.debug("Reading %s", full_path)
         crc = None

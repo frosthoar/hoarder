@@ -103,6 +103,8 @@ class HashArchive(AnchoredPathMixin, abc.ABC):
             location: AnchoredPath with storage_path and relative_path
         """
         if not location.full_path.is_file():
+            if location.full_path.exists() and location.full_path.is_dir():
+                raise IsADirectoryError(f"{location.full_path} is a directory, not a file")
             raise FileNotFoundError(f"{location.full_path} does not exist")
 
         return cls._from_path(location.storage_path, location.relative_path, **kwargs)
