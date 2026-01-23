@@ -88,16 +88,17 @@ class RARPath(typing.NamedTuple):
             scheme = RarScheme.DOT_RNN
             stem = match_dot_rnn["stem"]
             suffix = match_dot_rnn["suffix"]
-            volume_index = int(get_match_fallback(match_dot_rnn, "volume_index", "-1"))
+            volume_index = int(match_dot_rnn["volume_index"] or "-1")
         elif match_dot_rnn is None and match_part_n is not None:
             scheme = RarScheme.PART_N
             stem = match_part_n["stem"]
             suffix = match_part_n["suffix"]
-            volume_index = int(get_match_fallback(match_part_n, "volume_index", "-1"))
+            volume_index = int(match_part_n["volume_index"] or "-1")
         elif match_dot_rnn is not None and match_part_n is not None:
+            # chosing match_dot_rnn or match_part_n does not change the extracted matches
             stem = match_part_n["stem"]
             suffix = match_part_n["suffix"]
-            volume_index = int(get_match_fallback(match_part_n, "volume_index", "-1"))
+            volume_index = int(match_part_n["volume_index"] or "-1")
             scheme = RarScheme.AMBIGUOUS
 
         else:
@@ -118,7 +119,7 @@ class RARPath(typing.NamedTuple):
 
 def parse_rar_list(
     paths: collections.abc.Sequence[str | Path],
-):  # -> //tuple[RarScheme, list[RARPath]]:
+) -> tuple[RarScheme, list[RARPath]]:
     if len(paths) == 0:
         # Since there is no non-indexed .rar, this must be interpreted as an "empty PART_N"
         return RarScheme.PART_N, []
@@ -130,8 +131,6 @@ def parse_rar_list(
 
     if scheme == RarScheme.AMBIGUOUS and len(parsed) > 1:
         scheme = RarScheme.PART_N
-
-    print("+++", parsed, scheme)
 
     for rp in parsed[1:]:
         if getattr(rp, "stem", None) != stem:
@@ -165,9 +164,6 @@ def parse_rar_list(
     expected = set(range(base, base + len(paths)))
     spurious = actual - expected
     if spurious:
-        print("actual", actual)
-        print("expected", expected)
-        print("paths", paths)
         raise ValueError(
             "The following indices are unexpected: "
             + ", ".join(str(i) for i in spurious)
