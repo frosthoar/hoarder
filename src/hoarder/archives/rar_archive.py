@@ -10,7 +10,7 @@ import typing
 
 from ..utils import SEVENZIP, AnchoredPath
 from .hash_archive import Algo, FileEntry, HashArchive, HashArchiveSelf
-from .rar_path import DOT_RNN_PAT, PART_N_PAT, RarScheme, find_rar_files, RarPath
+from .rar_path import DOT_RNN_PAT, PART_N_PAT, RarScheme, RarPath, RarArchiveSet
 
 try:
     from typing import override  # type: ignore [attr-defined]
@@ -94,7 +94,7 @@ class RarArchive(HashArchive):
             logger.debug(
                 "A directory %s was given, trying to find RAR files", full_path
             )
-            rar_dict: dict[str, tuple[RarScheme, list[pathlib.Path]]] = find_rar_files(
+            rar_dict: dict[str, tuple[RarScheme, list[pathlib.Path]]] = RarArchiveSet.find_rar_files(
                 full_path
             )
             if len(rar_dict) != 1:
@@ -133,13 +133,13 @@ class RarArchive(HashArchive):
                     seek_stem,
                     search_dir,
                 )
-                rar_dict = find_rar_files(search_dir, seek_stem)
+                rar_dict = RarArchiveSet.find_rar_files(search_dir, seek_stem)
                 if rar_dict:
                     logger.info(rar_dict)
                     scheme, rar_volumes = rar_dict[seek_stem]
                     n_volumes = len(rar_volumes)
                     logger.debug("Found %d volumes in %s", n_volumes, search_dir)
-                    main_volume = rar_dict[seek_stem][1][0]
+                    main_volume = pathlib.Path(rar_dict[seek_stem][1][0])
                     # Calculate relative path from storage_path
                     try:
                         main_volume_path = main_volume.relative_to(storage_path)
@@ -331,7 +331,6 @@ class RarArchive(HashArchive):
         rar_path_list: list[RarPath] = []
         if not scope.full_path.is_dir():
             raise NotADirectoryError(f'Given scope "{scope.full_path}" is a directory')
-        rp RarPath.from_path(scope.full_path)
+        return []
 
-        
 

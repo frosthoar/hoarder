@@ -1,6 +1,7 @@
 """Utilities for parsing and handling RAR archive volume paths."""
 
 import collections.abc
+import dataclasses
 import enum
 import re
 import typing
@@ -58,7 +59,8 @@ PART_N_PAT = re.compile(
 T = typing.TypeVar("T", bound="RarPath")
 
 
-class RarPath(typing.NamedTuple):
+@dataclasses.dataclass(frozen=True, order=True)
+class RarPath():
     """Parsed RAR volume path with extracted scheme and volume index."""
 
     volume_index: int  # type: ignore[assignment]
@@ -115,98 +117,102 @@ class RarPath(typing.NamedTuple):
         return self.path
 
 
-def parse_rar_list(
-    paths: collections.abc.Sequence[str | Path],
-) -> tuple[RarScheme, list[RarPath]]:
-    """Parse and validate a list of RAR volume paths."""
-    if len(paths) == 0:
-        # Since there is no non-indexed .rar, this must be interpreted as an "empty PART_N"
-        return RarScheme.PART_N, []
+@dataclasses.dataclass
+class RarArchiveSet:
+    stem: str
+    rar_scheme: RarScheme
+    volumes: list[RarPath]
 
-    parsed = [RarPath.from_path(p) for p in paths]
+    @classmethod
+    def parse_rar_list(
+        cls,
+        paths: collections.abc.Sequence[str | Path],
+    ) -> typing.Self:
+        """Parse and validate a list of RAR volume paths."""
+        if len(paths) == 0:
+            # Since there is no non-indexed .rar, this must be interpreted as an "empty PART_N"
+            return cls(stem="", rar_scheme=RarScheme.PART_N, volumes=[])
 
-    stem = parsed[0].stem
-    scheme: RarScheme = parsed[0].scheme
+        parsed = [RarPath.from_path(p) for p in paths]
 
-    if scheme == RarScheme.AMBIGUOUS and len(parsed) > 1:
-        scheme = RarScheme.PART_N
+        stem = parsed[0].stem
+        scheme: RarScheme = parsed[0].scheme
 
-    for rp in parsed[1:]:
-        if getattr(rp, "stem", None) != stem:
-            raise ValueError(f"{rp} has an inconsistent stem")
+        if scheme == RarScheme.AMBIGUOUS and len(parsed) > 1:
+            scheme = RarScheme.PART_N
 
-    actual = {match.volume_index for match in parsed}
+        for rp in parsed[1:]:
+            if getattr(rp, "stem", None) != stem:
+                raise ValueError(f"{rp} has an inconsistent stem")
 
-    match scheme:
-        case RarScheme.DOT_RNN:
-            base = -1
-        case RarScheme.PART_N:
-            base = 1
-        case RarScheme.AMBIGUOUS:
-            # It's only possible for this to be a valid PART_N if the only volume index is 1
-            if actual == {1}:
-                return scheme, parsed
-            scheme = RarScheme.DOT_RNN
-            base = -1
+        actual = {match.volume_index for match in parsed}
 
-            # This started as an ambiguous case where the volume index might have been part of a PART_N suffix.
-            # Since we've ruled that out, the actual volume index set is reinterpreted as the base only (-1).
-            actual = {-1}
+        match scheme:
+            case RarScheme.DOT_RNN:
+                base = -1
+            case RarScheme.PART_N:
+                base = 1
+            case RarScheme.AMBIGUOUS:
+                # It's only possible for this to be a valid PART_N if the only volume index is 1
+                if actual == {1}:
+                    return cls(stem=stem, rar_scheme=RarScheme.AMBIGUOUS, volumes=parsed)
+                scheme = RarScheme.DOT_RNN
+                base = -1
 
-    if scheme == RarScheme.DOT_RNN:
-        n_unnumbered = sum(1 for match in parsed if match.suffix == "rar")
-        if n_unnumbered != 1:
+                # This started as an ambiguous case where the volume index might have been part of a PART_N suffix.
+                # Since we've ruled that out, the actual volume index set is reinterpreted as the base only (-1).
+                actual = {-1}
+
+        if scheme == RarScheme.DOT_RNN:
+            n_unnumbered = sum(1 for match in parsed if match.suffix == "rar")
+            if n_unnumbered != 1:
+                raise ValueError(
+                    f"{n_unnumbered} paths have a non-indexed suffix; must be exactly one"
+                )
+
+        expected = set(range(base, base + len(paths)))
+        spurious = actual - expected
+        if spurious:
             raise ValueError(
-                f"{n_unnumbered} paths have a non-indexed suffix; must be exactly one"
+                "The following indices are unexpected: "
+                + ", ".join(str(i) for i in spurious)
+            )
+        missing = expected - actual
+        if missing:
+            raise ValueError(
+                "The following indices are missing: " + ", ".join(str(i) for i in missing)
             )
 
-    expected = set(range(base, base + len(paths)))
-    spurious = actual - expected
-    if spurious:
-        raise ValueError(
-            "The following indices are unexpected: "
-            + ", ".join(str(i) for i in spurious)
-        )
-    missing = expected - actual
-    if missing:
-        raise ValueError(
-            "The following indices are missing: " + ", ".join(str(i) for i in missing)
-        )
+        return cls(stem=stem, rar_scheme=scheme, volumes=parsed)
 
-    return scheme, parsed
-
-
-def rar_sort(rar_paths: typing.Sequence[str | Path]) -> tuple[RarScheme, list[str]]:
-    """Sort RAR volume paths by volume index."""
-    scheme, parsed = parse_rar_list(rar_paths)
-    return scheme, [rar_path.path for rar_path in sorted(parsed)]
-
-
-def find_rar_files(
-    directory: Path | str, seek_stem: str | None = None
-) -> dict[str, tuple[RarScheme, list[Path]]]:
-    """Find and group RAR archives in a directory by stem."""
-    directory = Path(directory)
-    rar_dict: dict[str, list[Path]] = {}
-    for path in directory.iterdir():
-        if match := PART_N_PAT.match(str(path.name)):
-            stem = str(Path(match["stem"]))
-            if seek_stem and stem != seek_stem:
-                continue
-            if rar_dict.get(stem):
-                rar_dict[stem].append(path)
-            else:
-                rar_dict[stem] = [path]
-        elif match := DOT_RNN_PAT.match(str(path.name)):
-            if seek_stem and seek_stem != match["stem"]:
-                continue
-            stem = str(Path(match["stem"]))
-            if rar_dict.get(stem):
-                rar_dict[stem].append(path)
-            else:
-                rar_dict[stem] = [path]
-    ret_dict = {}
-    for k, v in rar_dict.items():
-        scheme, rar_volumes = rar_sort(v)
-        ret_dict[k] = (scheme, [Path(p) for p in rar_volumes])
-    return ret_dict
+    
+    @classmethod
+    def find_rar_files(
+        cls, directory: Path | str, seek_stem: str | None = None
+    ) -> dict[str, tuple[RarScheme, list[Path]]]:
+        """Find and group RAR archives in a directory by stem."""
+        directory = Path(directory)
+        rar_dict: dict[str, list[Path]] = {}
+        for path in directory.iterdir():
+            if match := PART_N_PAT.match(str(path.name)):
+                stem = str(Path(match["stem"]))
+                if seek_stem and stem != seek_stem:
+                    continue
+                if rar_dict.get(stem):
+                    rar_dict[stem].append(path)
+                else:
+                    rar_dict[stem] = [path]
+            elif match := DOT_RNN_PAT.match(str(path.name)):
+                if seek_stem and seek_stem != match["stem"]:
+                    continue
+                stem = str(Path(match["stem"]))
+                if rar_dict.get(stem):
+                    rar_dict[stem].append(path)
+                else:
+                    rar_dict[stem] = [path]
+        ret_dict = {}
+        for k, v in rar_dict.items():
+            rar_volume_set = cls.parse_rar_list(v)
+            sorted_paths = [el.path for el in sorted(rar_volume_set.volumes)]
+            ret_dict[k] = (rar_volume_set.rar_scheme, sorted_paths)
+        return ret_dict
