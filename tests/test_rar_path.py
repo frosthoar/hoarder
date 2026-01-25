@@ -4,27 +4,27 @@ from hoarder.archives.rar_path import RarArchiveSet
 
 def test_parse() -> None:
     assert (
-        RarArchiveSet.parse_rar_list(("a.part1.rar", "a.part2.rar")).rar_scheme == RarScheme.PART_N
+        RarArchiveSet.parse_rar_list(("a.part1.rar", "a.part2.rar")).scheme == RarScheme.PART_N
     ), "Simple PART_N"
 
     assert (
-        RarArchiveSet.parse_rar_list(("a.rar", "a.r00", "a.r01")).rar_scheme == RarScheme.DOT_RNN
+        RarArchiveSet.parse_rar_list(("a.rar", "a.r00", "a.r01")).scheme == RarScheme.DOT_RNN
     ), "Simple DOT_RNN"
 
     assert (
-        RarArchiveSet.parse_rar_list(("a.rar",)).rar_scheme == RarScheme.DOT_RNN
+        RarArchiveSet.parse_rar_list(("a.rar",)).scheme == RarScheme.DOT_RNN
     ), "Almost ambiguous but cannot be PART_N"
 
     assert (
-        RarArchiveSet.parse_rar_list(("a.part1.rar",)).rar_scheme == RarScheme.AMBIGUOUS
+        RarArchiveSet.parse_rar_list(("a.part1.rar",)).scheme == RarScheme.AMBIGUOUS
     ), "Actually ambiguous even though it is likely PART_N"
 
     assert (
-        RarArchiveSet.parse_rar_list(("a.part2.rar",)).rar_scheme == RarScheme.DOT_RNN
+        RarArchiveSet.parse_rar_list(("a.part2.rar",)).scheme == RarScheme.DOT_RNN
     ), "Invalid index forces this to be interpreted as DOT_RNN"
 
     assert (
-        RarArchiveSet.parse_rar_list(()).rar_scheme == RarScheme.PART_N
+        RarArchiveSet.parse_rar_list(()).scheme == RarScheme.PART_N
     ), "Empty input is only interpretable as a PART_N"
 
     try:

@@ -100,7 +100,7 @@ class RarArchive(HashArchive):
                     f"Directory {full_path} contains multiple non-indexed RAR files"
                 )
             _, archive_set = rar_dict.popitem()
-            scheme = archive_set.rar_scheme
+            scheme = archive_set.scheme
             n_volumes = len(archive_set.volumes)
             main_volume = archive_set.sorted_volume_paths[0]
             # Calculate relative path from storage_path
@@ -136,7 +136,7 @@ class RarArchive(HashArchive):
                 if rar_dict:
                     logger.info(rar_dict)
                     archive_set = rar_dict[seek_stem]
-                    scheme = archive_set.rar_scheme
+                    scheme = archive_set.scheme
                     n_volumes = len(archive_set.volumes)
                     logger.debug("Found %d volumes in %s", n_volumes, search_dir)
                     main_volume = pathlib.Path(archive_set.sorted_volume_paths[0])
