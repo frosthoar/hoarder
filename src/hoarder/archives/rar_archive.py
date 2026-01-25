@@ -94,16 +94,15 @@ class RarArchive(HashArchive):
             logger.debug(
                 "A directory %s was given, trying to find RAR files", full_path
             )
-            rar_dict: dict[str, tuple[RarScheme, list[pathlib.Path]]] = RarArchiveSet.find_rar_files(
-                full_path
-            )
+            rar_dict = RarArchiveSet.find_rar_files(full_path)
             if len(rar_dict) != 1:
                 raise ValueError(
                     f"Directory {full_path} contains multiple non-indexed RAR files"
                 )
-            _, (scheme, rar_volumes) = rar_dict.popitem()
-            n_volumes = len(rar_volumes)
-            main_volume = rar_volumes[0]
+            _, archive_set = rar_dict.popitem()
+            scheme = archive_set.rar_scheme
+            n_volumes = len(archive_set.volumes)
+            main_volume = archive_set.sorted_volume_paths[0]
             # Calculate relative path from storage_path
             try:
                 main_volume_path = main_volume.relative_to(storage_path)
@@ -136,10 +135,11 @@ class RarArchive(HashArchive):
                 rar_dict = RarArchiveSet.find_rar_files(search_dir, seek_stem)
                 if rar_dict:
                     logger.info(rar_dict)
-                    scheme, rar_volumes = rar_dict[seek_stem]
-                    n_volumes = len(rar_volumes)
+                    archive_set = rar_dict[seek_stem]
+                    scheme = archive_set.rar_scheme
+                    n_volumes = len(archive_set.volumes)
                     logger.debug("Found %d volumes in %s", n_volumes, search_dir)
-                    main_volume = pathlib.Path(rar_dict[seek_stem][1][0])
+                    main_volume = pathlib.Path(archive_set.sorted_volume_paths[0])
                     # Calculate relative path from storage_path
                     try:
                         main_volume_path = main_volume.relative_to(storage_path)

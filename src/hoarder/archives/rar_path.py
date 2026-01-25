@@ -123,6 +123,11 @@ class RarArchiveSet:
     rar_scheme: RarScheme
     volumes: list[RarPath]
 
+    @property
+    def sorted_volume_paths(self) -> list[str]:
+        """Return volume paths sorted by volume index."""
+        return [rp.path for rp in sorted(self.volumes)]
+
     @classmethod
     def parse_rar_list(
         cls,
@@ -189,7 +194,7 @@ class RarArchiveSet:
     @classmethod
     def find_rar_files(
         cls, directory: Path | str, seek_stem: str | None = None
-    ) -> dict[str, tuple[RarScheme, list[Path]]]:
+    ) -> dict[str, typing.Self]:
         """Find and group RAR archives in a directory by stem."""
         directory = Path(directory)
         rar_dict: dict[str, list[Path]] = {}
@@ -210,9 +215,4 @@ class RarArchiveSet:
                     rar_dict[stem].append(path)
                 else:
                     rar_dict[stem] = [path]
-        ret_dict = {}
-        for k, v in rar_dict.items():
-            rar_volume_set = cls.parse_rar_list(v)
-            sorted_paths = [el.path for el in sorted(rar_volume_set.volumes)]
-            ret_dict[k] = (rar_volume_set.rar_scheme, sorted_paths)
-        return ret_dict
+        return {stem: cls.parse_rar_list(paths) for stem, paths in rar_dict.items()}
