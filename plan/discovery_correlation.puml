@@ -1,0 +1,212 @@
+@startuml Discovery and Correlation Architecture
+
+skinparam backgroundColor #FEFEFE
+skinparam shadowing false
+skinparam defaultFontName Monospaced
+skinparam classAttributeIconSize 0
+skinparam classFontStyle bold
+
+skinparam class {
+    BackgroundColor #E8F4FD
+    BorderColor #2E86AB
+    ArrowColor #2E86AB
+}
+
+skinparam package {
+    BackgroundColor #F8F9FA
+    BorderColor #6C757D
+}
+
+skinparam note {
+    BackgroundColor #FFF3CD
+    BorderColor #856404
+}
+
+title Discovery and Correlation Architecture\n(ScanTarget Scoped Processing)
+
+package "Utils" #F0F0F0 {
+    class AnchoredPathMixin <<mixin>> {
+        +storage_path: Path {type hint}
+        +relative_path: PurePath {type hint}
+        --
+        +full_path: Path {property}
+    }
+
+    class AnchoredPath {
+        +storage_path: Path
+        +relative_path: PurePath
+    }
+
+    note right of AnchoredPathMixin
+        Mixin providing full_path property.
+        Works with regular classes and dataclasses.
+        Subclass defines the actual fields.
+    end note
+
+    note right of AnchoredPath
+        Concrete dataclass for direct use.
+    end note
+
+    AnchoredPathMixin <|-- AnchoredPath
+}
+
+package "Scan Target" #E0F0E0 {
+    class DiscoveryConfig {
+        +search_parent: bool = True
+        +additional_paths: list[AnchoredPath]
+    }
+
+    class ScanTarget <<dataclass>> {
+        +storage_path: Path
+        +relative_path: PurePath
+        +config: DiscoveryConfig
+        --
+        +get_archive_search_paths(): list[AnchoredPath]
+        +get_file_search_paths(): list[AnchoredPath]
+    }
+
+    ScanTarget *-- DiscoveryConfig
+}
+
+AnchoredPathMixin <|-- ScanTarget
+
+package "Archive Hierarchy" #E8F4FD {
+    abstract class HashArchive {
+        +storage_path: Path
+        +relative_path: PurePath
+        +files: set[FileEntry]
+        {static} +DELETABLE: bool = True
+        --
+        {static} +from_path(location: AnchoredPath): Self
+        {abstract} {static} +discover(scope: AnchoredPath): list[Self]
+    }
+    note left of HashArchive
+        Regular class (not dataclass).
+        Inherits full_path from mixin
+        (same name, no code change needed).
+        from_path refactored to use AnchoredPath.
+    end note
+
+    class SfvArchive {
+        {static} +discover(scope: AnchoredPath): list[SfvArchive]
+        --
+        Glob: *.sfv
+    }
+
+    class RarArchive {
+        +password: str | None
+        +scheme: RarScheme
+        +version: str
+        +n_volumes: int
+        --
+        {static} +discover(scope: AnchoredPath): list[RarArchive]
+        --
+        Uses find_rar_files()
+        Returns first volume only
+    }
+
+    class HashNameArchive {
+        +hash_enclosure: HashEnclosure
+        {static} +DELETABLE: bool = False
+        --
+        {static} +discover(scope: AnchoredPath): list[HashNameArchive]
+        --
+        Regex: [hash] or (hash)
+    }
+
+    HashArchive <|-- SfvArchive
+    HashArchive <|-- RarArchive
+    HashArchive <|-- HashNameArchive
+}
+
+package "Discovery Phase" #D4EDDA {
+    class "discover_real_files()" as DiscoverFiles <<function>> {
+        scopes: list[AnchoredPath]
+        exclude: set[Path]
+        --
+        Returns: list[RealFile]
+        --
+        Recursive scan within scopes
+        Excludes archive volumes
+    }
+
+    class "collect_archive_paths()" as CollectPaths <<function>> {
+        archives: list[HashArchive]
+        --
+        Returns: set[Path]
+        --
+        Gathers all volume paths
+        for exclusion set
+    }
+}
+
+package "Correlation Phase" #FFF3CD {
+    class "correlate_archives()" as CorrelateArchives <<function>> {
+        archives: list[HashArchive]
+        real_files: list[RealFile]
+        unit: ScanTarget
+        --
+        Returns: list[HashArchive]
+        --
+        Filters archives to those
+        with matching file paths
+    }
+
+    class "correlate_files_to_entries()" as CorrelateFiles <<function>> {
+        real_files: list[RealFile]
+        archives: list[HashArchive]
+        --
+        Returns: dict[RealFile, list[FileEntry]]
+        --
+        Matches by relative_path
+        Multiple entries possible
+        (same file in multiple archives)
+    }
+}
+
+package "Domain Objects" #F0E8F0 {
+    class FileEntry {
+        +path: PurePath
+        +size: int | None
+        +hash_value: bytes | None
+        +algo: Algo | None
+    }
+
+    class RealFile <<dataclass>> {
+        +storage_path: Path
+        +relative_path: PurePath
+        +size: int
+        +verification: list[Verification]
+    }
+    note right of RealFile
+        Dataclass with slots=True.
+        Inherits full_path from mixin
+        (same name, no code change needed).
+    end note
+
+    class Verification {
+        +source: VerificationSource
+        +hash_value: bytes
+        +algo: Algo
+        +verified: bool
+    }
+
+    HashArchive "1" *-- "*" FileEntry : contains
+    RealFile "1" *-- "*" Verification : has
+}
+
+AnchoredPathMixin <|-- HashArchive
+AnchoredPathMixin <|-- RealFile
+
+' Relationships
+ScanTarget ..> HashArchive : "get_archive_search_paths()\n-> discover()"
+ScanTarget ..> DiscoverFiles : "get_file_search_paths()"
+HashArchive ..> CollectPaths : volumes
+CollectPaths ..> DiscoverFiles : exclude set
+DiscoverFiles ..> RealFile : creates
+CorrelateArchives ..> HashArchive : filters
+CorrelateArchives ..> RealFile : matches against
+CorrelateFiles ..> FileEntry : maps to
+CorrelateFiles ..> RealFile : from
+
+@enduml
