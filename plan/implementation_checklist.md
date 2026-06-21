@@ -22,10 +22,10 @@ The goal is to map each “box/arrow” from the diagrams to concrete code artif
 
 ## A) Path-in-storage foundation (AnchoredPath*)
 
-- [x] `AnchoredPathMixin` exists and provides `full_path`
-  - **Code**: `src/hoarder/utils/path_utils.py` (`AnchoredPathMixin.full_path`)
-- [x] `AnchoredPath` dataclass exists with containment validation
-  - **Code**: `src/hoarder/utils/path_utils.py` (`AnchoredPath.__post_init__`)
+- [ ] `AnchoredPathMixin` exists and provides `full_path`
+  - **Target**: `src/hoarder/utils/path_utils.py` (`AnchoredPathMixin.full_path`)
+- [ ] `AnchoredPath` dataclass exists with containment validation
+  - **Target**: `src/hoarder/utils/path_utils.py` (`AnchoredPath.__post_init__`)
 
 ---
 

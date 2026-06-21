@@ -27,14 +27,14 @@ title Discovery and Correlation Architecture\n(ScanTarget Scoped Processing)
 package "Utils" #F0F0F0 {
     class AnchoredPathMixin <<mixin>> {
         +storage_path: Path {type hint}
-        +relative_path: PurePath {type hint}
+        +path: PurePath {type hint}
         --
         +full_path: Path {property}
     }
 
     class AnchoredPath {
         +storage_path: Path
-        +relative_path: PurePath
+        +path: PurePath
     }
 
     note right of AnchoredPathMixin
@@ -58,7 +58,7 @@ package "Scan Target" #E0F0E0 {
 
     class ScanTarget <<dataclass>> {
         +storage_path: Path
-        +relative_path: PurePath
+        +path: PurePath
         +config: DiscoveryConfig
         --
         +get_archive_search_paths(): list[AnchoredPath]
@@ -73,7 +73,7 @@ AnchoredPathMixin <|-- ScanTarget
 package "Archive Hierarchy" #E8F4FD {
     abstract class HashArchive {
         +storage_path: Path
-        +relative_path: PurePath
+        +path: PurePath
         +files: set[FileEntry]
         {static} +DELETABLE: bool = True
         --
@@ -158,7 +158,7 @@ package "Correlation Phase" #FFF3CD {
         --
         Returns: dict[RealFile, list[FileEntry]]
         --
-        Matches by relative_path
+        Matches by path
         Multiple entries possible
         (same file in multiple archives)
     }
@@ -174,7 +174,7 @@ package "Domain Objects" #F0E8F0 {
 
     class RealFile <<dataclass>> {
         +storage_path: Path
-        +relative_path: PurePath
+        +path: PurePath
         +size: int
         +verification: list[Verification]
     }
