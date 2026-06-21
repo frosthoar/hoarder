@@ -184,7 +184,10 @@ def correlate_archives(
     real_paths = {rf.path for rf in real_files}
     relevant = []
     for archive in archives:
-        archive_paths = {fe.path for fe in archive.files}
+        # FileEntry.path is relative to the archive file itself (bare filename
+        # from SFV, etc.), so resolve it to storage_path-relative before
+        # comparing against RealFile.path which is already storage_path-relative.
+        archive_paths = {archive.path.parent / fe.path for fe in archive.files}
         if archive_paths & real_paths:  # has intersection
             relevant.append(archive)
     return relevant
@@ -194,11 +197,12 @@ def correlate_files_to_entries(
     archives: list[HashArchive]
 ) -> dict[RealFile, list[FileEntry]]:
     """Match real files to their corresponding FileEntry records."""
-    # Build lookup: path -> list of FileEntry
+    # Build lookup: storage_path-relative path -> list of FileEntry
     path_to_entries: dict[PurePath, list[FileEntry]] = defaultdict(list)
     for archive in archives:
         for entry in archive.files:
-            path_to_entries[entry.path].append(entry)
+            resolved = archive.path.parent / entry.path
+            path_to_entries[resolved].append(entry)
 
     # Match real files
     matches = {}
