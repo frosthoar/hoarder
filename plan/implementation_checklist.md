@@ -8,13 +8,13 @@ This checklist is derived from:
 - `discovery_correlation_plan.txt`
 - `pipeline_implementation_order.txt`
 
-The goal is to map each “box/arrow” from the diagrams to concrete code artifacts in this repo, and mark what is already implemented vs still missing.
+The goal is to map each “box/arrow” from the diagrams to concrete code artifacts in this repository, and mark what is already implemented vs still missing.
 
 ---
 
 ## Legend
 
-- [x] implemented (exists in repo and roughly matches intent)
+- [x] implemented (exists in repository and roughly matches intent)
 - [~] partially implemented (core exists, but diagram-required API/behavior is missing or mismatched)
 - [ ] not implemented
 
@@ -53,7 +53,7 @@ The goal is to map each “box/arrow” from the diagrams to concrete code artif
     - parsing via `_from_path(...)` (handles file/dir input)
       - **Code**: `src/hoarder/archives/rar_archive.py` (`RarArchive._from_path`)
     - RAR set detection helper
-      - **Code**: `src/hoarder/archives/rar_path.py` (`find_rar_files`, `RarScheme`, regex)
+      - **Code**: `src/hoarder/archives/rar_path.py` (`find_rar_files`, `RarScheme`, regular expression)
     - volume list + file extraction
       - **Code**: `src/hoarder/archives/rar_archive.py` (`get_volumes`, `read_file`)
   - **Missing**:

@@ -260,7 +260,7 @@ def process_target(target: ScanTarget) -> ProcessingResult:
 
 New files to create:
 
-```
+```text
 src/hoarder/phases/
 ├── scan_target.py          # ScanTarget, DiscoveryConfig
 ├── discovery.py            # discover_real_files(), collect_archive_paths()
