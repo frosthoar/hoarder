@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<h1>Discovery and Correlation Plan</h1>
+<h2>Overview</h2>
+<p>The pipeline processes scan targets sequentially. Archive discovery must be
+scoped to each scan target, not the entire storage path. Archives may be
+located inside the target, beside it, or the target itself may be an archive.</p>
+<p>A <code>ScanTarget</code> is the input/work item for the pipeline (path-based), while
+<code>Download</code> is the output/domain entity (title-based, persisted).</p>
+<h2>Separation of Concerns</h2>
+<table>
+<thead>
+<tr>
+<th>Concern</th>
+<th>Responsibility</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>WHAT to find</td>
+<td>Archive class (discover method)</td>
+</tr>
+<tr>
+<td>WHERE to search</td>
+<td>ScanTarget / config</td>
+</tr>
+<tr>
+<td>WHICH are relevant</td>
+<td>Correlation phase</td>
+</tr>
+</tbody>
+</table>
+<h2>Component Design</h2>
+<h3>0. AnchoredPathMixin and AnchoredPath (path-in-storage pattern)</h3>
+<ul>
+<li>Mixin provides the <code>full_path</code> property</li>
+<li>Works with both regular classes and dataclasses</li>
+<li>Concrete <code>AnchoredPath</code> class for direct use</li>
+<li>Located in <code>src/hoarder/utils/path_utils.py</code></li>
+</ul>
+<pre><code class="language-python">class AnchoredPathMixin:
+    &quot;&quot;&quot;Mixin providing full_path for classes with storage_path and path.&quot;&quot;&quot;
+    storage_path: Path      # type hint only, subclass defines field
+    path: PurePath          # type hint only, subclass defines field
+
+    @property
+    def full_path(self) -&gt; Path:
+        &quot;&quot;&quot;Resolve to concrete path for filesystem I/O.&quot;&quot;&quot;
+        return self.storage_path / self.path
+
+@dataclass
+class AnchoredPath(AnchoredPathMixin):
+    &quot;&quot;&quot;Concrete class for direct use.&quot;&quot;&quot;
+    storage_path: Path
+    path: PurePath
+</code></pre>
+<p>Used as mixin by:</p>
+<ul>
+<li><code>HashArchive</code> (existing, regular class - to be refactored)</li>
+<li><code>RealFile</code> (existing, dataclass - to be refactored)</li>
+<li><code>ScanTarget</code> (new, dataclass)</li>
+</ul>
+<blockquote>
+<p>Note: Existing <code>full_path</code> properties will be inherited from mixin (no code change needed).</p>
+</blockquote>
+<h3>1. Archive Discovery (classmethod on each archive type)</h3>
+<ul>
+<li>Receives <code>AnchoredPath</code> scope for consistent API</li>
+<li>No knowledge of scan targets</li>
+<li>Non-recursive by default</li>
+</ul>
+<pre><code class="language-python">class HashArchive(AnchoredPathMixin, ABC):
+    @classmethod
+    def from_path(cls, location: AnchoredPath, **kwargs) -&gt; Self:
+        &quot;&quot;&quot;Create archive from location. Refactored to use AnchoredPath.&quot;&quot;&quot;
+        ...
+
+    @classmethod
+    @abstractmethod
+    def discover(cls, scope: AnchoredPath) -&gt; list[Self]:
+        &quot;&quot;&quot;Find archives of this type within scope.&quot;&quot;&quot;
+        ...
+
+class SfvArchive(HashArchive):
+    @classmethod
+    def discover(cls, scope: AnchoredPath) -&gt; list[SfvArchive]:
+        search_path = scope.full_path
+        if search_path.is_file():
+            if search_path.suffix.lower() == &quot;.sfv&quot;:
+                return [cls.from_path(scope)]
+            return []
+        results = []
+        for p in search_path.glob(&quot;*.sfv&quot;):
+            relative = p.relative_to(scope.storage_path)
+            results.append(cls.from_path(AnchoredPath(scope.storage_path, relative)))
+        return results
+
+class RarArchive(HashArchive):
+    @classmethod
+    def discover(cls, scope: AnchoredPath) -&gt; list[RarArchive]:
+        search_path = scope.full_path
+        # Uses existing find_rar_files() logic from rar_path.py
+        rar_sets = find_rar_files(search_path)
+        results = []
+        for first_vol in rar_sets:
+            relative = first_vol.relative_to(scope.storage_path)
+            results.append(cls.from_path(AnchoredPath(scope.storage_path, relative)))
+        return results
+
+class HashNameArchive(HashArchive):
+    @classmethod
+    def discover(cls, scope: AnchoredPath) -&gt; list[HashNameArchive]:
+        search_path = scope.full_path
+        results = []
+        candidates = [search_path] if search_path.is_file() else search_path.iterdir()
+        for p in candidates:
+            if p.is_file() and cls._matches_hash_pattern(p.name):
+                relative = p.relative_to(scope.storage_path)
+                results.append(cls.from_path(AnchoredPath(scope.storage_path, relative)))
+        return results
+</code></pre>
+<h3>2. ScanTarget (determines search scope)</h3>
+<ul>
+<li>Represents a single unit to process (file or directory)</li>
+<li>Inherits from <code>AnchoredPathMixin</code> (gets <code>full_path</code> property)</li>
+<li>Returns <code>AnchoredPath</code> from search methods for consistent API</li>
+<li>Provides configurable search paths for archive discovery</li>
+</ul>
+<pre><code class="language-python">@dataclass
+class DiscoveryConfig:
+    search_parent: bool = True          # look in parent directory
+    additional_paths: list[AnchoredPath] = field(default_factory=list)
+
+@dataclass
+class ScanTarget(AnchoredPathMixin):
+    storage_path: Path
+    path: PurePath
+    config: DiscoveryConfig = field(default_factory=DiscoveryConfig)
+
+    def get_archive_search_paths(self) -&gt; list[AnchoredPath]:
+        &quot;&quot;&quot;Where to look for archives related to this unit.&quot;&quot;&quot;
+        paths = [AnchoredPath(self.storage_path, self.path)]
+        if self.config.search_parent and self.path != PurePath(&quot;.&quot;):
+            paths.append(AnchoredPath(self.storage_path, self.path.parent))
+        paths.extend(self.config.additional_paths)
+        return paths
+
+    def get_file_search_paths(self) -&gt; list[AnchoredPath]:
+        &quot;&quot;&quot;Where to look for real files belonging to this unit.&quot;&quot;&quot;
+        return [AnchoredPath(self.storage_path, self.path)]
+</code></pre>
+<h3>3. Real File Discovery (simple function)</h3>
+<ul>
+<li>Receives <code>AnchoredPath</code> scopes for consistent API</li>
+<li>Excludes known archive files</li>
+</ul>
+<pre><code class="language-python">def discover_real_files(
+    scopes: list[AnchoredPath],
+    exclude: set[Path] | None = None
+) -&gt; list[RealFile]:
+    &quot;&quot;&quot;Scan for real files, excluding archive paths.&quot;&quot;&quot;
+    exclude = exclude or set()
+    results = []
+    for scope in scopes:
+        search_path = scope.full_path
+        if search_path.is_file():
+            if search_path not in exclude:
+                results.append(RealFile.from_path(scope))
+        else:
+            for p in search_path.rglob(&quot;*&quot;):
+                if p.is_file() and p not in exclude:
+                    relative = p.relative_to(scope.storage_path)
+                    results.append(RealFile.from_path(
+                        AnchoredPath(scope.storage_path, relative)
+                    ))
+    return results
+</code></pre>
+<h3>4. Correlation (filters archives to relevant ones)</h3>
+<ul>
+<li>Matches archives to real files by path</li>
+<li>Creates verification links</li>
+</ul>
+<pre><code class="language-python">def correlate_archives(
+    archives: list[HashArchive],
+    real_files: list[RealFile],
+    unit: ScanTarget
+) -&gt; list[HashArchive]:
+    &quot;&quot;&quot;Filter archives to those relevant to this unit's files.&quot;&quot;&quot;
+    real_paths = {rf.path for rf in real_files}
+    relevant = []
+    for archive in archives:
+        archive_paths = {fe.path for fe in archive.files}
+        if archive_paths &amp; real_paths:  # has intersection
+            relevant.append(archive)
+    return relevant
+
+def correlate_files_to_entries(
+    real_files: list[RealFile],
+    archives: list[HashArchive]
+) -&gt; dict[RealFile, list[FileEntry]]:
+    &quot;&quot;&quot;Match real files to their corresponding FileEntry records.&quot;&quot;&quot;
+    # Build lookup: path -&gt; list of FileEntry
+    path_to_entries: dict[PurePath, list[FileEntry]] = defaultdict(list)
+    for archive in archives:
+        for entry in archive.files:
+            path_to_entries[entry.path].append(entry)
+
+    # Match real files
+    matches = {}
+    for rf in real_files:
+        if rf.path in path_to_entries:
+            matches[rf] = path_to_entries[rf.path]
+    return matches
+</code></pre>
+<h3>5. Orchestrator Integration</h3>
+<ul>
+<li>Coordinates discovery and correlation per scan target</li>
+<li>All methods use <code>AnchoredPath</code> for consistent API</li>
+</ul>
+<pre><code class="language-python">ARCHIVE_TYPES: list[type[HashArchive]] = [SfvArchive, RarArchive, HashNameArchive]
+
+def process_target(target: ScanTarget) -&gt; ProcessingResult:
+    # 1. Discover archives from all search scopes
+    archives: list[HashArchive] = []
+    for scope in target.get_archive_search_paths():
+        for archive_cls in ARCHIVE_TYPES:
+            archives.extend(archive_cls.discover(scope))
+
+    # 2. Discover real files
+    archive_volume_paths = collect_archive_paths(archives)
+    real_files = discover_real_files(
+        target.get_file_search_paths(),
+        exclude=archive_volume_paths
+    )
+
+    # 3. Correlate - filter to relevant archives
+    relevant_archives = correlate_archives(archives, real_files, target)
+
+    # 4. Match files to entries
+    file_matches = correlate_files_to_entries(real_files, relevant_archives)
+
+    # Continue to verification phase...
+    return ProcessingResult(
+        target=target,
+        archives=relevant_archives,
+        real_files=real_files,
+        matches=file_matches
+    )
+</code></pre>
+<h2>Edge Cases Handled</h2>
+<table>
+<thead>
+<tr>
+<th>Scenario</th>
+<th>Unit Path</th>
+<th>Search Paths</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Dir with internal SFV</td>
+<td><code>downloads/Movie/</code></td>
+<td><code>[Movie/, downloads/]</code></td>
+<td>Finds <code>Movie/*.sfv</code></td>
+</tr>
+<tr>
+<td>SFV beside directory</td>
+<td><code>downloads/Movie/</code></td>
+<td><code>[Movie/, downloads/]</code></td>
+<td>Finds <code>downloads/Movie.sfv</code></td>
+</tr>
+<tr>
+<td>HashName file</td>
+<td><code>downloads/file[ABC].mkv</code></td>
+<td><code>[downloads/]</code></td>
+<td><code>HashNameArchive</code> matches it</td>
+</tr>
+<tr>
+<td>RAR set in directory</td>
+<td><code>downloads/Movie/</code></td>
+<td><code>[Movie/, downloads/]</code></td>
+<td>Finds first volume only</td>
+</tr>
+<tr>
+<td>Parent-level SFV</td>
+<td><code>downloads/Movie/</code></td>
+<td><code>[Movie/, downloads/]</code></td>
+<td>Finds <code>downloads/release.sfv</code></td>
+</tr>
+<tr>
+<td>Unit is single file</td>
+<td><code>downloads/video.mkv</code></td>
+<td><code>[downloads/]</code></td>
+<td>Scans parent for archives</td>
+</tr>
+</tbody>
+</table>
+<h2>File Locations</h2>
+<p>New files to create:</p>
+<pre><code>src/hoarder/phases/
+├── scan_target.py          # ScanTarget, DiscoveryConfig
+├── discovery.py            # discover_real_files(), collect_archive_paths()
+└── correlator.py           # correlate_archives(), correlate_files_to_entries()
+</code></pre>
+<p>Modifications to existing files:</p>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Change</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>src/hoarder/utils/path_utils.py</code></td>
+<td>Add <code>AnchoredPathMixin</code> and <code>AnchoredPath</code></td>
+</tr>
+<tr>
+<td><code>src/hoarder/archives/hash_archive.py</code></td>
+<td>Inherit from <code>AnchoredPathMixin</code>, add <code>discover()</code></td>
+</tr>
+<tr>
+<td><code>src/hoarder/archives/sfv_archive.py</code></td>
+<td>Implement <code>discover()</code></td>
+</tr>
+<tr>
+<td><code>src/hoarder/archives/rar_archive.py</code></td>
+<td>Implement <code>discover()</code></td>
+</tr>
+<tr>
+<td><code>src/hoarder/archives/hash_name_archive.py</code></td>
+<td>Implement <code>discover()</code></td>
+</tr>
+<tr>
+<td><code>src/hoarder/downloads/real_file.py</code></td>
+<td>Inherit from <code>AnchoredPathMixin</code>, remove <code>full_path</code></td>
+</tr>
+</tbody>
+</table>

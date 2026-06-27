@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<h1>Hoarder PUML Implementation Checklist</h1>
+<p>This checklist is derived from:</p>
+<ul>
+<li><code>discovery_correlation.puml</code></li>
+<li><code>discovery_correlation_sequence.puml</code></li>
+<li><code>pipeline_execution_flow.puml</code></li>
+<li><code>discovery_correlation_plan.txt</code></li>
+<li><code>pipeline_implementation_order.txt</code></li>
+</ul>
+<p>The goal is to map each “box/arrow” from the diagrams to concrete code artifacts in this repo, and mark what is already implemented vs still missing.</p>
+<hr>
+<h2>Legend</h2>
+<ul>
+<li>[x] implemented (exists in repo and roughly matches intent)</li>
+<li>[~] partially implemented (core exists, but diagram-required API/behavior is missing or mismatched)</li>
+<li>[ ] not implemented</li>
+</ul>
+<hr>
+<h2>A) Path-in-storage foundation (AnchoredPath*)</h2>
+<ul>
+<li>[x] <code>AnchoredPathMixin</code> exists and provides <code>full_path</code><ul>
+<li><strong>Code</strong>: <code>src/hoarder/utils/path_utils.py</code> (<code>AnchoredPathMixin.full_path</code>)</li>
+</ul>
+</li>
+<li>[x] <code>AnchoredPath</code> dataclass exists with containment validation<ul>
+<li><strong>Code</strong>: <code>src/hoarder/utils/path_utils.py</code> (<code>AnchoredPath.__post_init__</code>)</li>
+</ul>
+</li>
+</ul>
+<hr>
+<h2>B) Domain objects from “Discovery and Correlation Architecture”</h2>
+<h3>B1) FileEntry / HashArchive hierarchy</h3>
+<ul>
+<li>[x] <code>FileEntry</code> domain model (path, size, hash, algo)<ul>
+<li><strong>Code</strong>: <code>src/hoarder/archives/hash_archive.py</code> (<code>FileEntry</code>, <code>Algo</code>)</li>
+</ul>
+</li>
+<li>[~] <code>HashArchive</code> is anchored and has <code>from_path(AnchoredPath)</code><ul>
+<li><strong>Code</strong>: <code>src/hoarder/archives/hash_archive.py</code> (<code>HashArchive</code>, <code>HashArchive.from_path</code>)</li>
+<li><strong>Missing vs PUML</strong>:<ul>
+<li>[ ] <code>@classmethod discover(scope: AnchoredPath) -&gt; list[Self]</code> on base class (abstract)</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h3>B2) Archive types (parsing exists; discovery API missing)</h3>
+<ul>
+<li><p>[~] <code>SfvArchive</code></p>
+<ul>
+<li><strong>Implemented</strong>: parsing via <code>_from_path(...)</code><ul>
+<li><strong>Code</strong>: <code>src/hoarder/archives/sfv_archive.py</code> (<code>SfvArchive._from_path</code>)</li>
+</ul>
+</li>
+<li><strong>Missing</strong>:<ul>
+<li>[ ] <code>SfvArchive.discover(scope: AnchoredPath) -&gt; list[SfvArchive]</code> (non-recursive, <code>*.sfv</code>, accept file-or-dir scopes)</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p>[~] <code>RarArchive</code></p>
+<ul>
+<li><strong>Implemented</strong>:<ul>
+<li>parsing via <code>_from_path(...)</code> (handles file/dir input)<ul>
+<li><strong>Code</strong>: <code>src/hoarder/archives/rar_archive.py</code> (<code>RarArchive._from_path</code>)</li>
+</ul>
+</li>
+<li>RAR set detection helper<ul>
+<li><strong>Code</strong>: <code>src/hoarder/archives/rar_path.py</code> (<code>find_rar_files</code>, <code>RarScheme</code>, regex)</li>
+</ul>
+</li>
+<li>volume list + file extraction<ul>
+<li><strong>Code</strong>: <code>src/hoarder/archives/rar_archive.py</code> (<code>get_volumes</code>, <code>read_file</code>)</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><strong>Missing</strong>:<ul>
+<li>[ ] <code>RarArchive.discover(scope: AnchoredPath) -&gt; list[RarArchive]</code><ul>
+<li>Must return <strong>first volume only</strong> per set, per PUML/plan</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p>[~] <code>HashNameArchive</code></p>
+<ul>
+<li><strong>Implemented</strong>:<ul>
+<li>parsing hash from filename via <code>_from_path(...)</code><ul>
+<li><strong>Code</strong>: <code>src/hoarder/archives/hash_name_archive.py</code></li>
+</ul>
+</li>
+<li><code>DELETABLE = False</code><ul>
+<li><strong>Code</strong>: <code>src/hoarder/archives/hash_name_archive.py</code></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><strong>Missing</strong>:<ul>
+<li>[ ] <code>HashNameArchive.discover(scope: AnchoredPath) -&gt; list[HashNameArchive]</code><ul>
+<li>Should match filename patterns (<code>[hash]</code> or <code>(hash)</code>) as per PUML</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h3>B3) RealFile + Verification</h3>
+<ul>
+<li>[x] <code>RealFile</code> anchored model with filesystem inspection + hash calculation<ul>
+<li><strong>Code</strong>: <code>src/hoarder/downloads/real_file.py</code> (<code>RealFile.from_path</code>, <code>RealFile.calculate_hash</code>)</li>
+</ul>
+</li>
+<li>[x] <code>Verification</code> model and trust logic<ul>
+<li><strong>Code</strong>: <code>src/hoarder/downloads/real_file.py</code> (<code>Verification</code>, <code>Verification.is_trusted</code>)</li>
+</ul>
+</li>
+</ul>
+<hr>
+<h2>C) Discovery &amp; correlation phase (per ScanTarget)</h2>
+<p>These correspond to “Discovery and Correlation Sequence” and the plan’s “New files to create” under <code>src/hoarder/phases/</code>.</p>
+<h3>C1) ScanTarget and discovery config</h3>
+<ul>
+<li>[ ] <code>DiscoveryConfig</code> dataclass<ul>
+<li><strong>Target</strong>: <code>src/hoarder/phases/scan_target.py</code></li>
+<li><strong>Required API</strong> (per PUML/plan):<ul>
+<li><code>search_parent: bool = True</code></li>
+<li><code>additional_paths: list[AnchoredPath]</code></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>[ ] <code>ScanTarget</code> dataclass (anchored)<ul>
+<li><strong>Target</strong>: <code>src/hoarder/phases/scan_target.py</code></li>
+<li><strong>Required methods</strong>:<ul>
+<li><code>get_archive_search_paths() -&gt; list[AnchoredPath]</code></li>
+<li><code>get_file_search_paths() -&gt; list[AnchoredPath]</code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h3>C2) Archive discovery (Orchestrator calling per-type discover)</h3>
+<ul>
+<li>[ ] Implement archive discovery loop for each <code>ScanTarget</code><ul>
+<li><strong>Target</strong>: likely <code>src/hoarder/phases/discovery.py</code> or orchestrator module</li>
+<li><strong>Uses</strong>:<ul>
+<li><code>ScanTarget.get_archive_search_paths()</code></li>
+<li><code>SfvArchive.discover(scope)</code></li>
+<li><code>RarArchive.discover(scope)</code></li>
+<li><code>HashNameArchive.discover(scope)</code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h3>C3) Collect archive volume paths for exclusion</h3>
+<ul>
+<li>[ ] <code>collect_archive_paths(archives: list[HashArchive]) -&gt; set[pathlib.Path]</code><ul>
+<li><strong>Target</strong>: <code>src/hoarder/phases/discovery.py</code></li>
+<li><strong>Behavior</strong>:<ul>
+<li>include all archive volume paths (RAR sets have multiple volumes)</li>
+<li>used as <code>exclude</code> set for real file scanning</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h3>C4) Real file discovery (exclude archive volumes)</h3>
+<ul>
+<li>[ ] <code>discover_real_files(scopes: list[AnchoredPath], exclude: set[Path] | None) -&gt; list[RealFile]</code><ul>
+<li><strong>Target</strong>: <code>src/hoarder/phases/discovery.py</code></li>
+<li><strong>Behavior</strong>:<ul>
+<li>if scope is file: return it (unless excluded)</li>
+<li>if scope is dir: recursive scan (rglob) returning files (unless excluded)</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h3>C5) Correlation phase</h3>
+<ul>
+<li>[ ] <code>correlate_archives(archives, real_files, unit) -&gt; list[HashArchive]</code><ul>
+<li><strong>Target</strong>: <code>src/hoarder/phases/correlator.py</code></li>
+<li><strong>Behavior</strong>:<ul>
+<li>filter archives to those whose <code>FileEntry.path</code> intersects with <code>RealFile.relative_path</code> (or compatible path basis)</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>[ ] <code>correlate_files_to_entries(real_files, relevant_archives) -&gt; dict[RealFile, list[FileEntry]]</code><ul>
+<li><strong>Target</strong>: <code>src/hoarder/phases/correlator.py</code></li>
+<li><strong>Behavior</strong>:<ul>
+<li>build path→entries lookup</li>
+<li>allow multiple entries per file (SFV + HashName, etc.)</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h3>C6) ProcessingResult (handoff object)</h3>
+<ul>
+<li>[ ] <code>ProcessingResult</code> model for per-target discovery+correlation output<ul>
+<li><strong>Target</strong>: <code>src/hoarder/phases/orchestrator.py</code> or <code>src/hoarder/phases/models.py</code></li>
+<li><strong>Contains</strong> (per sequence diagram):<ul>
+<li><code>unit</code> (<code>ScanTarget</code>)</li>
+<li><code>relevant_archives</code></li>
+<li><code>real_files</code></li>
+<li><code>matches</code> (<code>dict[RealFile, list[FileEntry]]</code>)</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<hr>
+<h2>D) Provider-based pipeline (“Pipeline Execution Flow”)</h2>
+<p>Nothing in this section exists yet as first-class pipeline code under <code>src/hoarder/phases/</code> (package is missing). Some <em>building blocks</em> already exist (hashing, verifications, RAR extraction).</p>
+<h3>D1) Decision handling (user interaction)</h3>
+<ul>
+<li>[ ] <code>DecisionHandler</code> protocol / interface<ul>
+<li><strong>Target</strong>: <code>src/hoarder/phases/decision_handler.py</code></li>
+<li><strong>Methods</strong> (from <code>pipeline_implementation_order.txt</code> / PUML):<ul>
+<li><code>on_online_lookup_needed(file, service)</code></li>
+<li><code>on_hash_mismatch(file, expected, actual)</code></li>
+<li><code>on_extraction_needed(archive, missing_files)</code></li>
+<li><code>on_cleanup_ready(archives, total_size)</code></li>
+<li><code>on_error(unit, error)</code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h3>D2) Verification providers</h3>
+<ul>
+<li>[ ] <code>VerificationProvider</code> protocol / base class<ul>
+<li><strong>Target</strong>: <code>src/hoarder/phases/verification_provider.py</code></li>
+<li><strong>Core API</strong>:<ul>
+<li><code>can_verify(file) -&gt; bool</code></li>
+<li><code>get_verification(file) -&gt; Verification | None</code></li>
+</ul>
+</li>
+<li><strong>Priority/trust</strong>:<ul>
+<li>providers are ordered (Archive, Filename, Online, SelfHash)</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h3>D3) Concrete providers</h3>
+<ul>
+<li>[ ] <code>ArchiveVerificationProvider</code><ul>
+<li><strong>Target</strong>: <code>src/hoarder/phases/providers/archive_provider.py</code></li>
+<li><strong>Uses</strong>: correlation matches (<code>RealFile</code> → <code>FileEntry</code>) to produce <code>Verification(source=ARCHIVE)</code></li>
+</ul>
+</li>
+<li>[ ] <code>FilenameVerificationProvider</code><ul>
+<li><strong>Target</strong>: <code>src/hoarder/phases/providers/filename_provider.py</code></li>
+<li><strong>Uses</strong>: <code>HashNameArchive</code> expectations (CRC in filename)</li>
+</ul>
+</li>
+<li>[ ] <code>OnlineVerificationProvider</code><ul>
+<li><strong>Target</strong>: <code>src/hoarder/phases/providers/online_provider.py</code></li>
+<li><strong>Requires</strong>:<ul>
+<li>privacy gate via <code>DecisionHandler</code></li>
+<li>response cache to <code>.hoarder/online_cache/{service}/{query_hash}.json</code></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>[ ] <code>SelfHashProvider</code> (fallback, untrusted)<ul>
+<li><strong>Target</strong>: <code>src/hoarder/phases/providers/self_hash_provider.py</code></li>
+<li><strong>Uses</strong>: <code>RealFile.calculate_hash</code> (or <code>ContentsHasher</code>) to produce <code>Verification(source=SELF_HASH)</code></li>
+</ul>
+</li>
+</ul>
+<h3>D4) Hash computation and mismatch decisions</h3>
+<ul>
+<li>[~] Hash computation primitive exists<ul>
+<li><strong>Implemented</strong>: <code>RealFile.calculate_hash()</code> and <code>CRC32Hasher</code><ul>
+<li><strong>Code</strong>: <code>src/hoarder/downloads/real_file.py</code>, <code>src/hoarder/downloads/contents_hasher.py</code></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>[ ] Pipeline-level “hash verifier” stage<ul>
+<li><strong>Target</strong>: <code>src/hoarder/phases/verifier.py</code></li>
+<li><strong>Behavior</strong>:<ul>
+<li>compute actual hash, compare against chosen <code>Verification.hash_value</code></li>
+<li>invoke <code>DecisionHandler.on_hash_mismatch(...)</code> on mismatch</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h3>D5) Extraction phase</h3>
+<ul>
+<li>[~] Primitive exists: <code>RarArchive.read_file()</code> returns bytes for an entry<ul>
+<li><strong>Code</strong>: <code>src/hoarder/archives/rar_archive.py</code></li>
+</ul>
+</li>
+<li>[ ] Extraction stage orchestration<ul>
+<li><strong>Target</strong>: <code>src/hoarder/phases/extractor.py</code></li>
+<li><strong>Behavior</strong>:<ul>
+<li>detect missing files, ask via <code>DecisionHandler.on_extraction_needed(...)</code></li>
+<li>extract, then re-run scanner/correlator/providers for extracted files</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h3>D6) Cleanup phase</h3>
+<ul>
+<li>[~] Deletability signal exists: <code>HashArchive.DELETABLE</code><ul>
+<li><strong>Code</strong>: <code>src/hoarder/archives/hash_archive.py</code>, <code>src/hoarder/archives/hash_name_archive.py</code></li>
+</ul>
+</li>
+<li>[ ] Cleanup stage orchestration<ul>
+<li><strong>Target</strong>: <code>src/hoarder/phases/cleanup.py</code></li>
+<li><strong>Behavior</strong>:<ul>
+<li>only when all files verified &amp; trusted</li>
+<li>ask via <code>DecisionHandler.on_cleanup_ready(...)</code></li>
+<li>delete archives respecting <code>DELETABLE</code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h3>D7) Orchestrator</h3>
+<ul>
+<li>[ ] <code>PhaseOrchestrator.run(...)</code><ul>
+<li><strong>Target</strong>: <code>src/hoarder/phases/orchestrator.py</code></li>
+<li><strong>Responsibilities</strong> (per PUML):<ul>
+<li>enumerate scan targets in storage path</li>
+<li>per target: discovery → correlation → provider chain → hash compare → extraction → cleanup</li>
+<li>error handling via <code>DecisionHandler.on_error(...)</code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<hr>
+<h2>E) Tests / evidence of current state</h2>
+<ul>
+<li>[x] Existing tests cover archive parsing + repositories + filename hash parsing:<ul>
+<li><code>tests/test_sfv_file.py</code></li>
+<li><code>tests/test_rar_archive.py</code>, <code>tests/test_rar_path.py</code>, <code>tests/test_rar_file.py</code></li>
+<li><code>tests/test_hnf_file.py</code>, <code>tests/test_real_file.py</code></li>
+<li><code>tests/test_hash_archive_repository.py</code>, <code>tests/test_real_file_repository.py</code>, etc.</li>
+</ul>
+</li>
+<li>[ ] No tests exist yet for:<ul>
+<li>scan-target scoped discovery/correlation</li>
+<li>provider chain behavior</li>
+<li>orchestrator end-to-end pipeline execution</li>
+</ul>
+</li>
+</ul>
