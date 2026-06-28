@@ -5,7 +5,7 @@ import typing
 
 import pytest
 from hoarder import HoarderRepository
-from hoarder.archives import HashNameArchive, RarArchive, SfvArchive
+from hoarder.archives import HashNameArchive, Rar7zArchive, SfvArchive
 from tests.test_case_file_info import RAR_TEST_ARCHIVE_DEFS
 
 logger = logging.getLogger()
@@ -79,7 +79,7 @@ def test_rar_repositories(
     root = rar_file.parent
     path = pathlib.PurePath(rar_file.name)
     try:
-        saved_rar_file = RarArchive.from_path(
+        saved_rar_file = Rar7zArchive.from_path(
             root,
             path,
             password=password,

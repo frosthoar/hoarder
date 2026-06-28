@@ -4,7 +4,7 @@ import typing
 
 import pytest
 import tests.test_case_file_info
-from hoarder.archives import RarArchive
+from hoarder.archives import Rar7zArchive
 
 
 @pytest.mark.parametrize(
@@ -29,7 +29,7 @@ def test_read_file_content_validation(
     try:
         root = rar_path.parent
         path = pathlib.PurePath(rar_path.name)
-        archive = RarArchive.from_path(root, path, password=password)
+        archive = Rar7zArchive.from_path(root, path, password=password)
 
         # Test a selection of files from the archive
         test_files = [

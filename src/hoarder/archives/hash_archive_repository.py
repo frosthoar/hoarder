@@ -6,6 +6,8 @@ from typing import cast
 from .hash_archive import Algo, FileEntry, HashArchive
 from .hash_name_archive import HashEnclosure, HashNameArchive
 from .rar_archive import RarArchive
+from .rar_archive_7z import Rar7zArchive
+from .rar_archive_rarfile import RarfileRarArchive
 from .rar_path import RarScheme
 from .sfv_archive import SfvArchive
 
@@ -195,8 +197,22 @@ class HashArchiveRepository:
                 files=None,
                 enc=HashEnclosure(row["hash_enclosure"]),
             )
-        elif archive_type == "RarArchive":
-            arch = RarArchive(
+        elif archive_type in ("RarArchive", "Rar7zArchive"):
+            arch = Rar7zArchive(
+                storage_path,
+                PurePath(archive_path),
+                files=None,
+                password=cast(str | None, row["password"]),
+                version=cast(str | None, row["rar_version"]),
+                scheme=(
+                    RarScheme(cast(int, row["rar_scheme"]))
+                    if row["rar_scheme"] is not None
+                    else None
+                ),
+                n_volumes=cast(int | None, row["n_volumes"]),
+            )
+        elif archive_type == "RarfileRarArchive":
+            arch = RarfileRarArchive(
                 storage_path,
                 PurePath(archive_path),
                 files=None,

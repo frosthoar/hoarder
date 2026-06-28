@@ -8,7 +8,7 @@ import traceback
 import xml.etree.ElementTree as ET
 from typing import Callable, NamedTuple
 
-from ..archives.rar_archive import RarArchive
+from ..archives.rar_archive_7z import Rar7zArchive
 from ..utils import TableFormatter
 from .password_plugin import PasswordPlugin
 from .password_store import PasswordStore
@@ -171,7 +171,7 @@ class NzbPasswordPlugin(PasswordPlugin):
                 elif full_path.suffix == ".rar":
                     logger.debug(f"Processing RARed NZB(s) {full_path}")
                     path = pathlib.PurePath(full_path)
-                    rar_file: RarArchive = RarArchive.from_path(nzb_directory, path)
+                    rar_file: Rar7zArchive = Rar7zArchive.from_path(nzb_directory, path)
                     for file_entry in rar_file.files:
                         logger.debug(f"Read {file_entry.path}... extracting passwords")
                         title_password = NzbPasswordPlugin._process_file(
