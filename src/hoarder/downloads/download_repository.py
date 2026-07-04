@@ -34,13 +34,13 @@ class DownloadRepository:
         """Insert or replace a Download and its associated RealFiles and HashArchives."""
         # Ensure storage paths exist for all real_files
         for real_file in download.real_files:
-            self._ensure_storage_path(con, real_file.storage_path)
+            self._ensure_storage_path(con, real_file.anchor.storage_path)
             for verification in real_file.verification:
-                self._ensure_storage_path(con, verification.source_storage_path)
+                self._ensure_storage_path(con, verification.source.storage_path)
 
         # Ensure storage paths exist for all hash_archives
         for hash_archive in download.hash_archives:
-            self._ensure_storage_path(con, hash_archive.storage_path)
+            self._ensure_storage_path(con, hash_archive.anchor.storage_path)
 
         # Save all real_files first using real_file_repository
         for real_file in download.real_files:
@@ -209,8 +209,8 @@ class DownloadRepository:
         for real_file in real_files:
             yield {
                 "download_title": download_title,
-                "real_file_storage_path": str(real_file.storage_path.resolve()),
-                "real_file_path": str(real_file.path),
+                "real_file_storage_path": str(real_file.anchor.storage_path),
+                "real_file_path": str(real_file.anchor.relative_path),
             }
 
     def _build_archive_association_rows(
@@ -222,8 +222,8 @@ class DownloadRepository:
         for hash_archive in hash_archives:
             yield {
                 "download_title": download_title,
-                "archive_storage_path": str(hash_archive.storage_path.resolve()),
-                "archive_path": str(hash_archive.path),
+                "archive_storage_path": str(hash_archive.anchor.storage_path),
+                "archive_path": str(hash_archive.anchor.relative_path),
             }
 
     def _load_real_files(

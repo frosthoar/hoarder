@@ -1,6 +1,6 @@
 from . import db_schema, db_utils, path_utils, presentation, shared, sql3_fk
 from .db_utils import now_str
-from .path_utils import PathType, determine_path_type
+from .path_utils import AnchoredPath, PathType, determine_path_type
 from .presentation import Presentable, PresentationSpec, ScalarValue, TableFormatter
 from .shared import SEVENZIP, config
 from .sql3_fk import Sqlite3FK
@@ -18,6 +18,7 @@ __all__ = [
     "Sqlite3FK",
     "TableFormatter",
     "now_str",
+    "AnchoredPath",
     "PathType",
     "determine_path_type",
     "SEVENZIP",

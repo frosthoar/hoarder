@@ -31,7 +31,9 @@ class HoarderRepository:
         self._initialize_password_tables()
 
     def save_hash_archive(self, archive: HashArchive) -> None:
-        normalized_storage_path = self._check_storage_path_allowed(archive.storage_path)
+        normalized_storage_path = self._check_storage_path_allowed(
+            archive.anchor.storage_path
+        )
         with Sqlite3FK(self.db_path) as con:
             self._ensure_storage_path(con, normalized_storage_path)
             self.hash_repo.save(archive, con)
@@ -46,11 +48,11 @@ class HoarderRepository:
 
     def save_real_file(self, real_file: RealFile) -> None:
         normalized_storage_path = self._check_storage_path_allowed(
-            real_file.storage_path
+            real_file.anchor.storage_path
         )
         for verification in real_file.verification:
-            verification.source_storage_path = self._check_storage_path_allowed(
-                verification.source_storage_path
+            verification.source = verification.source.with_storage_path(
+                self._check_storage_path_allowed(verification.source.storage_path)
             )
         with Sqlite3FK(self.db_path) as con:
             self._ensure_storage_path(con, normalized_storage_path)
@@ -76,25 +78,29 @@ class HoarderRepository:
         # Validate storage paths from real_files
         for real_file in download.real_files:
             normalized_storage_path = self._check_storage_path_allowed(
-                real_file.storage_path
+                real_file.anchor.storage_path
             )
-            real_file.storage_path = normalized_storage_path
+            real_file.anchor = real_file.anchor.with_storage_path(
+                normalized_storage_path
+            )
             for verification in real_file.verification:
-                verification.source_storage_path = self._check_storage_path_allowed(
-                    verification.source_storage_path
+                verification.source = verification.source.with_storage_path(
+                    self._check_storage_path_allowed(verification.source.storage_path)
                 )
         # Validate storage paths from hash_archives
         for hash_archive in download.hash_archives:
             normalized_storage_path = self._check_storage_path_allowed(
-                hash_archive.storage_path
+                hash_archive.anchor.storage_path
             )
-            hash_archive.storage_path = normalized_storage_path
+            hash_archive.anchor = hash_archive.anchor.with_storage_path(
+                normalized_storage_path
+            )
         with Sqlite3FK(self.db_path) as con:
             # Ensure all storage paths exist
             for real_file in download.real_files:
-                self._ensure_storage_path(con, real_file.storage_path)
+                self._ensure_storage_path(con, real_file.anchor.storage_path)
             for hash_archive in download.hash_archives:
-                self._ensure_storage_path(con, hash_archive.storage_path)
+                self._ensure_storage_path(con, hash_archive.anchor.storage_path)
             self.download_repo.save(download, con)
 
     def load_download(self, title: str) -> Download:

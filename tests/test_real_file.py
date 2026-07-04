@@ -6,6 +6,7 @@ import pytest
 import tests.test_case_file_info as case_files
 from hoarder.archives import Algo
 from hoarder.downloads import RealFile
+from hoarder.utils import AnchoredPath
 
 STORAGE_ROOT = Path("test_files/compare")
 CRC32_SAMPLE_FILES = [fe for fe in case_files.TEST_FILES if not fe.is_dir][:10]
@@ -14,8 +15,7 @@ CRC32_SAMPLE_DIRS = [fe for fe in case_files.TEST_FILES if fe.is_dir][:5]
 
 def _build_real_file(entry: case_files.FileEntry) -> RealFile:
     return RealFile(
-        storage_path=STORAGE_ROOT,
-        path=entry.path,
+        anchor=AnchoredPath(STORAGE_ROOT, entry.path),
         size=entry.size,
         is_dir=entry.is_dir,
     )
@@ -24,7 +24,7 @@ def _build_real_file(entry: case_files.FileEntry) -> RealFile:
 def test_real_file_full_path_includes_storage_root() -> None:
     entry = case_files.TEST_FILES[0]
     real_file = _build_real_file(entry)
-    assert real_file.full_path == STORAGE_ROOT / entry.path
+    assert real_file.full_path == STORAGE_ROOT.resolve() / entry.path
 
 
 @pytest.mark.parametrize("entry", CRC32_SAMPLE_FILES)
