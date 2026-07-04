@@ -175,13 +175,15 @@ class Rar7zArchive(AbstractRarArchive):
         for entry in self:
             if not entry.hash_value:
                 try:
+                    crc: bytes | None
                     if entry.is_dir:
                         crc = b"\x00" * 4
                     else:
                         crc = self.get_crc32_slow(entry.path)
 
-                    entry.hash_value = crc
-                    entry.algo = Algo.CRC32
+                    if crc is not None:
+                        entry.hash_value = crc
+                        entry.algo = Algo.CRC32
                 except RarArchiveError:
                     logger.error(
                         "Failed to get CRC32 for %(entry_path)s",
