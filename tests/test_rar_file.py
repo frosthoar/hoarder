@@ -3,16 +3,26 @@ import pathlib
 
 import pytest
 import tests.test_case_file_info
-from hoarder.archives import FileEntry, RarArchive, RarScheme
+from hoarder.archives import (
+    AbstractRarArchive,
+    FileEntry,
+    Rar7zArchive,
+    RarfileRarArchive,
+    RarScheme,
+)
 
 logger = logging.getLogger("hoarder.test_rar_file")
 
 
+@pytest.mark.parametrize("archive_class", [Rar7zArchive, RarfileRarArchive])
 @pytest.mark.parametrize(
     "rar_data_tuple", tests.test_case_file_info.RAR_TEST_ARCHIVE_DEFS
 )
 def test_rar_archives_set(
-    rar_data_tuple: tuple[pathlib.Path, str, int, int, RarScheme, list[FileEntry]]
+    archive_class: type[AbstractRarArchive],
+    rar_data_tuple: tuple[
+        pathlib.Path, str | None, int, int, RarScheme, list[FileEntry]
+    ],
 ) -> None:
     (
         main_archive_path,
@@ -26,7 +36,7 @@ def test_rar_archives_set(
     main_archive_path = main_archive_path.resolve()
     root = main_archive_path.parent
     path = pathlib.PurePath(main_archive_path.name)
-    rar_archive = RarArchive.from_path(root, path, password=password)
+    rar_archive = archive_class.from_path(root, path, password=password)
     logger.debug(f"== Listing {main_archive_path}")
     for f in rar_archive.files:
         logger.debug(f)

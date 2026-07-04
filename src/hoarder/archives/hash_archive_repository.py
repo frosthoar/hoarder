@@ -3,6 +3,7 @@ import sqlite3
 from pathlib import Path, PurePath
 from typing import cast
 
+from .abstract_rar_archive import AbstractRarArchive
 from .hash_archive import Algo, FileEntry, HashArchive
 from .hash_name_archive import HashEnclosure, HashNameArchive
 from .rar_archive import RarArchive
@@ -145,7 +146,7 @@ class HashArchiveRepository:
         }
         if isinstance(arch, HashNameArchive):
             base["hash_enclosure"] = arch.enc.value
-        elif isinstance(arch, RarArchive):
+        elif isinstance(arch, AbstractRarArchive):
             base.update(
                 password=arch.password,
                 rar_scheme=arch.scheme.value if arch.scheme else None,
