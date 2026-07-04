@@ -50,8 +50,8 @@ class RarfileRarArchive(AbstractRarArchive):
         path: pathlib.PurePath,
         password: str | None = None,
     ) -> T:
-        main_volume, main_volume_path, scheme, n_volumes = locate_main_volume(
-            storage_path, path
+        main_volume, main_volume_path, scheme, n_volumes, part_n_padding = (
+            locate_main_volume(storage_path, path)
         )
 
         version = _detect_version(main_volume)
@@ -82,6 +82,7 @@ class RarfileRarArchive(AbstractRarArchive):
             version,
             scheme,
             n_volumes,
+            part_n_padding,
         )
 
     @override

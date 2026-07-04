@@ -143,6 +143,7 @@ class HashArchiveRepository:
             "rar_scheme": None,
             "rar_version": None,
             "n_volumes": None,
+            "part_n_padding": None,
         }
         if isinstance(arch, HashNameArchive):
             base["hash_enclosure"] = arch.enc.value
@@ -152,6 +153,7 @@ class HashArchiveRepository:
                 rar_scheme=arch.scheme.value if arch.scheme else None,
                 rar_version=arch.version,
                 n_volumes=arch.n_volumes,
+                part_n_padding=arch.part_n_padding,
             )
         elif isinstance(arch, SfvArchive):
             pass
@@ -209,6 +211,7 @@ class HashArchiveRepository:
                     else None
                 ),
                 n_volumes=cast(int | None, row["n_volumes"]),
+                part_n_padding=cast(int | None, row["part_n_padding"]),
             )
         elif archive_type == "SfvArchive":
             arch = SfvArchive(storage_path, PurePath(archive_path), files=set())

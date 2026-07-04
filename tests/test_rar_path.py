@@ -1,5 +1,7 @@
+from pathlib import Path, PurePath
+
 from hoarder.archives import RarScheme
-from hoarder.archives.rar_path import parse_rar_list, rar_sort
+from hoarder.archives.rar_path import locate_main_volume, parse_rar_list, rar_sort
 
 
 def test_parse() -> None:
@@ -81,6 +83,48 @@ def test_sort() -> None:
             "a.part2.rar",
         ],
     ), "Simple PART_N sort"
+
+
+def test_locate_main_volume_part_n_padding_not_derivable_from_volume_count(
+    tmp_path: Path,
+) -> None:
+    """A 5-volume archive can still be zero-padded to two digits."""
+    for index in range(1, 6):
+        (tmp_path / f"archive.part{index:02d}.rar").touch()
+
+    _, _, scheme, n_volumes, part_n_padding = locate_main_volume(
+        tmp_path, PurePath("archive.part01.rar")
+    )
+
+    assert scheme == RarScheme.PART_N
+    assert n_volumes == 5
+    assert part_n_padding == 2
+
+
+def test_locate_main_volume_part_n_no_padding(tmp_path: Path) -> None:
+    for index in range(1, 4):
+        (tmp_path / f"archive.part{index}.rar").touch()
+
+    _, _, scheme, n_volumes, part_n_padding = locate_main_volume(
+        tmp_path, PurePath("archive.part1.rar")
+    )
+
+    assert scheme == RarScheme.PART_N
+    assert n_volumes == 3
+    assert part_n_padding == 1
+
+
+def test_locate_main_volume_dot_rnn_has_no_part_n_padding(tmp_path: Path) -> None:
+    (tmp_path / "archive.rar").touch()
+    (tmp_path / "archive.r00").touch()
+
+    _, _, scheme, n_volumes, part_n_padding = locate_main_volume(
+        tmp_path, PurePath("archive.rar")
+    )
+
+    assert scheme == RarScheme.DOT_RNN
+    assert n_volumes == 2
+    assert part_n_padding is None
 
 
 if __name__ == "__main__":

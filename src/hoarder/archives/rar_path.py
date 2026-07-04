@@ -184,18 +184,30 @@ def find_rar_files(
     return ret_dict
 
 
-def locate_main_volume(
-    storage_path: Path, path: PurePath
-) -> tuple[Path, PurePath, RarScheme, int]:
+class RarVolumeSet(typing.NamedTuple):
+    """The result of locating a RAR archive's volumes on disk."""
+
+    main_volume: Path
+    main_volume_path: PurePath
+    scheme: RarScheme
+    n_volumes: int
+    # Digit width of the volume index in a PART_N archive's file names (e.g.
+    # 2 for "archive.part01.rar"), or None for other schemes. Not derivable
+    # from n_volumes alone: a 5-volume archive can still be zero-padded to
+    # two digits.
+    part_n_padding: int | None
+
+
+def locate_main_volume(storage_path: Path, path: PurePath) -> RarVolumeSet:
     """Locate the main RAR volume and its sibling volumes for a given path.
 
     `path` may point either directly at a volume file or at a directory
     containing exactly one (possibly multi-volume) RAR archive.
 
     Returns:
-        (main_volume, main_volume_path, scheme, n_volumes), where
-        main_volume is the absolute path to the first volume and
-        main_volume_path is that same path relative to storage_path.
+        A RarVolumeSet where main_volume is the absolute path to the first
+        volume and main_volume_path is that same path relative to
+        storage_path.
 
     Raises:
         ValueError: the path is ambiguous or does not match any RAR naming
@@ -253,4 +265,15 @@ def locate_main_volume(
             f"Main volume {main_volume} is not under storage_path {storage_path}"
         )
 
-    return main_volume, main_volume_path, scheme, n_volumes
+    part_n_padding: int | None = None
+    if scheme == RarScheme.PART_N:
+        padding_match = PART_N_PAT.match(main_volume.name)
+        if padding_match is None:
+            raise ValueError(
+                f"Main volume {main_volume} does not match the PART_N pattern"
+            )
+        part_n_padding = len(padding_match["volume_index"])
+
+    return RarVolumeSet(
+        main_volume, main_volume_path, scheme, n_volumes, part_n_padding
+    )
