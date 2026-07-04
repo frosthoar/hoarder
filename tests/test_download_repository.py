@@ -106,7 +106,9 @@ def test_download_repository_roundtrip(
             if rf.anchor.relative_path == sample_original.anchor.relative_path
         )
         assert sample_loaded.anchor.storage_path == sample_original.anchor.storage_path
-        assert sample_loaded.anchor.relative_path == sample_original.anchor.relative_path
+        assert (
+            sample_loaded.anchor.relative_path == sample_original.anchor.relative_path
+        )
         assert sample_loaded.size == sample_original.size
         assert sample_loaded.hash_value == sample_original.hash_value
     assert sample_loaded.first_seen == sample_original.first_seen
@@ -291,4 +293,6 @@ def test_download_repository_persists_real_files_and_hash_archives(
 
     assert len(loaded.real_files) == len(test_files)
     assert len(loaded.hash_archives) == 1
-    assert loaded.hash_archives[0].anchor.relative_path == sfv_archive.anchor.relative_path
+    assert (
+        loaded.hash_archives[0].anchor.relative_path == sfv_archive.anchor.relative_path
+    )

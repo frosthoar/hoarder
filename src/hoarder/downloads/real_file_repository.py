@@ -142,12 +142,12 @@ class RealFileRepository:
             "is_dir": int(real_file.is_dir),
             "hash_value": real_file.hash_value,
             "algo": real_file.algo.value if real_file.algo is not None else None,
-            "first_seen": real_file.first_seen.isoformat()
-            if real_file.first_seen
-            else None,
-            "last_seen": real_file.last_seen.isoformat()
-            if real_file.last_seen
-            else None,
+            "first_seen": (
+                real_file.first_seen.isoformat() if real_file.first_seen else None
+            ),
+            "last_seen": (
+                real_file.last_seen.isoformat() if real_file.last_seen else None
+            ),
             "comment": real_file.comment,
         }
 
