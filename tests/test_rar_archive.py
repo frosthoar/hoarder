@@ -1,15 +1,17 @@
 import pathlib
-import typing
 
 import pytest
 import tests.test_case_file_info
 from hoarder.archives import (
     AbstractRarArchive,
+    FileEntry,
     Rar7zArchive,
     RarArchiveError,
     RarfileRarArchive,
     RarScheme,
 )
+
+RarFileEntry = tuple[pathlib.Path, str | None, int, int, RarScheme, list[FileEntry]]
 
 
 @pytest.mark.parametrize("archive_class", [Rar7zArchive, RarfileRarArchive])
@@ -18,9 +20,7 @@ from hoarder.archives import (
 )
 def test_read_file_content_validation(
     archive_class: type[AbstractRarArchive],
-    rar_file_entry: tuple[
-        pathlib.Path, str | None, typing.Any, typing.Any, typing.Any, typing.Any
-    ],
+    rar_file_entry: RarFileEntry,
 ):
     rar_path = rar_file_entry[0]
     password = rar_file_entry[1]
@@ -95,9 +95,7 @@ def test_part_n_padding_matching_n_volumes_is_allowed(
 )
 def test_get_volumes_returns_existing_sibling_volumes(
     archive_class: type[AbstractRarArchive],
-    rar_file_entry: tuple[
-        pathlib.Path, str | None, typing.Any, typing.Any, typing.Any, typing.Any
-    ],
+    rar_file_entry: RarFileEntry,
 ):
     rar_path = rar_file_entry[0]
     password = rar_file_entry[1]
