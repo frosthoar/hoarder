@@ -111,7 +111,7 @@ class RarfileRarArchive(RarArchive):
 
         pwd = password.encode() if password else None
         files: set[FileEntry] = set()
-        with rarfile.RarFile(str(main_volume), errors="ignore") as rf:
+        with rarfile.RarFile(str(main_volume), errors="stop") as rf:
             if pwd:
                 rf.setpassword(pwd)
             for ri in rf.infolist():
@@ -136,7 +136,7 @@ class RarfileRarArchive(RarArchive):
     def update_hash_values(self) -> None:
         logger.debug("Updating hash values for %s", self.full_path.name)
         pwd = self.password.encode() if self.password else None
-        with rarfile.RarFile(str(self.full_path), errors="ignore") as rf:
+        with rarfile.RarFile(str(self.full_path), errors="stop") as rf:
             if pwd:
                 rf.setpassword(pwd)
             for entry in self:
@@ -161,7 +161,7 @@ class RarfileRarArchive(RarArchive):
             raise FileNotFoundError(f"Could not find {path}")
 
         pwd = self.password.encode() if self.password else None
-        with rarfile.RarFile(str(self.full_path), errors="ignore") as rf:
+        with rarfile.RarFile(str(self.full_path), errors="stop") as rf:
             if pwd:
                 rf.setpassword(pwd)
             return rf.read(str(path))
