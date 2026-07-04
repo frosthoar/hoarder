@@ -8,8 +8,8 @@ import subprocess
 import typing
 
 from ..utils import SEVENZIP
+from .abstract_rar_archive import AbstractRarArchive, RarArchiveError
 from .hash_archive import Algo, FileEntry
-from .rar_archive import AbstractRarArchive, RarArchiveError
 from .rar_path import locate_main_volume
 
 try:

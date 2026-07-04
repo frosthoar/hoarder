@@ -3,10 +3,10 @@ import sqlite3
 from pathlib import Path, PurePath
 from typing import cast
 
+from .abstract_rar_archive import AbstractRarArchive
 from .hash_archive import Algo, FileEntry, HashArchive
 from .hash_name_archive import HashEnclosure, HashNameArchive
-from .rar_archive import AbstractRarArchive
-from .rar_archive_default import RarArchive
+from .rar_archive import RarArchive
 from .rar_path import RarScheme
 from .sfv_archive import SfvArchive
 

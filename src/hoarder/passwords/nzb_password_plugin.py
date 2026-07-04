@@ -8,7 +8,7 @@ import traceback
 import xml.etree.ElementTree as ET
 from typing import Callable, NamedTuple
 
-from ..archives.rar_archive_default import RarArchive
+from ..archives.rar_archive import RarArchive
 from ..utils import TableFormatter
 from .password_plugin import PasswordPlugin
 from .password_store import PasswordStore
