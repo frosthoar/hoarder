@@ -59,14 +59,17 @@ class AbstractRarArchive(HashArchive, abc.ABC):
         if self.n_volumes == 1:
             return [self.full_path]
         if self.scheme == RarScheme.DOT_RNN:
-            return [self.storage_path / f"{self.path.stem}.rar"] + [
-                self.storage_path / f"{self.path.stem}.r{index:02d}"
+            return [
+                self.anchor.storage_path / f"{self.anchor.relative_path.stem}.rar"
+            ] + [
+                self.anchor.storage_path
+                / f"{self.anchor.relative_path.stem}.r{index:02d}"
                 for index in range(0, self.n_volumes - 1)
             ]
         if self.scheme == RarScheme.PART_N:
-            stem = self.path.stem.split(".part")[0]
+            stem = self.anchor.relative_path.stem.split(".part")[0]
             volume_list = [
-                self.storage_path / f"{stem}.part{index}.rar"
+                self.anchor.storage_path / f"{stem}.part{index}.rar"
                 for index in range(1, self.n_volumes + 1)
             ]
             for p in volume_list:

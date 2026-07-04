@@ -5,6 +5,7 @@ from pathlib import Path
 
 import pytest
 from hoarder.downloads import Download, RealFile
+from hoarder.utils import AnchoredPath
 
 FROZEN_TS = dt.datetime(2024, 1, 1, tzinfo=dt.timezone.utc)
 
@@ -33,14 +34,12 @@ def test_download_with_real_files() -> None:
     """Test Download with associated RealFiles."""
     storage_path = Path("/test/storage")
     real_file1 = RealFile(
-        storage_path=storage_path,
-        path=Path("file1.dat"),
+        anchor=AnchoredPath(storage_path, Path("file1.dat")),
         size=100,
         is_dir=False,
     )
     real_file2 = RealFile(
-        storage_path=storage_path,
-        path=Path("file2.bin"),
+        anchor=AnchoredPath(storage_path, Path("file2.bin")),
         size=200,
         is_dir=False,
     )

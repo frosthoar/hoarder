@@ -7,6 +7,7 @@ from pathlib import Path, PurePath
 from typing import Iterable
 
 from ..archives import Algo
+from ..utils import AnchoredPath
 from .real_file import RealFile, Verification, VerificationSource
 
 
@@ -15,10 +16,10 @@ class RealFileRepository:
 
     def save(self, real_file: RealFile, con: sqlite3.Connection) -> None:
         """Insert or replace a RealFile and its verifications."""
-        storage_path_str = str(real_file.storage_path.resolve())
+        storage_path_str = str(real_file.anchor.storage_path)
         real_file_row = self._build_real_file_row(real_file)
 
-        self._ensure_storage_path(con, real_file.storage_path)
+        self._ensure_storage_path(con, real_file.anchor.storage_path)
         cur = con.cursor()
         _ = cur.execute(
             """
@@ -26,7 +27,7 @@ class RealFileRepository:
             WHERE storage_path_id = (SELECT id FROM storage_paths WHERE storage_path = ?)
               AND path = ?;
             """,
-            (storage_path_str, str(real_file.path)),
+            (storage_path_str, str(real_file.anchor.relative_path)),
         )
         _ = cur.execute(
             """
@@ -57,11 +58,11 @@ class RealFileRepository:
         )
         if real_file.verification:
             for verification in real_file.verification:
-                self._ensure_storage_path(con, verification.source_storage_path)
+                self._ensure_storage_path(con, verification.source.storage_path)
             verification_rows = list(
                 self._build_verification_rows(
                     real_file.verification,
-                    str(real_file.path),
+                    str(real_file.anchor.relative_path),
                     storage_path_str,
                 )
             )
@@ -136,7 +137,7 @@ class RealFileRepository:
     @staticmethod
     def _build_real_file_row(real_file: RealFile) -> dict[str, object]:
         return {
-            "path": str(real_file.path),
+            "path": str(real_file.anchor.relative_path),
             "size": real_file.size,
             "is_dir": int(real_file.is_dir),
             "hash_value": real_file.hash_value,
@@ -159,8 +160,8 @@ class RealFileRepository:
         for verification in verifications:
             yield {
                 "source_type": verification.source_type.value,
-                "source_path": str(verification.source_path),
-                "source_storage_path": str(verification.source_storage_path.resolve()),
+                "source_path": str(verification.source.relative_path),
+                "source_storage_path": str(verification.source.storage_path),
                 "hash_value": verification.hash_value,
                 "algo": verification.algo.value,
                 "comment": verification.comment,
@@ -192,8 +193,9 @@ class RealFileRepository:
             verification = Verification(
                 real_file=real_file,
                 source_type=VerificationSource(row["source_type"]),
-                source_path=PurePath(row["source_path"]),
-                source_storage_path=Path(row["source_storage_path"]),
+                source=AnchoredPath(
+                    Path(row["source_storage_path"]), PurePath(row["source_path"])
+                ),
                 hash_value=row["hash_value"],
                 algo=Algo(row["algo"]),
                 comment=row["comment"],
@@ -212,8 +214,7 @@ class RealFileRepository:
     @staticmethod
     def _row_to_real_file(row: sqlite3.Row) -> RealFile:
         return RealFile(
-            storage_path=Path(row["storage_path"]),
-            path=PurePath(row["path"]),
+            anchor=AnchoredPath(Path(row["storage_path"]), PurePath(row["path"])),
             size=int(row["size"]),
             is_dir=bool(row["is_dir"]),
             algo=Algo(row["algo"]) if row["algo"] is not None else None,

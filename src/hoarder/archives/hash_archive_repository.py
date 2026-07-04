@@ -16,7 +16,7 @@ class HashArchiveRepository:
 
     def save(self, archive: HashArchive, con: sqlite3.Connection) -> None:
         """Insert or replace one archive and all its FileEntry rows."""
-        storage_path_str = str(archive.storage_path.resolve())
+        storage_path_str = str(archive.anchor.storage_path)
 
         archive_row = self._build_archive_row(archive)
         archive_path_str = str(archive_row["path"])
@@ -136,7 +136,7 @@ class HashArchiveRepository:
         """Return a dict used directly with named-parameter SQL."""
         base: dict[str, str | int | None] = {
             "type": type(arch).__name__,
-            "path": str(arch.path),
+            "path": str(arch.anchor.relative_path),
             "is_deleted": int(arch.is_deleted),
             "hash_enclosure": None,
             "password": None,

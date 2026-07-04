@@ -133,7 +133,7 @@ class Rar7zArchive(AbstractRarArchive):
         logger.debug(
             "Processing archive %(name)s with path %(entry_path)s using password %(password)s",
             {
-                "name": self.path.name,
+                "name": self.anchor.relative_path.name,
                 "entry_path": entry_path,
                 "password": self.password,
             },
@@ -160,12 +160,16 @@ class Rar7zArchive(AbstractRarArchive):
         if not crc_match:
             logger.error(
                 "Failed to get CRC for %(name)s: %(entry_path)s",
-                {"name": self.path.name, "entry_path": entry_path},
+                {"name": self.anchor.relative_path.name, "entry_path": entry_path},
             )
             return None
         logger.debug(
             "Got CRC %(crc_match)s for %(name)s: %(entry_path)s",
-            {"crc_match": crc_match, "name": self.path.name, "entry_path": entry_path},
+            {
+                "crc_match": crc_match,
+                "name": self.anchor.relative_path.name,
+                "entry_path": entry_path,
+            },
         )
         return bytes.fromhex(crc_match)
 

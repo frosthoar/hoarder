@@ -7,6 +7,7 @@ from pathlib import Path, PurePath
 from typing import ClassVar, Type
 
 from ..archives import Algo
+from ..utils import AnchoredPath
 from .contents_hasher import ContentsHasher, CRC32Hasher
 
 
@@ -24,8 +25,7 @@ class VerificationSource(enum.IntEnum):
 class RealFile:
     """Represents a file or directory we encountered in storage."""
 
-    storage_path: Path
-    path: PurePath
+    anchor: AnchoredPath
     size: int
     is_dir: bool
     algo: Algo | None = None
@@ -46,7 +46,7 @@ class RealFile:
     @property
     def full_path(self) -> Path:
         """Return the resolved path on disk."""
-        return self.storage_path / self.path
+        return self.anchor.full_path
 
     def calculate_hash(self, algo: Algo = Algo.CRC32) -> bytes:
         """Calculate and assign hash/algo for this real file."""
@@ -72,16 +72,14 @@ class RealFile:
         algo: Algo = Algo.CRC32,
     ) -> RealFile:
         """Create a RealFile instance by inspecting the filesystem."""
-        storage_path = Path(storage_path)
-        pure_path = PurePath(path)
-        full_path = storage_path / pure_path
+        anchor = AnchoredPath(Path(storage_path), PurePath(path))
+        full_path = anchor.full_path
         if not full_path.exists():
             raise FileNotFoundError(full_path)
 
         stat = full_path.stat()
         real_file = cls(
-            storage_path=storage_path,
-            path=pure_path,
+            anchor=anchor,
             size=stat.st_size,
             is_dir=full_path.is_dir(),
         )
@@ -97,8 +95,7 @@ class Verification:
 
     real_file: RealFile
     source_type: VerificationSource
-    source_path: PurePath
-    source_storage_path: Path
+    source: AnchoredPath
     hash_value: bytes
     algo: Algo
     comment: str | None = None
