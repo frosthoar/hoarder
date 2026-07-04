@@ -1,11 +1,14 @@
 import pathlib
-import subprocess
 import typing
 
 import pytest
-import rarfile
 import tests.test_case_file_info
-from hoarder.archives import Rar7zArchive, RarArchive, RarfileRarArchive
+from hoarder.archives import (
+    AbstractRarArchive,
+    Rar7zArchive,
+    RarArchiveError,
+    RarfileRarArchive,
+)
 
 
 @pytest.mark.parametrize("archive_class", [Rar7zArchive, RarfileRarArchive])
@@ -13,7 +16,7 @@ from hoarder.archives import Rar7zArchive, RarArchive, RarfileRarArchive
     "rar_file_entry", tests.test_case_file_info.RAR_TEST_ARCHIVE_DEFS
 )
 def test_read_file_content_validation(
-    archive_class: type[RarArchive],
+    archive_class: type[AbstractRarArchive],
     rar_file_entry: tuple[
         pathlib.Path, str | None, typing.Any, typing.Any, typing.Any, typing.Any
     ],
@@ -52,7 +55,7 @@ def test_read_file_content_validation(
                 f"Content mismatch for {file_path} in {rar_path}"
             )
 
-    except (subprocess.CalledProcessError, rarfile.Error) as e:
+    except RarArchiveError as e:
         pytest.skip(f"{archive_class.__name__} cannot process {rar_path}: {e}")
     except FileNotFoundError as e:
         pytest.skip(f"Required file not found: {e}")

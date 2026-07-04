@@ -13,11 +13,26 @@ try:
 except ImportError:
     from typing_extensions import override
 
-T = typing.TypeVar("T", bound="RarArchive")
+T = typing.TypeVar("T", bound="AbstractRarArchive")
 
 
-class RarArchive(HashArchive, abc.ABC):
-    """Abstract base class for RAR archive implementations."""
+class RarArchiveError(Exception):
+    """Raised on RAR processing failures, regardless of backend.
+
+    Backend implementations must catch their own library-specific
+    exceptions (subprocess errors, rarfile.Error, ...) and re-raise as
+    this type, so callers never need to know which backend is in use.
+    """
+
+
+class AbstractRarArchive(HashArchive, abc.ABC):
+    """Abstract base class for RAR archive implementations.
+
+    Backend implementations (Rar7zArchive, RarfileRarArchive) must be
+    behaviorally interchangeable. Code outside this package should not
+    reference them directly - use RarArchive (rar_archive_default.py)
+    instead, which names the currently preferred backend.
+    """
 
     password: str | None
     scheme: RarScheme | None

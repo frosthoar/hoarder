@@ -9,7 +9,7 @@ import typing
 
 from ..utils import SEVENZIP
 from .hash_archive import Algo, FileEntry
-from .rar_archive import RarArchive
+from .rar_archive import AbstractRarArchive, RarArchiveError
 from .rar_path import DOT_RNN_PAT, PART_N_PAT, RarScheme, find_rar_files
 
 try:
@@ -22,7 +22,7 @@ logger = logging.getLogger("hoarder.archives.rar_archive_7z")
 T = typing.TypeVar("T", bound="Rar7zArchive")
 
 
-class Rar7zArchive(RarArchive):
+class Rar7zArchive(AbstractRarArchive):
     """RAR archive implementation that uses 7-zip for all operations."""
 
     @classmethod
@@ -152,7 +152,10 @@ class Rar7zArchive(RarArchive):
             str(path),
         ]
 
-        sub = subprocess.run(command_line, capture_output=True, check=True)
+        try:
+            sub = subprocess.run(command_line, capture_output=True, check=True)
+        except (subprocess.CalledProcessError, OSError) as exc:
+            raise RarArchiveError(f"7z failed to list {path}") from exc
 
         entries = sub.stdout.decode(errors="ignore", encoding="utf-8").split(
             2 * os.linesep
@@ -197,7 +200,12 @@ class Rar7zArchive(RarArchive):
             },
         )
 
-        sub = subprocess.run(command_line, capture_output=True, check=True)
+        try:
+            sub = subprocess.run(command_line, capture_output=True, check=True)
+        except (subprocess.CalledProcessError, OSError) as exc:
+            raise RarArchiveError(
+                f"7z failed to get CRC32 for {entry_path} in {self.full_path}"
+            ) from exc
 
         lines = sub.stdout.decode(errors="ignore", encoding="utf-8").splitlines()
 
@@ -235,7 +243,7 @@ class Rar7zArchive(RarArchive):
 
                     entry.hash_value = crc
                     entry.algo = Algo.CRC32
-                except subprocess.CalledProcessError:
+                except RarArchiveError:
                     logger.error(
                         "Failed to get CRC32 for %(entry_path)s",
                         {"entry_path": entry.path},
@@ -258,5 +266,10 @@ class Rar7zArchive(RarArchive):
             str(path),
         ]
 
-        sub = subprocess.run(command_line, capture_output=True, check=True)
+        try:
+            sub = subprocess.run(command_line, capture_output=True, check=True)
+        except (subprocess.CalledProcessError, OSError) as exc:
+            raise RarArchiveError(
+                f"7z failed to extract {path} from {self.full_path}"
+            ) from exc
         return sub.stdout

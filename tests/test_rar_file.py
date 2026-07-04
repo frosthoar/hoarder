@@ -3,7 +3,13 @@ import pathlib
 
 import pytest
 import tests.test_case_file_info
-from hoarder.archives import FileEntry, Rar7zArchive, RarArchive, RarfileRarArchive, RarScheme
+from hoarder.archives import (
+    AbstractRarArchive,
+    FileEntry,
+    Rar7zArchive,
+    RarfileRarArchive,
+    RarScheme,
+)
 
 logger = logging.getLogger("hoarder.test_rar_file")
 
@@ -13,7 +19,7 @@ logger = logging.getLogger("hoarder.test_rar_file")
     "rar_data_tuple", tests.test_case_file_info.RAR_TEST_ARCHIVE_DEFS
 )
 def test_rar_archives_set(
-    archive_class: type[RarArchive],
+    archive_class: type[AbstractRarArchive],
     rar_data_tuple: tuple[pathlib.Path, str | None, int, int, RarScheme, list[FileEntry]],
 ) -> None:
     (

@@ -8,7 +8,7 @@ import zlib
 import rarfile
 
 from .hash_archive import Algo, FileEntry
-from .rar_archive import RarArchive
+from .rar_archive import AbstractRarArchive, RarArchiveError
 from .rar_path import DOT_RNN_PAT, PART_N_PAT, RarScheme, find_rar_files
 
 try:
@@ -34,7 +34,7 @@ def _detect_version(path: pathlib.Path) -> str | None:
     return None
 
 
-class RarfileRarArchive(RarArchive):
+class RarfileRarArchive(AbstractRarArchive):
     """RAR archive implementation using the rarfile library.
 
     Reads CRC32 directly from archive headers when available (avoiding
@@ -111,16 +111,21 @@ class RarfileRarArchive(RarArchive):
 
         pwd = password.encode() if password else None
         files: set[FileEntry] = set()
-        with rarfile.RarFile(str(main_volume), errors="stop") as rf:
-            if pwd:
-                rf.setpassword(pwd)
-            for ri in rf.infolist():
-                entry_path = pathlib.PurePath(ri.filename)
-                size = ri.file_size
-                is_dir = ri.is_dir()
-                hash_value = ri.CRC.to_bytes(4, "big") if ri.CRC is not None else None
-                algo = Algo.CRC32 if hash_value is not None else None
-                files.add(FileEntry(entry_path, size, is_dir, hash_value, algo))
+        try:
+            with rarfile.RarFile(str(main_volume), errors="stop") as rf:
+                if pwd:
+                    rf.setpassword(pwd)
+                for ri in rf.infolist():
+                    entry_path = pathlib.PurePath(ri.filename)
+                    size = ri.file_size
+                    is_dir = ri.is_dir()
+                    hash_value = (
+                        ri.CRC.to_bytes(4, "big") if ri.CRC is not None else None
+                    )
+                    algo = Algo.CRC32 if hash_value is not None else None
+                    files.add(FileEntry(entry_path, size, is_dir, hash_value, algo))
+        except rarfile.Error as exc:
+            raise RarArchiveError(f"rarfile failed to list {main_volume}") from exc
 
         return cls(
             storage_path,
@@ -136,23 +141,26 @@ class RarfileRarArchive(RarArchive):
     def update_hash_values(self) -> None:
         logger.debug("Updating hash values for %s", self.full_path.name)
         pwd = self.password.encode() if self.password else None
-        with rarfile.RarFile(str(self.full_path), errors="stop") as rf:
-            if pwd:
-                rf.setpassword(pwd)
-            for entry in self:
-                if entry.hash_value:
-                    continue
-                if entry.is_dir:
-                    entry.hash_value = b"\x00" * 4
-                    entry.algo = Algo.CRC32
-                    continue
-                try:
-                    data = rf.read(str(entry.path))
-                    crc = zlib.crc32(data) & 0xFFFFFFFF
-                    entry.hash_value = crc.to_bytes(4, "big")
-                    entry.algo = Algo.CRC32
-                except Exception:
-                    logger.error("Failed to get CRC32 for %s", entry.path)
+        try:
+            with rarfile.RarFile(str(self.full_path), errors="stop") as rf:
+                if pwd:
+                    rf.setpassword(pwd)
+                for entry in self:
+                    if entry.hash_value:
+                        continue
+                    if entry.is_dir:
+                        entry.hash_value = b"\x00" * 4
+                        entry.algo = Algo.CRC32
+                        continue
+                    try:
+                        data = rf.read(str(entry.path))
+                        crc = zlib.crc32(data) & 0xFFFFFFFF
+                        entry.hash_value = crc.to_bytes(4, "big")
+                        entry.algo = Algo.CRC32
+                    except rarfile.Error:
+                        logger.error("Failed to get CRC32 for %s", entry.path)
+        except rarfile.Error as exc:
+            raise RarArchiveError(f"rarfile failed to open {self.full_path}") from exc
 
     @override
     def read_file(self, path: pathlib.PurePath) -> bytes:
@@ -161,7 +169,12 @@ class RarfileRarArchive(RarArchive):
             raise FileNotFoundError(f"Could not find {path}")
 
         pwd = self.password.encode() if self.password else None
-        with rarfile.RarFile(str(self.full_path), errors="stop") as rf:
-            if pwd:
-                rf.setpassword(pwd)
-            return rf.read(str(path))
+        try:
+            with rarfile.RarFile(str(self.full_path), errors="stop") as rf:
+                if pwd:
+                    rf.setpassword(pwd)
+                return rf.read(str(path))
+        except rarfile.Error as exc:
+            raise RarArchiveError(
+                f"rarfile failed to extract {path} from {self.full_path}"
+            ) from exc

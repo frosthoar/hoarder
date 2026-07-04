@@ -1,11 +1,10 @@
 import logging
 import pathlib
-import subprocess
 import typing
 
 import pytest
 from hoarder import HoarderRepository
-from hoarder.archives import HashNameArchive, Rar7zArchive, SfvArchive
+from hoarder.archives import HashNameArchive, RarArchive, RarArchiveError, SfvArchive
 from tests.test_case_file_info import RAR_TEST_ARCHIVE_DEFS
 
 logger = logging.getLogger()
@@ -79,15 +78,15 @@ def test_rar_repositories(
     root = rar_file.parent
     path = pathlib.PurePath(rar_file.name)
     try:
-        saved_rar_file = Rar7zArchive.from_path(
+        saved_rar_file = RarArchive.from_path(
             root,
             path,
             password=password,
         )
-    except subprocess.CalledProcessError:
-        pytest.skip("7zip not available or failed to process archive")
+    except RarArchiveError as exc:
+        pytest.skip(f"Failed to process archive: {exc}")
     except FileNotFoundError as exc:
-        pytest.skip(f"Required executable not found: {exc}")
+        pytest.skip(f"Required file not found: {exc}")
     create_test_repo.save_hash_archive(saved_rar_file)
     retrieved_rar_file = create_test_repo.load_hash_archive(
         saved_rar_file.storage_path, saved_rar_file.path
