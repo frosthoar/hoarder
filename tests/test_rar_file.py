@@ -20,7 +20,9 @@ logger = logging.getLogger("hoarder.test_rar_file")
 )
 def test_rar_archives_set(
     archive_class: type[AbstractRarArchive],
-    rar_data_tuple: tuple[pathlib.Path, str | None, int, int, RarScheme, list[FileEntry]],
+    rar_data_tuple: tuple[
+        pathlib.Path, str | None, int, int, RarScheme, list[FileEntry]
+    ],
 ) -> None:
     (
         main_archive_path,

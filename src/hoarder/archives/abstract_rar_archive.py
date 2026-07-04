@@ -8,11 +8,6 @@ from abc import abstractmethod
 from .hash_archive import FileEntry, HashArchive
 from .rar_path import RarScheme
 
-try:
-    from typing import override  # type: ignore [attr-defined]
-except ImportError:
-    from typing_extensions import override
-
 T = typing.TypeVar("T", bound="AbstractRarArchive")
 
 

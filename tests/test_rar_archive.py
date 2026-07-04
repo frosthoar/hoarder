@@ -51,9 +51,9 @@ def test_read_file_content_validation(
             archive_content = archive.read_file(file_path)
             with open(compare_file, "rb") as f:
                 original_content = f.read()
-            assert archive_content == original_content, (
-                f"Content mismatch for {file_path} in {rar_path}"
-            )
+            assert (
+                archive_content == original_content
+            ), f"Content mismatch for {file_path} in {rar_path}"
 
     except RarArchiveError as e:
         pytest.skip(f"{archive_class.__name__} cannot process {rar_path}: {e}")

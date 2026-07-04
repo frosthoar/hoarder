@@ -68,9 +68,9 @@ class RARPath(typing.NamedTuple):
         if match is None:
             raise ValueError("match is None")
         return cls(
-            volume_index=-1
-            if match["volume_index"] is None
-            else int(match["volume_index"]),
+            volume_index=(
+                -1 if match["volume_index"] is None else int(match["volume_index"])
+            ),
             path=match.string,
             stem=match["stem"],
             suffix=match["suffix"],
@@ -228,9 +228,7 @@ def locate_main_volume(
 
         seek_stem = match["stem"]
         search_dir = (
-            storage_path / path.parent
-            if path.parent != PurePath(".")
-            else storage_path
+            storage_path / path.parent if path.parent != PurePath(".") else storage_path
         )
         logger.debug(
             "Finding RAR files with stem %s in directory %s", seek_stem, search_dir
