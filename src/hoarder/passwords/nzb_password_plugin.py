@@ -8,6 +8,7 @@ import traceback
 import xml.etree.ElementTree as ET
 from typing import Callable, NamedTuple
 
+from ..archives import RarArchiveError
 from ..archives.rar_archive import RarArchive
 from ..utils import TableFormatter
 from .password_plugin import PasswordPlugin
@@ -45,14 +46,18 @@ class NzbPasswordPlugin(PasswordPlugin):
 
         Raises:
             KeyError: If 'nzb_paths' is not present in the config dictionary.
+            TypeError: If 'nzb_paths' is not a list.
             ValueError: If 'nzb_paths' is empty.
             NotADirectoryError: If any path in 'nzb_paths' is not a valid directory.
         """
         if "nzb_paths" not in config:
             raise KeyError("nzb_paths not set")
-        if not config["nzb_paths"]:
-            raise ValueError("nzb_paths must map to a list")
-        paths = [pathlib.Path(p) for p in config["nzb_paths"]]
+        nzb_paths = config["nzb_paths"]
+        if not isinstance(nzb_paths, list):
+            raise TypeError("nzb_paths must be a list")
+        if not nzb_paths:
+            raise ValueError("nzb_paths must map to a non-empty list")
+        paths = [pathlib.Path(p) for p in nzb_paths]
         invalid_paths = [p for p in paths if not p.is_dir()]
         if invalid_paths:
             raise NotADirectoryError(
@@ -163,9 +168,14 @@ class NzbPasswordPlugin(PasswordPlugin):
             for file in files:
                 full_path: pathlib.Path = nzb_directory / root / file
                 if full_path.suffix == ".nzb":
-                    title_password = NzbPasswordPlugin._process_file(
-                        full_path, read_file_content=lambda fp: open(fp, "r").read()
-                    )
+                    try:
+                        title_password = NzbPasswordPlugin._process_file(
+                            full_path,
+                            read_file_content=lambda fp: open(fp, "r").read(),
+                        )
+                    except (OSError, UnicodeDecodeError) as exc:
+                        logger.warning("Skipping unreadable NZB %s: %s", full_path, exc)
+                        continue
                     if title_password:
                         dir_store.add_password(*title_password)
                 elif full_path.suffix == ".rar":
@@ -174,12 +184,21 @@ class NzbPasswordPlugin(PasswordPlugin):
                     rar_file: RarArchive = RarArchive.from_path(nzb_directory, path)
                     for file_entry in rar_file.files:
                         logger.debug(f"Read {file_entry.path}... extracting passwords")
-                        title_password = NzbPasswordPlugin._process_file(
-                            file_entry.path,
-                            read_file_content=lambda fp: rar_file.read_file(
-                                file_entry.path
-                            ),
-                        )
+                        try:
+                            title_password = NzbPasswordPlugin._process_file(
+                                file_entry.path,
+                                read_file_content=lambda fp: rar_file.read_file(
+                                    file_entry.path
+                                ),
+                            )
+                        except (OSError, UnicodeDecodeError, RarArchiveError) as exc:
+                            logger.warning(
+                                "Skipping unreadable archive entry %s in %s: %s",
+                                file_entry.path,
+                                full_path,
+                                exc,
+                            )
+                            continue
                         if title_password:
                             dir_store.add_password(*title_password)
         return dir_store
