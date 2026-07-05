@@ -27,7 +27,9 @@ class HashArchiveRepository:
         _ = cur.execute(
             """
             DELETE FROM hash_archives
-            WHERE storage_path_id = (SELECT id FROM storage_paths WHERE storage_path = ?)
+            WHERE storage_path_id = (
+                SELECT id FROM storage_paths WHERE storage_path = ?
+              )
               AND path = ?;
             """,
             (storage_path_str, archive_path_str),
@@ -52,12 +54,16 @@ class HashArchiveRepository:
             )
             _ = cur.executemany(
                 """
-                INSERT INTO file_entries (path, size, is_dir, hash_value, algo, archive_id)
-                SELECT :path AS path, :size AS size, :is_dir AS is_dir, :hash_value AS hash_value,
-                :algo AS algo, hash_archives.id as archive_id
+                INSERT INTO file_entries (
+                    path, size, is_dir, hash_value, algo, archive_id
+                )
+                SELECT :path AS path, :size AS size, :is_dir AS is_dir,
+                :hash_value AS hash_value, :algo AS algo,
+                hash_archives.id as archive_id
                 FROM hash_archives
                 JOIN storage_paths ON hash_archives.storage_path_id = storage_paths.id
-                WHERE storage_paths.storage_path = :storage_path AND hash_archives.path = :archive_path
+                WHERE storage_paths.storage_path = :storage_path
+                  AND hash_archives.path = :archive_path
                 """,
                 fe_rows,
             )

@@ -132,7 +132,8 @@ class Rar7zArchive(AbstractRarArchive):
             str(entry_path),
         ]
         logger.debug(
-            "Processing archive %(name)s with path %(entry_path)s using password %(password)s",
+            "Processing archive %(name)s with path %(entry_path)s "
+            "using password %(password)s",
             {
                 "name": self.anchor.relative_path.name,
                 "entry_path": entry_path,

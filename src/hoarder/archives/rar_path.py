@@ -85,7 +85,8 @@ def parse_rar_list(
     paths: collections.abc.Sequence[str | Path],
 ) -> tuple[RarScheme, list[RARPath]]:
     if len(paths) == 0:
-        # Since there is no non-indexed .rar, this must be interpreted as an "empty PART_N"
+        # Since there is no non-indexed .rar, this must be interpreted as an
+        # "empty PART_N"
         return RarScheme.PART_N, []
 
     matches = [PART_N_PAT.match(str(p)) for p in paths]
@@ -117,14 +118,17 @@ def parse_rar_list(
         case RarScheme.PART_N:
             base = 1
         case RarScheme.AMBIGUOUS:
-            # It's only possible for this to be a valid PART_N if the only volume index is 1
+            # It's only possible for this to be a valid PART_N if the only
+            # volume index is 1
             if actual == {1}:
                 return scheme, parsed
             scheme = RarScheme.DOT_RNN
             base = -1
 
-            # This started as an ambiguous case where the volume index might have been part of a PART_N suffix.
-            # Since we've ruled that out, the actual volume index set is reinterpreted as the base only (-1).
+            # This started as an ambiguous case where the volume index might
+            # have been part of a PART_N suffix. Since we've ruled that out,
+            # the actual volume index set is reinterpreted as the base only
+            # (-1).
             actual = {-1}
 
     if scheme == RarScheme.DOT_RNN:
