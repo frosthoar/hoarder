@@ -54,7 +54,7 @@ def test_nzb_plugin_requires_list_nzb_paths(tmp_path: pathlib.Path) -> None:
 def test_nzb_plugin_rejects_non_list_nzb_paths(tmp_path: pathlib.Path) -> None:
     """A bare string is iterable char-by-char; it must be rejected."""
     with pytest.raises(TypeError, match="nzb_paths"):
-        NzbPasswordPlugin({"nzb_paths": str(tmp_path)})  # type: ignore[arg-type]
+        NzbPasswordPlugin({"nzb_paths": str(tmp_path)})  # type: ignore[dict-item]
 
 
 def test_nzb_plugin_skips_unreadable_nzb_and_continues(
