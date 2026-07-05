@@ -431,17 +431,17 @@ def test_add_password_type_error_title(password_store: PasswordStore):
     """Test that add_password raises TypeError for non-string title."""
     with pytest.raises(TypeError, match="title must be str"):
         password_store.add_password(
-            123, "password1"
+            123, "password1"  # type: ignore[arg-type]
         )  # pyright: ignore[reportArgumentType]
 
     with pytest.raises(TypeError, match="title must be str"):
         password_store.add_password(
-            None, "password1"
+            None, "password1"  # type: ignore[arg-type]
         )  # pyright: ignore[reportArgumentType]
 
     with pytest.raises(TypeError, match="title must be str"):
         password_store.add_password(
-            ["title"], "password1"
+            ["title"], "password1"  # type: ignore[arg-type]
         )  # pyright: ignore[reportArgumentType]
 
 
@@ -450,17 +450,17 @@ def test_add_password_type_error_password(password_store: PasswordStore):
     """Test that add_password raises TypeError for non-string password."""
     with pytest.raises(TypeError, match="password must be str"):
         password_store.add_password(
-            "title1", 123
+            "title1", 123  # type: ignore[arg-type]
         )  # pyright: ignore[reportArgumentType]
 
     with pytest.raises(TypeError, match="password must be str"):
         password_store.add_password(
-            "title1", None
+            "title1", None  # type: ignore[arg-type]
         )  # pyright: ignore[reportArgumentType]
 
     with pytest.raises(TypeError, match="password must be str"):
         password_store.add_password(
-            "title1", ["password"]
+            "title1", ["password"]  # type: ignore[arg-type]
         )  # pyright: ignore[reportArgumentType]
 
 

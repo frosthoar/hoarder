@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Generate an example SQLite database using HashArchiveRepository.
 
-This script creates a small example database with sample archives from the test_files directory.
+This script creates a small example database with sample archives from the
+test_files directory.
 """
 
 import pathlib
@@ -78,7 +79,8 @@ def main() -> None:
                 hnf_archive = HashNameArchive.from_path(storage_path, path)
                 repo.save_hash_archive(hnf_archive)
                 print(
-                    f"  ✓ Saved HashNameArchive with {len(hnf_archive.files)} file entry"
+                    f"  ✓ Saved HashNameArchive with "
+                    f"{len(hnf_archive.files)} file entry"
                 )
                 archives_created += 1
             except Exception as e:
@@ -104,7 +106,8 @@ def main() -> None:
                     )
                     repo.save_hash_archive(rar_archive)
                     print(
-                        f"  ✓ Saved RAR archive with {len(rar_archive.files)} file entries"
+                        f"  ✓ Saved RAR archive with "
+                        f"{len(rar_archive.files)} file entries"
                     )
                     archives_created += 1
                     break  # Only add one RAR archive for the example
@@ -129,8 +132,8 @@ def main() -> None:
                 path = pathlib.PurePath(sfv_file.name)
                 loaded_archive = repo.load_hash_archive(storage_path, path)
                 print(f"  ✓ Successfully loaded: {loaded_archive.__class__.__name__}")
-                print(f"    Storage path: {loaded_archive.storage_path}")
-                print(f"    Path: {loaded_archive.path}")
+                print(f"    Storage path: {loaded_archive.anchor.storage_path}")
+                print(f"    Path: {loaded_archive.anchor.relative_path}")
                 print(f"    Files: {len(loaded_archive.files)}")
             except Exception as e:
                 print(f"  ✗ Failed to load archive: {e}")

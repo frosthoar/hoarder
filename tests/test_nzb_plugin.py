@@ -26,7 +26,6 @@ def test_nzb_plugin(nzb_plugin: NzbPasswordPlugin) -> None:
     logger.info(formatter.format_presentable(password_store))
     assert len(password_store) == 4
 
-    assert password_store.add_password
     assert "archlinux-2025.07.01-x86_64.iso" in password_store
     assert password_store["archlinux-2025.07.01-x86_64.iso"] == set(["letmein"])
 

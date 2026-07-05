@@ -50,16 +50,14 @@ class RarfileRarArchive(AbstractRarArchive):
         path: pathlib.PurePath,
         password: str | None = None,
     ) -> T:
-        main_volume, main_volume_path, scheme, n_volumes = locate_main_volume(
-            storage_path, path
-        )
+        volumes = locate_main_volume(storage_path, path)
 
-        version = _detect_version(main_volume)
+        version = _detect_version(volumes.main_volume)
 
         pwd = password.encode() if password else None
         files: set[FileEntry] = set()
         try:
-            with rarfile.RarFile(str(main_volume), errors="stop") as rf:
+            with rarfile.RarFile(str(volumes.main_volume), errors="stop") as rf:
                 if pwd:
                     rf.setpassword(pwd)
                 for ri in rf.infolist():
@@ -72,16 +70,19 @@ class RarfileRarArchive(AbstractRarArchive):
                     algo = Algo.CRC32 if hash_value is not None else None
                     files.add(FileEntry(entry_path, size, is_dir, hash_value, algo))
         except rarfile.Error as exc:
-            raise RarArchiveError(f"rarfile failed to list {main_volume}") from exc
+            raise RarArchiveError(
+                f"rarfile failed to list {volumes.main_volume}"
+            ) from exc
 
         return cls(
             storage_path,
-            pathlib.PurePath(main_volume_path),
+            pathlib.PurePath(volumes.main_volume_path),
             files,
             password,
             version,
-            scheme,
-            n_volumes,
+            volumes.scheme,
+            volumes.n_volumes,
+            volumes.part_n_padding,
         )
 
     @override

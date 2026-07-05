@@ -27,7 +27,9 @@ class HashArchiveRepository:
         _ = cur.execute(
             """
             DELETE FROM hash_archives
-            WHERE storage_path_id = (SELECT id FROM storage_paths WHERE storage_path = ?)
+            WHERE storage_path_id = (
+                SELECT id FROM storage_paths WHERE storage_path = ?
+              )
               AND path = ?;
             """,
             (storage_path_str, archive_path_str),
@@ -52,12 +54,16 @@ class HashArchiveRepository:
             )
             _ = cur.executemany(
                 """
-                INSERT INTO file_entries (path, size, is_dir, hash_value, algo, archive_id)
-                SELECT :path AS path, :size AS size, :is_dir AS is_dir, :hash_value AS hash_value,
-                :algo AS algo, hash_archives.id as archive_id
+                INSERT INTO file_entries (
+                    path, size, is_dir, hash_value, algo, archive_id
+                )
+                SELECT :path AS path, :size AS size, :is_dir AS is_dir,
+                :hash_value AS hash_value, :algo AS algo,
+                hash_archives.id as archive_id
                 FROM hash_archives
                 JOIN storage_paths ON hash_archives.storage_path_id = storage_paths.id
-                WHERE storage_paths.storage_path = :storage_path AND hash_archives.path = :archive_path
+                WHERE storage_paths.storage_path = :storage_path
+                  AND hash_archives.path = :archive_path
                 """,
                 fe_rows,
             )
@@ -143,6 +149,7 @@ class HashArchiveRepository:
             "rar_scheme": None,
             "rar_version": None,
             "n_volumes": None,
+            "part_n_padding": None,
         }
         if isinstance(arch, HashNameArchive):
             base["hash_enclosure"] = arch.enc.value
@@ -152,6 +159,7 @@ class HashArchiveRepository:
                 rar_scheme=arch.scheme.value if arch.scheme else None,
                 rar_version=arch.version,
                 n_volumes=arch.n_volumes,
+                part_n_padding=arch.part_n_padding,
             )
         elif isinstance(arch, SfvArchive):
             pass
@@ -209,6 +217,7 @@ class HashArchiveRepository:
                     else None
                 ),
                 n_volumes=cast(int | None, row["n_volumes"]),
+                part_n_padding=cast(int | None, row["part_n_padding"]),
             )
         elif archive_type == "SfvArchive":
             arch = SfvArchive(storage_path, PurePath(archive_path), files=set())

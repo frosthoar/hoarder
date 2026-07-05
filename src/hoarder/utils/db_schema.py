@@ -26,6 +26,7 @@ CREATE TABLE IF NOT EXISTS hash_archives (
     rar_scheme     INTEGER,
     rar_version    TEXT,
     n_volumes      INTEGER,
+    part_n_padding INTEGER,
     FOREIGN KEY (storage_path_id)
       REFERENCES storage_paths(id)
       ON DELETE CASCADE,

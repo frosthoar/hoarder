@@ -6,7 +6,7 @@ import typing
 from abc import abstractmethod
 
 from .hash_archive import FileEntry, HashArchive
-from .rar_path import RarScheme
+from .rar_path import PART_N_PAT, RarScheme
 
 T = typing.TypeVar("T", bound="AbstractRarArchive")
 
@@ -33,6 +33,7 @@ class AbstractRarArchive(HashArchive, abc.ABC):
     scheme: RarScheme | None
     version: str | None
     n_volumes: int | None
+    part_n_padding: int | None
 
     def __init__(
         self,
@@ -43,12 +44,24 @@ class AbstractRarArchive(HashArchive, abc.ABC):
         version: str | None = None,
         scheme: RarScheme | None = None,
         n_volumes: int | None = None,
+        part_n_padding: int | None = None,
     ) -> None:
+        if (
+            scheme == RarScheme.PART_N
+            and n_volumes is not None
+            and part_n_padding is not None
+            and n_volumes >= 10**part_n_padding
+        ):
+            raise ValueError(
+                f"part_n_padding={part_n_padding} cannot represent "
+                f"n_volumes={n_volumes}"
+            )
         super().__init__(storage_path, path, files)
         self.password = password
         self.scheme = scheme
         self.n_volumes = n_volumes
         self.version = version
+        self.part_n_padding = part_n_padding
 
     def get_volumes(self) -> list[pathlib.Path]:
         """Get a list of all volumes of the same RAR archive."""
@@ -66,9 +79,17 @@ class AbstractRarArchive(HashArchive, abc.ABC):
                 for index in range(0, self.n_volumes - 1)
             ]
         if self.scheme == RarScheme.PART_N:
-            stem = self.anchor.relative_path.stem.split(".part")[0]
+            if self.part_n_padding is None:
+                raise ValueError(f"part_n_padding not set for {self.full_path}")
+            match = PART_N_PAT.match(self.anchor.relative_path.name)
+            if match is None:
+                raise ValueError(
+                    f"{self.anchor.relative_path.name} does not match the "
+                    "PART_N naming pattern"
+                )
+            stem = match["stem"]
             volume_list = [
-                volume_dir / f"{stem}.part{index}.rar"
+                volume_dir / f"{stem}.part{index:0{self.part_n_padding}d}.rar"
                 for index in range(1, self.n_volumes + 1)
             ]
             for p in volume_list:

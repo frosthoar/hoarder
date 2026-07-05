@@ -14,6 +14,7 @@ CRC32_SAMPLE_DIRS = [fe for fe in case_files.TEST_FILES if fe.is_dir][:5]
 
 
 def _build_real_file(entry: case_files.FileEntry) -> RealFile:
+    assert entry.size is not None, "test fixtures always set a concrete size"
     return RealFile(
         anchor=AnchoredPath(STORAGE_ROOT, entry.path),
         size=entry.size,
