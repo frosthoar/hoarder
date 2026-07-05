@@ -40,14 +40,18 @@ class SabnzbdPasswordPlugin(PasswordPlugin):
 
         Raises:
             KeyError: If 'history_paths' is not present in the config dictionary.
+            TypeError: If 'history_paths' is not a list.
             ValueError: If 'history_paths' is empty.
             FileNotFoundError: If any path in 'history_paths' is not a valid file.
         """
         if "history_paths" not in config:
             raise KeyError("history_paths not set")
-        if not config["history_paths"]:
+        history_paths = config["history_paths"]
+        if not isinstance(history_paths, list):
+            raise TypeError("history_paths must be a list")
+        if not history_paths:
             raise ValueError("history_paths must map to a non-empty list")
-        paths = [Path(p) for p in config["history_paths"]]
+        paths = [Path(p) for p in history_paths]
         missing_paths = [p for p in paths if not p.is_file()]
         if missing_paths:
             raise FileNotFoundError(
@@ -85,5 +89,12 @@ class SabnzbdPasswordPlugin(PasswordPlugin):
         """
         password_store = PasswordStore()
         for db_path in self._history_paths:
-            password_store |= self._read_history_db(db_path)
+            try:
+                password_store |= self._read_history_db(db_path)
+            except (sqlite3.Error, OSError) as exc:
+                logger.warning(
+                    "Skipping unreadable SABnzbd history database %s: %s",
+                    db_path,
+                    exc,
+                )
         return password_store

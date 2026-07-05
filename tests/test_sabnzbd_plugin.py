@@ -54,7 +54,33 @@ def test_sabnzbd_plugin_requires_history_paths() -> None:
         SabnzbdPasswordPlugin({"history_paths": []})
 
 
+def test_sabnzbd_plugin_rejects_non_list_history_paths(
+    history_db_path: pathlib.Path,
+) -> None:
+    """A bare string is iterable char-by-char; it must be rejected, not silently
+    treated as a one-path list of nonsense single-character paths."""
+    with pytest.raises(TypeError, match="history_paths"):
+        SabnzbdPasswordPlugin({"history_paths": str(history_db_path)})
+
+
 def test_sabnzbd_plugin_raises_on_missing_file(tmp_path: pathlib.Path) -> None:
     missing = tmp_path / "does_not_exist.db"
     with pytest.raises(FileNotFoundError):
         SabnzbdPasswordPlugin({"history_paths": [str(missing)]})
+
+
+def test_sabnzbd_plugin_skips_unreadable_database_and_continues(
+    tmp_path: pathlib.Path, history_db_path: pathlib.Path
+) -> None:
+    """One corrupt/unreadable database must not discard results from the rest."""
+    broken_db = tmp_path / "broken.db"
+    broken_db.write_bytes(b"not a sqlite database")
+
+    plugin = SabnzbdPasswordPlugin(
+        {"history_paths": [str(broken_db), str(history_db_path)]}
+    )
+
+    password_store = plugin.extract_passwords()
+
+    assert "archlinux-2025.07.01-x86_64.iso" in password_store
+    assert password_store["archlinux-2025.07.01-x86_64.iso"] == {"letmein"}
