@@ -7,3 +7,6 @@ __pycache__/
 *.sqlite
 *.sqlite3
 *.db3
+
+# ...except committed test fixtures
+!test_files/**/*.db
