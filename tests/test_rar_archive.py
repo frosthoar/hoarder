@@ -90,6 +90,25 @@ def test_part_n_padding_matching_n_volumes_is_allowed(
 
 
 @pytest.mark.parametrize("archive_class", [Rar7zArchive, RarfileRarArchive])
+def test_get_volumes_raises_on_malformed_part_n_stem(
+    archive_class: type[AbstractRarArchive],
+) -> None:
+    """scheme=PART_N requires the relative_path to actually look like a
+    PART_N volume name; a mismatched name must raise rather than silently
+    deriving a wrong stem."""
+    archive = archive_class(
+        pathlib.Path("/tmp"),
+        pathlib.PurePath("archive.rar"),
+        scheme=RarScheme.PART_N,
+        n_volumes=2,
+        part_n_padding=2,
+    )
+
+    with pytest.raises(ValueError, match="does not match the PART_N naming pattern"):
+        archive.get_volumes()
+
+
+@pytest.mark.parametrize("archive_class", [Rar7zArchive, RarfileRarArchive])
 @pytest.mark.parametrize(
     "rar_file_entry", tests.test_case_file_info.RAR_TEST_ARCHIVE_DEFS
 )

@@ -6,7 +6,7 @@ import typing
 from abc import abstractmethod
 
 from .hash_archive import FileEntry, HashArchive
-from .rar_path import RarScheme
+from .rar_path import PART_N_PAT, RarScheme
 
 T = typing.TypeVar("T", bound="AbstractRarArchive")
 
@@ -81,7 +81,13 @@ class AbstractRarArchive(HashArchive, abc.ABC):
         if self.scheme == RarScheme.PART_N:
             if self.part_n_padding is None:
                 raise ValueError(f"part_n_padding not set for {self.full_path}")
-            stem = self.anchor.relative_path.stem.split(".part")[0]
+            match = PART_N_PAT.match(self.anchor.relative_path.name)
+            if match is None:
+                raise ValueError(
+                    f"{self.anchor.relative_path.name} does not match the "
+                    "PART_N naming pattern"
+                )
+            stem = match["stem"]
             volume_list = [
                 volume_dir / f"{stem}.part{index:0{self.part_n_padding}d}.rar"
                 for index in range(1, self.n_volumes + 1)

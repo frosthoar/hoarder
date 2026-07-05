@@ -2,7 +2,12 @@ from pathlib import Path, PurePath
 
 import pytest
 from hoarder.archives import RarScheme
-from hoarder.archives.rar_path import locate_main_volume, parse_rar_list, rar_sort
+from hoarder.archives.rar_path import (
+    PART_N_PAT,
+    locate_main_volume,
+    parse_rar_list,
+    rar_sort,
+)
 
 RAR_TEST_DIR = Path("test_files/rar")
 
@@ -67,6 +72,20 @@ def test_parse() -> None:
         raise AssertionError("PART_N missing an index")
     except ValueError as e:
         assert str(e) == "The following indices are missing: 2"
+
+
+def test_part_n_pat_extracts_full_stem_despite_embedded_part_substring() -> None:
+    """The stem may itself legitimately contain ".part" (e.g. "archive.part").
+
+    A naive `name.split(".part")[0]` would truncate at the first occurrence
+    and silently produce the wrong stem; the regex is anchored on the
+    trailing `.part<N>.rar` suffix instead, so it must find the correct,
+    full stem.
+    """
+    match = PART_N_PAT.match("archive.part.part01.rar")
+    assert match is not None
+    assert match["stem"] == "archive.part"
+    assert match["volume_index"] == "01"
 
 
 def test_sort() -> None:
