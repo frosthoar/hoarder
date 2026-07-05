@@ -1,12 +1,21 @@
 """Abstract base class for RAR archive implementations."""
 
 import abc
+import logging
 import pathlib
 import typing
 from abc import abstractmethod
 
+from ..utils.path_utils import AnchoredPath
 from .hash_archive import FileEntry, HashArchive
-from .rar_path import PART_N_PAT, RarScheme
+from .rar_path import PART_N_PAT, RarScheme, find_rar_files
+
+try:
+    from typing import override  # type: ignore [attr-defined]
+except ImportError:
+    from typing_extensions import override
+
+logger = logging.getLogger("hoarder.archives.abstract_rar_archive")
 
 T = typing.TypeVar("T", bound="AbstractRarArchive")
 
@@ -38,7 +47,7 @@ class AbstractRarArchive(HashArchive, abc.ABC):
     def __init__(
         self,
         storage_path: pathlib.Path,
-        path: pathlib.PurePath,
+        relative_path: pathlib.PurePath,
         files: set[FileEntry] | None = None,
         password: str | None = None,
         version: str | None = None,
@@ -56,7 +65,7 @@ class AbstractRarArchive(HashArchive, abc.ABC):
                 f"part_n_padding={part_n_padding} cannot represent "
                 f"n_volumes={n_volumes}"
             )
-        super().__init__(storage_path, path, files)
+        super().__init__(storage_path, relative_path, files)
         self.password = password
         self.scheme = scheme
         self.n_volumes = n_volumes
@@ -99,6 +108,36 @@ class AbstractRarArchive(HashArchive, abc.ABC):
         raise ValueError(
             f"Ambiguous RAR file {self.full_path} with {self.n_volumes} volumes"
         )
+
+    @classmethod
+    @override
+    def discover(cls: typing.Type[T], scope: AnchoredPath) -> list[T]:
+        """Find RAR archives within scope."""
+        search_path = scope.full_path
+        if search_path.is_file():
+            try:
+                return [cls.from_path(scope.storage_path, scope.relative_path)]
+            except ValueError:
+                # Doesn't match any RAR naming pattern - not an error, just
+                # not a match for this archive type.
+                return []
+        results = []
+        for _scheme, volumes in find_rar_files(search_path).values():
+            first_volume = volumes[0]
+            relative = first_volume.relative_to(scope.storage_path)
+            try:
+                results.append(cls.from_path(scope.storage_path, relative))
+            except RarArchiveError as exc:
+                # e.g. password-protected - expected when scanning a whole
+                # directory blindly; skip it, don't abort discovering others.
+                logger.warning(
+                    "Skipping unreadable RAR archive %s: %s", first_volume, exc
+                )
+        return results
+
+    @override
+    def get_occupied_paths(self) -> list[pathlib.Path]:
+        return self.get_volumes()
 
     @property
     def hash_values_exist(self) -> bool:

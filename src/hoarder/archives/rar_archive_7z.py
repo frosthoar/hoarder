@@ -30,10 +30,10 @@ class Rar7zArchive(AbstractRarArchive):
     def _from_path(
         cls: type[T],
         storage_path: pathlib.Path,
-        path: pathlib.PurePath,
+        relative_path: pathlib.PurePath,
         password: str | None = None,
     ) -> T:
-        volumes = locate_main_volume(storage_path, path)
+        volumes = locate_main_volume(storage_path, relative_path)
 
         infos = Rar7zArchive.list_rar(volumes.main_volume, password)
         type_entries = [entry for entry in infos if "Type" in entry]

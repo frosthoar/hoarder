@@ -6,7 +6,13 @@ import pathlib
 import typing
 
 from ..utils import PathType, determine_path_type
+from ..utils.path_utils import AnchoredPath
 from .hash_archive import Algo, FileEntry, HashArchive
+
+try:
+    from typing import override  # type: ignore [attr-defined]
+except ImportError:
+    from typing_extensions import override
 
 logger = logging.getLogger("hoarder.archives.sfv_file")
 
@@ -18,15 +24,18 @@ class SfvArchive(HashArchive):
 
     @classmethod
     def _from_path(
-        cls: typing.Type[T], storage_path: pathlib.Path, path: pathlib.PurePath
+        cls: typing.Type[T],
+        storage_path: pathlib.Path,
+        relative_path: pathlib.PurePath,
     ) -> T:
-        """Create a SfvArchive object by reading information from an SFV file given its storage_path and path.
+        """Create a SfvArchive object by reading information from an SFV
+        file given its storage_path and relative_path.
 
         Args:
             storage_path: The storage directory path (explicitly set, not inferred)
-            path: The relative path from storage_path (as PurePath)
+            relative_path: The relative path from storage_path (as PurePath)
         """
-        full_path = storage_path / path
+        full_path = storage_path / relative_path
         files = []
         with open(full_path, "rt", encoding="utf-8") as file:
             logger.debug("Reading %s", full_path)
@@ -83,4 +92,19 @@ class SfvArchive(HashArchive):
                         "Error converting '%(line)s' to FileEntry: %(error)s",
                         {"line": line, "error": e},
                     )
-        return cls(storage_path, path, set(files))
+        return cls(storage_path, relative_path, set(files))
+
+    @classmethod
+    @override
+    def discover(cls: typing.Type[T], scope: AnchoredPath) -> list[T]:
+        """Find .sfv files within scope."""
+        search_path = scope.full_path
+        if search_path.is_file():
+            if search_path.suffix.lower() == ".sfv":
+                return [cls.from_path(scope.storage_path, scope.relative_path)]
+            return []
+        results = []
+        for p in search_path.glob("*.sfv"):
+            relative = p.relative_to(scope.storage_path)
+            results.append(cls.from_path(scope.storage_path, relative))
+        return results

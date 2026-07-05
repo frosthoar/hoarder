@@ -47,10 +47,10 @@ class RarfileRarArchive(AbstractRarArchive):
     def _from_path(
         cls: type[T],
         storage_path: pathlib.Path,
-        path: pathlib.PurePath,
+        relative_path: pathlib.PurePath,
         password: str | None = None,
     ) -> T:
-        volumes = locate_main_volume(storage_path, path)
+        volumes = locate_main_volume(storage_path, relative_path)
 
         version = _detect_version(volumes.main_volume)
 

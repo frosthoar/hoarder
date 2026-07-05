@@ -76,18 +76,18 @@ class HashArchive(abc.ABC):
     def __init__(
         self,
         storage_path: pathlib.Path,
-        path: pathlib.PurePath,
+        relative_path: pathlib.PurePath,
         files: set[FileEntry] | None = None,
     ) -> None:
         """Create a HashArchive object.
 
         Args:
             storage_path: The storage directory path (explicitly set, not inferred)
-            path: The relative path from storage_path (as PurePath)
+            relative_path: The relative path from storage_path (as PurePath)
             files: Optional set of FileEntry objects
         """
         self.files = files or set()
-        self.anchor = AnchoredPath(storage_path, path)
+        self.anchor = AnchoredPath(storage_path, relative_path)
         self.is_deleted = True
 
     @property
@@ -99,35 +99,58 @@ class HashArchive(abc.ABC):
     def from_path(
         cls: typing.Type[T],
         storage_path: str | pathlib.Path,
-        path: str | pathlib.PurePath,
+        relative_path: str | pathlib.PurePath,
         **kwargs,
     ) -> T:
-        """Create a HashArchive object by reading information from an hash file given its storage_path and path.
+        """Create a HashArchive object by reading information from a hash
+        file given its storage_path and relative_path.
 
         Args:
             storage_path: The storage directory path (explicitly set, not inferred)
-            path: The relative path from storage_path
+            relative_path: The relative path from storage_path
         """
         _storage_path: pathlib.Path = pathlib.Path(storage_path)
-        _path: pathlib.PurePath = pathlib.PurePath(path)
+        _relative_path: pathlib.PurePath = pathlib.PurePath(relative_path)
 
-        full_path = _storage_path / _path
+        full_path = _storage_path / _relative_path
         if not full_path.is_file():
             raise FileNotFoundError(f"{full_path} does not exist")
 
-        return cls._from_path(_storage_path, _path, **kwargs)
+        return cls._from_path(_storage_path, _relative_path, **kwargs)
 
     @classmethod
     @abstractmethod
     def _from_path(
-        cls: typing.Type[T], storage_path: pathlib.Path, path: pathlib.PurePath
+        cls: typing.Type[T],
+        storage_path: pathlib.Path,
+        relative_path: pathlib.PurePath,
     ) -> T:
-        """Create a HashArchive object by reading information from an hash file given its storage_path and path.
+        """Create a HashArchive object by reading information from a hash
+        file given its storage_path and relative_path.
 
         Args:
             storage_path: The storage directory path (explicitly set, not inferred)
-            path: The relative path from storage_path (as PurePath)
+            relative_path: The relative path from storage_path (as PurePath)
         """
+
+    @classmethod
+    @abstractmethod
+    def discover(cls: typing.Type[T], scope: AnchoredPath) -> list[T]:
+        """Find archives of this type within scope.
+
+        Args:
+            scope: A file or directory to search. A file scope is checked
+                directly; a directory scope is searched non-recursively.
+        """
+
+    def get_occupied_paths(self) -> list[pathlib.Path]:
+        """All paths on disk this archive occupies.
+
+        Most archives are a single file; multi-volume archives (RAR) occupy
+        more than one path. Used by discovery to exclude archive volumes
+        from being treated as ordinary real files.
+        """
+        return [self.full_path]
 
     def __len__(self) -> int:
         return len(self.files)

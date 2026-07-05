@@ -5,8 +5,8 @@ from pathlib import Path, PurePath
 
 import pytest
 from hoarder import HoarderRepository
-from hoarder.archives import SfvArchive
-from hoarder.downloads import Download, RealFile
+from hoarder.archives import Algo, SfvArchive
+from hoarder.downloads import Download, RealFile, Verification, VerificationSource
 from hoarder.utils import AnchoredPath
 
 FROZEN_TS = dt.datetime(2024, 1, 1, tzinfo=dt.timezone.utc)
@@ -45,7 +45,7 @@ def _collect_files_from_directory(
             relative_path = file_path.relative_to(storage_path)
             real_file = RealFile.from_path(
                 storage_path=storage_path,
-                path=relative_path,
+                relative_path=relative_path,
                 include_hash=True,
             )
             real_file.first_seen = FROZEN_TS
@@ -296,3 +296,34 @@ def test_download_repository_persists_real_files_and_hash_archives(
     assert (
         loaded.hash_archives[0].anchor.relative_path == sfv_archive.anchor.relative_path
     )
+
+
+def test_save_download_repairs_verification_back_reference(
+    hoarder_repo: HoarderRepository, compare_storage_path: Path
+) -> None:
+    """save_download replaces RealFile instances rather than mutating .anchor
+    in place (RealFile is hashed by full_path). Verification.real_file must be
+    repointed at the replacement, not left referencing the stale original."""
+    real_files = _collect_files_from_directory(
+        compare_storage_path, PurePath("compare/files")
+    )
+    if not real_files:
+        pytest.skip("No files found in test_files/compare/files")
+
+    real_file = real_files[0]
+    original_real_file = real_file
+    verification = Verification(
+        real_file=real_file,
+        source_type=VerificationSource.SELF_HASH,
+        source=real_file.anchor,
+        hash_value=real_file.hash_value or b"",
+        algo=real_file.algo or Algo.CRC32,
+    )
+    real_file.verification.append(verification)
+
+    download = _build_download("verification back-reference", [real_file])
+    hoarder_repo.save_download(download)
+
+    saved_real_file = download.real_files[0]
+    assert saved_real_file is not original_real_file
+    assert saved_real_file.verification[0].real_file is saved_real_file

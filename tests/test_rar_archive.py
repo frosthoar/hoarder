@@ -10,6 +10,7 @@ from hoarder.archives import (
     RarfileRarArchive,
     RarScheme,
 )
+from hoarder.utils import AnchoredPath
 
 RarFileEntry = tuple[pathlib.Path, str | None, int, int, RarScheme, list[FileEntry]]
 
@@ -138,3 +139,22 @@ def test_get_volumes_returns_existing_sibling_volumes(
         pytest.skip(f"{archive_class.__name__} cannot process {rar_path}: {e}")
     except FileNotFoundError as e:
         pytest.skip(f"Required file not found: {e}")
+
+
+@pytest.mark.parametrize("archive_class", [Rar7zArchive, RarfileRarArchive])
+def test_rar_discover_finds_archives_in_directory(
+    archive_class: type[AbstractRarArchive],
+) -> None:
+    scope = AnchoredPath(pathlib.Path("test_files/rar"), pathlib.PurePath("."))
+    found = archive_class.discover(scope)
+    assert len(found) > 0
+    for archive in found:
+        assert isinstance(archive, archive_class)
+
+
+@pytest.mark.parametrize("archive_class", [Rar7zArchive, RarfileRarArchive])
+def test_rar_discover_returns_empty_when_no_match(
+    archive_class: type[AbstractRarArchive],
+) -> None:
+    scope = AnchoredPath(pathlib.Path("test_files/sfv"), pathlib.PurePath("."))
+    assert archive_class.discover(scope) == []

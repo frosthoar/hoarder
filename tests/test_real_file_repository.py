@@ -33,7 +33,7 @@ def hoarder_repo(tmp_path, compare_storage_path: Path) -> HoarderRepository:
 def _build_real_file(entry: case_files.FileEntry, storage_path: Path) -> RealFile:
     real_file = RealFile.from_path(
         storage_path=storage_path,
-        path=Path("compare") / entry.path,
+        relative_path=Path("compare") / entry.path,
         include_hash=not entry.is_dir,
     )
     real_file.first_seen = FROZEN_TS

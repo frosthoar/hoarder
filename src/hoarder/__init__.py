@@ -1,4 +1,4 @@
-from . import archives, downloads, passwords, utils
+from . import archives, downloads, passwords, phases, utils
 from .hoarder_repository import HoarderRepository
 
 __all__ = [
@@ -6,5 +6,6 @@ __all__ = [
     "archives",
     "passwords",
     "downloads",
+    "phases",
     "HoarderRepository",
 ]

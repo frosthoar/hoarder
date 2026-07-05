@@ -6,6 +6,7 @@ import pathlib
 import pytest
 import tests.test_case_file_info
 from hoarder.archives import HashNameArchive
+from hoarder.utils import AnchoredPath
 
 logger = logging.getLogger("hoarder.test_hnf_file")
 
@@ -29,3 +30,14 @@ def test_hnf_archives(list_hnf_file_paths: list[pathlib.Path]):
     assert sorted(itertools.chain(*map(lambda x: x.files, hnf_archives))) == sorted(
         tests.test_case_file_info.HNF_FILES
     )
+
+
+def test_hnf_discover_finds_all_hash_name_files():
+    scope = AnchoredPath(pathlib.Path("test_files/hnf"), pathlib.PurePath("."))
+    found = HashNameArchive.discover(scope)
+    assert len(found) == 4
+
+
+def test_hnf_discover_returns_empty_when_no_match():
+    scope = AnchoredPath(pathlib.Path("test_files/sfv"), pathlib.PurePath("."))
+    assert HashNameArchive.discover(scope) == []
