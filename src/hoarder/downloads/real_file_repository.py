@@ -3,7 +3,7 @@ from __future__ import annotations
 import collections.abc
 import datetime as dt
 import sqlite3
-from pathlib import Path, PurePath
+from pathlib import Path, PurePath, PurePosixPath
 from typing import Iterable
 
 from ..archives import Algo
@@ -110,7 +110,7 @@ class RealFileRepository:
     ) -> RealFile:
         """Load one RealFile (including all Verification records)."""
         storage_path_str = str(storage_path.resolve())
-        path_str = str(path)
+        path_str = str(PurePosixPath(*PurePath(path).parts))
 
         con.row_factory = sqlite3.Row
         cur = con.cursor()

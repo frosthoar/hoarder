@@ -1,6 +1,6 @@
 import collections.abc
 import sqlite3
-from pathlib import Path, PurePath
+from pathlib import Path, PurePath, PurePosixPath
 from typing import cast
 
 from .abstract_rar_archive import AbstractRarArchive
@@ -73,7 +73,7 @@ class HashArchiveRepository:
     ) -> HashArchive:
         """Return the archive (plus its FileEntry set) previously stored."""
         storage_path_str = str(storage_path.resolve())
-        path_str = str(path)
+        path_str = str(PurePosixPath(*PurePath(path).parts))
 
         con.row_factory = sqlite3.Row
         cur = con.cursor()

@@ -1,6 +1,6 @@
 """Tests for ScanTarget and DiscoveryConfig."""
 
-from pathlib import Path, PurePath
+from pathlib import Path, PurePath, PurePosixPath
 
 from hoarder.phases import DiscoveryConfig, ScanTarget
 from hoarder.utils import AnchoredPath
@@ -15,7 +15,7 @@ def test_get_archive_search_paths_includes_parent_by_default() -> None:
     target = ScanTarget(anchor=AnchoredPath(Path("test_files"), PurePath("sfv")))
     paths = target.get_archive_search_paths()
     assert paths[0] == target.anchor
-    assert paths[1].relative_path == PurePath(".")
+    assert paths[1].relative_path == PurePosixPath(".")
     assert paths[1].storage_path == target.anchor.storage_path
 
 

@@ -1,6 +1,6 @@
 """Tests for correlate_archives() and correlate_files_to_entries()."""
 
-from pathlib import Path, PurePath
+from pathlib import Path, PurePath, PurePosixPath
 
 from hoarder.archives import SfvArchive
 from hoarder.downloads import RealFile
@@ -49,7 +49,7 @@ def test_correlate_files_to_entries_matches_by_absolute_path() -> None:
     assert len(matches) == 1
     entries = matches[real_files[0]]
     assert len(entries) == 1
-    assert entries[0].path == PurePath("data/note.txt")
+    assert entries[0].path == PurePosixPath("data/note.txt")
 
 
 def test_correlate_files_to_entries_excludes_unmatched_real_files() -> None:

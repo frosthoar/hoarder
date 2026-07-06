@@ -1,6 +1,6 @@
 """End-to-end tests for process_target()."""
 
-from pathlib import Path, PurePath
+from pathlib import Path, PurePath, PurePosixPath
 
 from hoarder.phases import ScanTarget, process_target
 from hoarder.utils import AnchoredPath
@@ -23,7 +23,7 @@ def test_process_target_discovers_and_correlates_a_release() -> None:
     assert len(result.matches) == 1
     entries = result.matches[real_file]
     assert len(entries) == 1
-    assert entries[0].path == PurePath("data/note.txt")
+    assert entries[0].path == PurePosixPath("data/note.txt")
 
 
 def test_process_target_finds_nothing_for_an_empty_directory(tmp_path: Path) -> None:

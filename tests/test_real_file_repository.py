@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import datetime as dt
-from pathlib import Path, PurePath
+from pathlib import Path, PurePath, PurePosixPath
 
 import pytest
 import tests.test_case_file_info as case_files

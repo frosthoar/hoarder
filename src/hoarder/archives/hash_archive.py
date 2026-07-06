@@ -49,6 +49,9 @@ class FileEntry:
     algo: Algo | None = None
     info: str | None = None
 
+    def __post_init__(self) -> None:
+        self.path = pathlib.PurePosixPath(*pathlib.PurePath(self.path).parts)
+
     def __lt__(self: Self, other: Self) -> bool:
         return self.path < other.path
 
