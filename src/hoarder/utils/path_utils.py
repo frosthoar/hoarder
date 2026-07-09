@@ -39,8 +39,7 @@ class AnchoredPath:
         object.__setattr__(
             self, "storage_path", pathlib.Path(self.storage_path).resolve()
         )
-        parts = pathlib.PurePath(self.relative_path).parts
-        object.__setattr__(self, "relative_path", pathlib.PurePosixPath(*parts))
+        object.__setattr__(self, "relative_path", pathlib.PurePath(self.relative_path))
         resolved = (self.storage_path / self.relative_path).resolve()
         if not resolved.is_relative_to(self.storage_path):
             raise ValueError(

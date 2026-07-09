@@ -2,7 +2,7 @@
 
 import dataclasses
 import pathlib
-from pathlib import PurePosixPath
+from pathlib import PurePath
 
 from ..utils.path_utils import AnchoredPath
 
@@ -29,9 +29,7 @@ class ScanTarget:
     def get_archive_search_paths(self) -> list[AnchoredPath]:
         """Where to look for archives related to this target."""
         paths = [self.anchor]
-        if self.config.search_parent and self.anchor.relative_path != PurePosixPath(
-            "."
-        ):
+        if self.config.search_parent and self.anchor.relative_path != PurePath("."):
             paths.append(
                 self.anchor.with_relative_path(self.anchor.relative_path.parent)
             )

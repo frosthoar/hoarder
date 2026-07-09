@@ -112,7 +112,6 @@ class RarfileRarArchive(AbstractRarArchive):
 
     @override
     def read_file(self, path: pathlib.PurePath) -> bytes:
-        path = pathlib.PurePosixPath(*pathlib.PurePath(path).parts)
         paths: set[pathlib.PurePath] = {file.path for file in self.files}
         if path not in paths:
             raise FileNotFoundError(f"Could not find {path}")

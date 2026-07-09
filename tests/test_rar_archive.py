@@ -46,7 +46,7 @@ def test_read_file_content_validation(
 
         archive_paths = {f.path for f in archive.files}
         for file_path_str in test_files:
-            file_path = pathlib.PurePosixPath(file_path_str)
+            file_path = pathlib.PurePath(file_path_str)
             compare_file = compare_base / file_path
             assert compare_file.exists(), f"Compare fixture missing: {compare_file}"
             assert file_path in archive_paths, f"{file_path} not found in {rar_path}"

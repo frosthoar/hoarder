@@ -1,6 +1,6 @@
 import collections.abc
 import sqlite3
-from pathlib import Path, PurePath, PurePosixPath
+from pathlib import Path, PurePath
 from typing import cast
 
 from .abstract_rar_archive import AbstractRarArchive
@@ -73,7 +73,11 @@ class HashArchiveRepository:
     ) -> HashArchive:
         """Return the archive (plus its FileEntry set) previously stored."""
         storage_path_str = str(storage_path.resolve())
-        path_str = str(PurePosixPath(*PurePath(path).parts))
+        # SERIALIZATION BOUNDARY: this lookup key must match the canonical form
+        # written by save() above. A native str() won't match posix-stored
+        # values on Windows.
+        # TODO(path-serialization): normalize with .as_posix() (needs Windows verification).
+        path_str = str(path)
 
         con.row_factory = sqlite3.Row
         cur = con.cursor()
@@ -142,6 +146,12 @@ class HashArchiveRepository:
         """Return a dict used directly with named-parameter SQL."""
         base: dict[str, str | int | None] = {
             "type": type(arch).__name__,
+            # SERIALIZATION BOUNDARY: at runtime relative_path is a native
+            # PurePath, so str() emits OS-specific separators (backslashes on
+            # Windows). The DB must hold an OS-independent form or a database
+            # written on one platform won't match lookups on another. Normalize
+            # here, e.g. arch.anchor.relative_path.as_posix().
+            # TODO(path-serialization): apply .as_posix() (needs Windows verification).
             "path": str(arch.anchor.relative_path),
             "is_deleted": int(arch.is_deleted),
             "hash_enclosure": None,
@@ -175,6 +185,9 @@ class HashArchiveRepository:
     ) -> collections.abc.Iterable[dict[str, str | int | None | bytes]]:
         for fe in entries:
             ret_dict: dict[str, str | int | None | bytes] = {
+                # SERIALIZATION BOUNDARY: fe.path is a native PurePath at
+                # runtime; store the OS-independent form so the DB is portable.
+                # TODO(path-serialization): apply fe.path.as_posix() (needs Windows verification).
                 "path": str(fe.path),
                 "size": fe.size,
                 "is_dir": int(fe.is_dir),
