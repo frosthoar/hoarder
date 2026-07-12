@@ -8,7 +8,7 @@ import subprocess
 import typing
 
 from ..utils import SEVENZIP
-from .abstract_rar_archive import AbstractRarArchive, RarArchiveError
+from .abstract_rar_archive import AbstractRarArchive, RarArchiveError, RarPasswordError
 from .hash_archive import Algo, FileEntry
 from .rar_path import locate_main_volume
 
@@ -20,6 +20,13 @@ except ImportError:
 logger = logging.getLogger("hoarder.archives.rar_archive_7z")
 
 T = typing.TypeVar("T", bound="Rar7zArchive")
+
+
+def _is_password_stderr(stderr: bytes) -> bool:
+    """7z reports both a missing and a wrong password the same way, via
+    this stderr message (verified against 7z 25.01) rather than a
+    distinct exit code, so string-matching it is the only signal available."""
+    return b"wrong password" in stderr.lower()
 
 
 class Rar7zArchive(AbstractRarArchive):
@@ -43,6 +50,14 @@ class Rar7zArchive(AbstractRarArchive):
             logger.warning(f"No 'Type' entries found in {volumes.main_volume}")
         else:
             version = type_entries[0]["Type"]
+
+        # RAR3/4 signals encryption via "BlockEncryption" in Characteristics;
+        # RAR5 instead has a separate Encrypted=+/- field on the same entry.
+        requires_password = any(
+            "BlockEncryption" in te.get("Characteristics", "")
+            or te.get("Encrypted") == "+"
+            for te in type_entries
+        )
 
         files: set[FileEntry] = set()
         for entry in infos:
@@ -68,6 +83,7 @@ class Rar7zArchive(AbstractRarArchive):
             volumes.scheme,
             volumes.n_volumes,
             volumes.part_n_padding,
+            requires_password,
         )
 
     @classmethod
@@ -92,7 +108,11 @@ class Rar7zArchive(AbstractRarArchive):
 
         try:
             sub = subprocess.run(command_line, capture_output=True, check=True)
-        except (subprocess.CalledProcessError, OSError) as exc:
+        except subprocess.CalledProcessError as exc:
+            if _is_password_stderr(exc.stderr):
+                raise RarPasswordError(f"Wrong password for {path}") from exc
+            raise RarArchiveError(f"7z failed to list {path}") from exc
+        except OSError as exc:
             raise RarArchiveError(f"7z failed to list {path}") from exc
 
         entries = sub.stdout.decode(errors="ignore", encoding="utf-8").split(
@@ -141,7 +161,15 @@ class Rar7zArchive(AbstractRarArchive):
 
         try:
             sub = subprocess.run(command_line, capture_output=True, check=True)
-        except (subprocess.CalledProcessError, OSError) as exc:
+        except subprocess.CalledProcessError as exc:
+            if _is_password_stderr(exc.stderr):
+                raise RarPasswordError(
+                    f"Wrong password for {self.full_path}"
+                ) from exc
+            raise RarArchiveError(
+                f"7z failed to get CRC32 for {entry_path} in {self.full_path}"
+            ) from exc
+        except OSError as exc:
             raise RarArchiveError(
                 f"7z failed to get CRC32 for {entry_path} in {self.full_path}"
             ) from exc
@@ -188,6 +216,10 @@ class Rar7zArchive(AbstractRarArchive):
                     if crc is not None:
                         entry.hash_value = crc
                         entry.algo = Algo.CRC32
+                except RarPasswordError:
+                    # Wrong for one entry means wrong for all; abort rather
+                    # than silently leaving every remaining hash unset.
+                    raise
                 except RarArchiveError:
                     logger.error(
                         "Failed to get CRC32 for %(entry_path)s",
@@ -213,7 +245,15 @@ class Rar7zArchive(AbstractRarArchive):
 
         try:
             sub = subprocess.run(command_line, capture_output=True, check=True)
-        except (subprocess.CalledProcessError, OSError) as exc:
+        except subprocess.CalledProcessError as exc:
+            if _is_password_stderr(exc.stderr):
+                raise RarPasswordError(
+                    f"Wrong password for {path} in {self.full_path}"
+                ) from exc
+            raise RarArchiveError(
+                f"7z failed to extract {path} from {self.full_path}"
+            ) from exc
+        except OSError as exc:
             raise RarArchiveError(
                 f"7z failed to extract {path} from {self.full_path}"
             ) from exc

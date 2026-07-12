@@ -8,7 +8,7 @@ from abc import abstractmethod
 
 from ..utils.path_utils import AnchoredPath
 from .hash_archive import FileEntry, HashArchive
-from .rar_path import PART_N_PAT, RarScheme, find_rar_files
+from .rar_path import PART_N_PAT, RarScheme, find_rar_files, locate_main_volume
 
 try:
     from typing import override  # type: ignore [attr-defined]
@@ -29,6 +29,17 @@ class RarArchiveError(Exception):
     """
 
 
+class RarPasswordError(RarArchiveError):
+    """Raised when an archive requires a password and the one supplied
+    (including none at all) does not work.
+
+    Callers driving a "try candidate passwords" loop should catch this
+    specifically and move on to the next candidate; a plain
+    RarArchiveError means the archive itself is broken and retrying with
+    a different password will not help.
+    """
+
+
 class AbstractRarArchive(HashArchive, abc.ABC):
     """Abstract base class for RAR archive implementations.
 
@@ -43,6 +54,7 @@ class AbstractRarArchive(HashArchive, abc.ABC):
     version: str | None
     n_volumes: int | None
     part_n_padding: int | None
+    requires_password: bool
 
     def __init__(
         self,
@@ -54,6 +66,7 @@ class AbstractRarArchive(HashArchive, abc.ABC):
         scheme: RarScheme | None = None,
         n_volumes: int | None = None,
         part_n_padding: int | None = None,
+        requires_password: bool = False,
     ) -> None:
         if (
             scheme == RarScheme.PART_N
@@ -71,6 +84,7 @@ class AbstractRarArchive(HashArchive, abc.ABC):
         self.n_volumes = n_volumes
         self.version = version
         self.part_n_padding = part_n_padding
+        self.requires_password = requires_password
 
     def get_volumes(self) -> list[pathlib.Path]:
         """Get a list of all volumes of the same RAR archive."""
@@ -121,19 +135,58 @@ class AbstractRarArchive(HashArchive, abc.ABC):
                 # Doesn't match any RAR naming pattern - not an error, just
                 # not a match for this archive type.
                 return []
+            except RarPasswordError:
+                return [
+                    cls._password_required_stub(
+                        scope.storage_path, scope.relative_path
+                    )
+                ]
         results = []
         for _scheme, volumes in find_rar_files(search_path).values():
             first_volume = volumes[0]
             relative = first_volume.relative_to(scope.storage_path)
             try:
                 results.append(cls.from_path(scope.storage_path, relative))
+            except RarPasswordError:
+                # Expected when scanning a whole directory blindly without
+                # knowing passwords upfront. Record it anyway (instead of
+                # skipping) so it shows up as "encrypted, no working
+                # password" rather than silently vanishing from results.
+                logger.warning(
+                    "Archive %s requires a password; recording without contents",
+                    first_volume,
+                )
+                results.append(
+                    cls._password_required_stub(scope.storage_path, relative)
+                )
             except RarArchiveError as exc:
-                # e.g. password-protected - expected when scanning a whole
+                # e.g. corrupt archive - expected when scanning a whole
                 # directory blindly; skip it, don't abort discovering others.
                 logger.warning(
                     "Skipping unreadable RAR archive %s: %s", first_volume, exc
                 )
         return results
+
+    @classmethod
+    def _password_required_stub(
+        cls: typing.Type[T],
+        storage_path: pathlib.Path,
+        relative_path: pathlib.PurePath,
+    ) -> T:
+        """Build a placeholder for an archive known to require a password
+        we don't have. Its metadata (scheme, volume count, padding) comes
+        purely from the on-disk file layout, so no password is needed to
+        build it."""
+        volumes = locate_main_volume(storage_path, relative_path)
+        return cls(
+            storage_path,
+            volumes.main_volume_path,
+            files=set(),
+            scheme=volumes.scheme,
+            n_volumes=volumes.n_volumes,
+            part_n_padding=volumes.part_n_padding,
+            requires_password=True,
+        )
 
     @override
     def get_occupied_paths(self) -> list[pathlib.Path]:
