@@ -4,7 +4,7 @@ import typing
 
 import pytest
 from hoarder import HoarderRepository
-from hoarder.archives import HashNameArchive, RarArchive, RarArchiveError, SfvArchive
+from hoarder.archives import HashNameArchive, RarArchive, SfvArchive
 from tests.test_case_file_info import RAR_TEST_ARCHIVE_DEFS
 
 logger = logging.getLogger()
@@ -77,16 +77,11 @@ def test_rar_repositories(
     password = rar_file_tuple[1]
     root = rar_file.parent
     path = pathlib.PurePath(rar_file.name)
-    try:
-        saved_rar_file = RarArchive.from_path(
-            root,
-            path,
-            password=password,
-        )
-    except RarArchiveError as exc:
-        pytest.skip(f"Failed to process archive: {exc}")
-    except FileNotFoundError as exc:
-        pytest.skip(f"Required file not found: {exc}")
+    saved_rar_file = RarArchive.from_path(
+        root,
+        path,
+        password=password,
+    )
     create_test_repo.save_hash_archive(saved_rar_file)
     retrieved_rar_file = create_test_repo.load_hash_archive(
         saved_rar_file.anchor.storage_path, saved_rar_file.anchor.relative_path
@@ -120,8 +115,7 @@ def test_storage_path_not_allowed_error(tmpdir_factory):
 
     # Create repository with only one allowed storage path
     allowed_path = pathlib.Path("./test_files/sfv/")
-    if not allowed_path.exists():
-        pytest.skip(f"Test file directory not found: {allowed_path}")
+    assert allowed_path.exists(), f"Committed test fixture missing: {allowed_path}"
 
     repo = HoarderRepository(pathlib.Path(p / "hoarder.db"), [allowed_path])
 
@@ -130,8 +124,7 @@ def test_storage_path_not_allowed_error(tmpdir_factory):
         pathlib.Path("./test_files/hnf/")
         / "[ABC] 05. Lowercase and Brackets [x265][1080p][8714c76f].mkv"
     )
-    if not hnf_path.exists():
-        pytest.skip(f"Test file not found: {hnf_path}")
+    assert hnf_path.exists(), f"Committed test fixture missing: {hnf_path}"
 
     storage_path = hnf_path.parent
     path = pathlib.PurePath(hnf_path.name)
@@ -150,8 +143,7 @@ def test_storage_path_not_allowed_on_load(tmpdir_factory):
 
     # Create repository with only SFV storage path
     allowed_path = pathlib.Path("./test_files/sfv/")
-    if not allowed_path.exists():
-        pytest.skip(f"Test file directory not found: {allowed_path}")
+    assert allowed_path.exists(), f"Committed test fixture missing: {allowed_path}"
 
     repo = HoarderRepository(pathlib.Path(p / "hoarder.db"), [allowed_path])
 
@@ -160,8 +152,7 @@ def test_storage_path_not_allowed_on_load(tmpdir_factory):
         pathlib.Path("./test_files/hnf/")
         / "[ABC] 05. Lowercase and Brackets [x265][1080p][8714c76f].mkv"
     )
-    if not hnf_path.exists():
-        pytest.skip(f"Test file not found: {hnf_path}")
+    assert hnf_path.exists(), f"Committed test fixture missing: {hnf_path}"
 
     storage_path = hnf_path.parent
     path = pathlib.PurePath(hnf_path.name)
@@ -184,8 +175,7 @@ def test_storage_path_validation_on_init(tmpdir_factory):
 
     # Test with existing path - should normalize (resolve)
     sfv_path = pathlib.Path("./test_files/sfv/")
-    if not sfv_path.exists():
-        pytest.skip(f"Test file directory not found: {sfv_path}")
+    assert sfv_path.exists(), f"Committed test fixture missing: {sfv_path}"
 
     repo = HoarderRepository(pathlib.Path(p / "hoarder.db"), [sfv_path])
 

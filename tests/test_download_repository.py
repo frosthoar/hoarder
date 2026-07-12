@@ -13,8 +13,7 @@ FROZEN_TS = dt.datetime(2024, 1, 1, tzinfo=dt.timezone.utc)
 
 
 def _require_path(path: Path) -> Path:
-    if not path.exists():
-        pytest.skip(f"Required test data missing: {path}")
+    assert path.exists(), f"Committed test fixture missing: {path}"
     return path.resolve()
 
 
@@ -36,8 +35,7 @@ def _collect_files_from_directory(
     real_files: list[RealFile] = []
     files_dir = storage_path / directory_path
 
-    if not files_dir.exists():
-        pytest.skip(f"Test directory missing: {files_dir}")
+    assert files_dir.exists(), f"Committed test fixture directory missing: {files_dir}"
 
     # Walk through the directory and collect all files (not directories)
     for file_path in files_dir.rglob("*"):
@@ -75,8 +73,7 @@ def test_download_repository_roundtrip(
     real_files = _collect_files_from_directory(
         compare_storage_path, Path("compare/files")
     )
-    if not real_files:
-        pytest.skip("No files found in test_files/compare/files")
+    assert real_files, "Committed test fixture directory is empty: test_files/compare/files"
 
     # Create a download named "files"
     original = _build_download("files", real_files)
@@ -123,8 +120,7 @@ def test_download_repository_persists_real_files(
     real_files = _collect_files_from_directory(
         compare_storage_path, PurePath("compare/files")
     )
-    if not real_files:
-        pytest.skip("No files found in test_files/compare/files")
+    assert real_files, "Committed test fixture directory is empty: test_files/compare/files"
 
     # Take a subset for this test
     test_files = real_files[:5] if len(real_files) >= 5 else real_files
@@ -176,8 +172,7 @@ def test_download_repository_updates_existing_download(
     real_files = _collect_files_from_directory(
         compare_storage_path, PurePath("compare/files")
     )
-    if not real_files:
-        pytest.skip("No files found in test_files/compare/files")
+    assert real_files, "Committed test fixture directory is empty: test_files/compare/files"
 
     # Create initial download
     download1 = _build_download("files", real_files[:3])
@@ -236,8 +231,9 @@ def test_download_repository_persists_hash_archives(
 ) -> None:
     """Test that hash_archives associated with a download are persisted correctly."""
 
-    if not Path("./test_files/sfv/files.sfv").exists():
-        pytest.skip("SFV file not found")
+    assert Path(
+        "./test_files/sfv/files.sfv"
+    ).exists(), "Committed test fixture missing: test_files/sfv/files.sfv"
 
     sfv_archive = SfvArchive.from_path(compare_storage_path, PurePath("sfv/files.sfv"))
     hoarder_repo.save_hash_archive(sfv_archive)
@@ -272,14 +268,14 @@ def test_download_repository_persists_real_files_and_hash_archives(
     real_files = _collect_files_from_directory(
         compare_storage_path, Path("compare/files")
     )
-    if not real_files:
-        pytest.skip("No files found in test_files/compare/files")
+    assert real_files, "Committed test fixture directory is empty: test_files/compare/files"
 
     # Take a small subset
     test_files = real_files[:3] if len(real_files) >= 3 else real_files
 
-    if not Path("./test_files/sfv/files.sfv").exists():
-        pytest.skip("SFV file not found")
+    assert Path(
+        "./test_files/sfv/files.sfv"
+    ).exists(), "Committed test fixture missing: test_files/sfv/files.sfv"
 
     sfv_archive = SfvArchive.from_path(compare_storage_path, PurePath("sfv/files.sfv"))
     hoarder_repo.save_hash_archive(sfv_archive)
@@ -307,8 +303,7 @@ def test_save_download_repairs_verification_back_reference(
     real_files = _collect_files_from_directory(
         compare_storage_path, PurePath("compare/files")
     )
-    if not real_files:
-        pytest.skip("No files found in test_files/compare/files")
+    assert real_files, "Committed test fixture directory is empty: test_files/compare/files"
 
     real_file = real_files[0]
     original_real_file = real_file

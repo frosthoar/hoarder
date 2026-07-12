@@ -1,6 +1,5 @@
 from pathlib import Path, PurePath
 
-import pytest
 from hoarder.archives import RarScheme
 from hoarder.archives.rar_path import (
     PART_N_PAT,
@@ -115,8 +114,8 @@ def test_locate_main_volume_part_n_padding_not_derivable_from_volume_count() -> 
     real-world archives are sometimes renamed/repackaged with wider padding
     than their volume count strictly requires.
     """
-    if not (RAR_TEST_DIR / "locate_forced_padding.part01.rar").exists():
-        pytest.skip("RAR fixture files not found")
+    fixture = RAR_TEST_DIR / "locate_forced_padding.part01.rar"
+    assert fixture.exists(), f"Committed RAR fixture missing: {fixture}"
 
     volumes = locate_main_volume(
         RAR_TEST_DIR, PurePath("locate_forced_padding.part01.rar")
@@ -129,8 +128,8 @@ def test_locate_main_volume_part_n_padding_not_derivable_from_volume_count() -> 
 
 def test_locate_main_volume_part_n_no_padding() -> None:
     """A real 3-volume archive with rar's natural, unpadded part numbering."""
-    if not (RAR_TEST_DIR / "locate_padding.part1.rar").exists():
-        pytest.skip("RAR fixture files not found")
+    fixture = RAR_TEST_DIR / "locate_padding.part1.rar"
+    assert fixture.exists(), f"Committed RAR fixture missing: {fixture}"
 
     volumes = locate_main_volume(RAR_TEST_DIR, PurePath("locate_padding.part1.rar"))
 
@@ -142,8 +141,7 @@ def test_locate_main_volume_part_n_no_padding() -> None:
 def test_locate_main_volume_dot_rnn_has_no_part_n_padding() -> None:
     """A real old-style (.rar/.rNN) multi-volume archive."""
     main_volume = RAR_TEST_DIR / "v4_split_headers_unencrypted.rar"
-    if not main_volume.exists():
-        pytest.skip("RAR fixture files not found")
+    assert main_volume.exists(), f"Committed RAR fixture missing: {main_volume}"
 
     volumes = locate_main_volume(
         RAR_TEST_DIR, PurePath("v4_split_headers_unencrypted.rar")
