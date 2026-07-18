@@ -177,7 +177,7 @@ class AbstractRarArchive(HashArchive, abc.ABC):
         we don't have. Its metadata (scheme, volume count, padding) comes
         purely from the on-disk file layout, so no password is needed to
         build it."""
-        volumes = locate_main_volume(storage_path, relative_path)
+        volumes = locate_main_volume(AnchoredPath(storage_path, relative_path))
         return cls(
             storage_path,
             volumes.main_volume_path,

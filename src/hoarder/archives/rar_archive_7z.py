@@ -8,6 +8,7 @@ import subprocess
 import typing
 
 from ..utils import SEVENZIP
+from ..utils.path_utils import AnchoredPath
 from .abstract_rar_archive import AbstractRarArchive, RarArchiveError, RarPasswordError
 from .hash_archive import Algo, FileEntry
 from .rar_path import locate_main_volume
@@ -40,7 +41,7 @@ class Rar7zArchive(AbstractRarArchive):
         relative_path: pathlib.PurePath,
         password: str | None = None,
     ) -> T:
-        volumes = locate_main_volume(storage_path, relative_path)
+        volumes = locate_main_volume(AnchoredPath(storage_path, relative_path))
 
         infos = Rar7zArchive.list_rar(volumes.main_volume, password)
         type_entries = [entry for entry in infos if "Type" in entry]

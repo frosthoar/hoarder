@@ -7,6 +7,7 @@ import zlib
 
 import rarfile
 
+from ..utils.path_utils import AnchoredPath
 from .abstract_rar_archive import AbstractRarArchive, RarArchiveError, RarPasswordError
 from .hash_archive import Algo, FileEntry
 from .rar_path import locate_main_volume
@@ -66,7 +67,7 @@ class RarfileRarArchive(AbstractRarArchive):
         relative_path: pathlib.PurePath,
         password: str | None = None,
     ) -> T:
-        volumes = locate_main_volume(storage_path, relative_path)
+        volumes = locate_main_volume(AnchoredPath(storage_path, relative_path))
 
         version = _detect_version(volumes.main_volume)
 

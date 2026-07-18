@@ -166,7 +166,7 @@ class NzbPasswordPlugin(PasswordPlugin):
         dir_store = PasswordStore()
         for root, _, files in os.walk(nzb_directory):
             for file in files:
-                full_path: pathlib.Path = nzb_directory / root / file
+                full_path: pathlib.Path = pathlib.Path(root) / file
                 if full_path.suffix == ".nzb":
                     try:
                         title_password = NzbPasswordPlugin._process_file(
@@ -180,8 +180,10 @@ class NzbPasswordPlugin(PasswordPlugin):
                         dir_store.add_password(*title_password)
                 elif full_path.suffix == ".rar":
                     logger.debug(f"Processing RARed NZB(s) {full_path}")
-                    path = pathlib.PurePath(full_path)
-                    rar_file: RarArchive = RarArchive.from_path(nzb_directory, path)
+                    relative_path = full_path.relative_to(nzb_directory)
+                    rar_file: RarArchive = RarArchive.from_path(
+                        nzb_directory, relative_path
+                    )
                     for file_entry in rar_file.files:
                         logger.debug(f"Read {file_entry.path}... extracting passwords")
                         try:

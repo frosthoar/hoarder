@@ -7,6 +7,7 @@ from hoarder.archives.rar_path import (
     parse_rar_list,
     rar_sort,
 )
+from hoarder.utils.path_utils import AnchoredPath
 
 RAR_TEST_DIR = Path("test_files/rar")
 
@@ -118,7 +119,7 @@ def test_locate_main_volume_part_n_padding_not_derivable_from_volume_count() -> 
     assert fixture.exists(), f"Committed RAR fixture missing: {fixture}"
 
     volumes = locate_main_volume(
-        RAR_TEST_DIR, PurePath("locate_forced_padding.part01.rar")
+        AnchoredPath(RAR_TEST_DIR, PurePath("locate_forced_padding.part01.rar"))
     )
 
     assert volumes.scheme == RarScheme.PART_N
@@ -131,7 +132,9 @@ def test_locate_main_volume_part_n_no_padding() -> None:
     fixture = RAR_TEST_DIR / "locate_padding.part1.rar"
     assert fixture.exists(), f"Committed RAR fixture missing: {fixture}"
 
-    volumes = locate_main_volume(RAR_TEST_DIR, PurePath("locate_padding.part1.rar"))
+    volumes = locate_main_volume(
+        AnchoredPath(RAR_TEST_DIR, PurePath("locate_padding.part1.rar"))
+    )
 
     assert volumes.scheme == RarScheme.PART_N
     assert volumes.n_volumes == 3
@@ -144,7 +147,7 @@ def test_locate_main_volume_dot_rnn_has_no_part_n_padding() -> None:
     assert main_volume.exists(), f"Committed RAR fixture missing: {main_volume}"
 
     volumes = locate_main_volume(
-        RAR_TEST_DIR, PurePath("v4_split_headers_unencrypted.rar")
+        AnchoredPath(RAR_TEST_DIR, PurePath("v4_split_headers_unencrypted.rar"))
     )
 
     assert volumes.scheme == RarScheme.DOT_RNN

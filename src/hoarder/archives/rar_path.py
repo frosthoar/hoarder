@@ -5,6 +5,8 @@ import re
 import typing
 from pathlib import Path, PurePath
 
+from ..utils.path_utils import AnchoredPath
+
 try:
     from typing import override  # type: ignore [attr-defined]
 except ImportError:
@@ -202,8 +204,11 @@ class RarVolumeSet(typing.NamedTuple):
     part_n_padding: int | None
 
 
-def locate_main_volume(storage_path: Path, path: PurePath) -> RarVolumeSet:
+def locate_main_volume(anchor: AnchoredPath) -> RarVolumeSet:
     """Locate the main RAR volume and its sibling volumes for a given file.
+
+    `anchor` guarantees its relative_path cannot resolve outside
+    storage_path, so callers no longer need to check that themselves.
 
     Returns:
         A RarVolumeSet where main_volume is the absolute path to the first
@@ -215,7 +220,9 @@ def locate_main_volume(storage_path: Path, path: PurePath) -> RarVolumeSet:
             scheme.
         FileNotFoundError: path does not refer to an existing file.
     """
-    full_path = storage_path / path
+    storage_path = anchor.storage_path
+    path = anchor.relative_path
+    full_path = anchor.full_path
 
     if not full_path.is_file():
         logger.debug("Path %s is not a file", full_path)
@@ -245,12 +252,7 @@ def locate_main_volume(storage_path: Path, path: PurePath) -> RarVolumeSet:
     main_volume = rar_volumes[0]
     logger.debug("Main volume is %s", main_volume)
 
-    try:
-        main_volume_path = main_volume.relative_to(storage_path)
-    except ValueError:
-        raise ValueError(
-            f"Main volume {main_volume} is not under storage_path {storage_path}"
-        )
+    main_volume_path = main_volume.relative_to(storage_path)
 
     part_n_padding: int | None = None
     if scheme == RarScheme.PART_N:
