@@ -129,12 +129,14 @@ class AbstractRarArchive(HashArchive, abc.ABC):
         """Find RAR archives within scope."""
         search_path = scope.full_path
         if search_path.is_file():
+            if locate_main_volume(scope) is None:
+                # Doesn't match any RAR naming pattern - not an error, just
+                # not a match for this archive type. Checked directly instead
+                # of via from_path so a common non-match doesn't cost a 7z/
+                # rarfile invocation just to be discarded.
+                return []
             try:
                 return [cls.from_path(scope.storage_path, scope.relative_path)]
-            except ValueError:
-                # Doesn't match any RAR naming pattern - not an error, just
-                # not a match for this archive type.
-                return []
             except RarPasswordError:
                 return [
                     cls._password_required_stub(
