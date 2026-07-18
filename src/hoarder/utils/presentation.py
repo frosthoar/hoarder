@@ -117,6 +117,24 @@ class TableFormatter:
             return "yes" if value else "no"
         return str(value)
 
+    @staticmethod
+    def _truncate_middle(value: str, width: int) -> str:
+        """Truncate a long value by eliding its middle, keeping both ends.
+
+        Long paths/filenames in this codebase (e.g. scene-release names)
+        tend to share a common prefix and differ near the end - truncating
+        only the tail would make distinct rows look identical.
+        """
+        if len(value) <= width:
+            return value
+        ellipsis = "..."
+        if width <= len(ellipsis):
+            return value[:width]
+        keep = width - len(ellipsis)
+        head = keep // 2
+        tail = keep - head
+        return f"{value[:head]}{ellipsis}{value[-tail:]}"
+
     def _draw_line_above(
         self, first_col: str | None, i: int, rows: Sequence[Mapping[str, ScalarValue]]
     ) -> bool:
@@ -196,8 +214,8 @@ class TableFormatter:
                 else:
                     formatted_value = self._format_value(value)
                     if len(formatted_value) > self.MAX_COL_WIDTH:
-                        formatted_value = (
-                            formatted_value[: self.MAX_COL_WIDTH - 3] + "..."
+                        formatted_value = self._truncate_middle(
+                            formatted_value, self.MAX_COL_WIDTH
                         )
                 cells.append(f" {formatted_value.ljust(col_widths[col])} ")
             lines.append(f"┃{'│'.join(cells)}┃")

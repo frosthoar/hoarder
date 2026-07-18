@@ -4,7 +4,7 @@ from pathlib import Path, PurePath
 
 from hoarder.passwords import PasswordStore
 from hoarder.phases import ScanTarget, process_target
-from hoarder.utils import AnchoredPath
+from hoarder.utils import AnchoredPath, Presentable
 
 ENCRYPTED_RAR_FIXTURE = Path("test_files/rar/v4_encrypted.rar")
 ENCRYPTED_RAR_PASSWORD = "secret"
@@ -28,6 +28,25 @@ def test_process_target_discovers_and_correlates_a_release() -> None:
     entries = result.matches[real_file]
     assert len(entries) == 1
     assert entries[0].path == PurePath("data/note.txt")
+
+
+def test_processing_result_to_presentation() -> None:
+    target = ScanTarget(
+        anchor=AnchoredPath(Path("test_files/scan_target"), PurePath("release"))
+    )
+    result = process_target(target)
+
+    presentable: Presentable = result  # structural check: satisfies the protocol
+    spec = presentable.to_presentation()
+
+    assert spec["scalar"]["archives"] == 1
+    assert spec["scalar"]["real_files"] == 1
+    assert spec["scalar"]["matched_files"] == 1
+
+    assert len(spec["collection"]) == 1
+    row = spec["collection"][0]
+    assert row["matched"] is True
+    assert row["matched_entries"] == "data/note.txt"
 
 
 def test_process_target_resolves_a_password_protected_archive_when_known() -> None:

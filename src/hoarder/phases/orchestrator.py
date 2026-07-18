@@ -6,6 +6,7 @@ import logging
 from ..archives import FileEntry, HashArchive, HashNameArchive, RarArchive, SfvArchive
 from ..downloads import RealFile
 from ..passwords import PasswordStore
+from ..utils import PresentationSpec, ScalarValue
 from .correlation import correlate_archives, correlate_files_to_entries
 from .discovery import collect_archive_paths, discover_real_files
 from .password_resolution import resolve_passwords
@@ -24,6 +25,35 @@ class ProcessingResult:
     archives: list[HashArchive]
     real_files: list[RealFile]
     matches: dict[RealFile, list[FileEntry]]
+
+    def to_presentation(self) -> PresentationSpec:
+        """Convert this result to a presentation specification.
+
+        Returns:
+            A PresentationSpec with target/archive/match counts as scalars
+            and one row per real file - its correlation status and which
+            archive entries it matched - as the collection.
+        """
+        scalar: dict[str, ScalarValue] = {
+            "type": "ProcessingResult",
+            "path": str(self.target.full_path),
+            "archives": len(self.archives),
+            "real_files": len(self.real_files),
+            "matched_files": sum(1 for f in self.real_files if self.matches.get(f)),
+        }
+
+        collection: list[dict[str, ScalarValue]] = []
+        for real_file in sorted(self.real_files, key=lambda f: str(f.full_path)):
+            entries = self.matches.get(real_file, [])
+            row: dict[str, ScalarValue] = {
+                "path": str(real_file.full_path),
+                "size": real_file.size,
+                "matched": bool(entries),
+                "matched_entries": ", ".join(str(e.path) for e in entries) or None,
+            }
+            collection.append(row)
+
+        return PresentationSpec(scalar=scalar, collection=collection)
 
 
 def process_target(
