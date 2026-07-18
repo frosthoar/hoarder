@@ -8,7 +8,7 @@ from .correlation import correlate_archives, correlate_files_to_entries
 from .discovery import collect_archive_paths, discover_real_files
 from .orchestrator import ARCHIVE_TYPES, ProcessingResult, process_target
 from .password_resolution import resolve_passwords
-from .scan_target import DiscoveryConfig, ScanTarget
+from .scan_target import ScanTarget
 
 __all__ = [
     "correlation",
@@ -24,6 +24,5 @@ __all__ = [
     "ProcessingResult",
     "process_target",
     "resolve_passwords",
-    "DiscoveryConfig",
     "ScanTarget",
 ]

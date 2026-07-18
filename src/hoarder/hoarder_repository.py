@@ -16,7 +16,9 @@ class HoarderRepository:
     """Facade that combines archive and real file repositories with one connection."""
 
     def __init__(
-        self, db_path: str | Path, allowed_storage_paths: collections.abc.Iterable[Path]
+        self,
+        db_path: str | Path,
+        allowed_storage_paths: collections.abc.Iterable[Path | str],
     ) -> None:
         self.db_path = Path(db_path)
         self.allowed_storage_paths = self._normalize_paths(allowed_storage_paths)
@@ -127,11 +129,11 @@ class HoarderRepository:
 
     @staticmethod
     def _normalize_paths(
-        storage_paths: collections.abc.Iterable[Path],
+        storage_paths: collections.abc.Iterable[Path | str],
     ) -> set[Path]:
         normalized_paths: set[Path] = set()
         for path in storage_paths:
-            resolved = path.resolve()
+            resolved = Path(path).resolve()
             if not resolved.exists():
                 raise FileNotFoundError(
                     f"Storage path does not exist on disk: {resolved}"

@@ -1,8 +1,8 @@
-"""Tests for ScanTarget and DiscoveryConfig."""
+"""Tests for ScanTarget."""
 
 from pathlib import Path, PurePath
 
-from hoarder.phases import DiscoveryConfig, ScanTarget
+from hoarder.phases import ScanTarget
 from hoarder.utils import AnchoredPath
 
 
@@ -14,7 +14,7 @@ def test_get_file_search_paths_is_just_the_target_itself() -> None:
 def test_get_archive_search_paths_excludes_parent_by_default() -> None:
     """A ScanTarget's anchor is normally a directory holding one release, so
     its parent (e.g. the whole downloads folder) isn't a useful place to
-    look for archives by default - see DiscoveryConfig.search_parent."""
+    look for archives by default - see ScanTarget.search_parent."""
     target = ScanTarget(anchor=AnchoredPath(Path("test_files"), PurePath("sfv")))
     assert target.get_archive_search_paths() == [target.anchor]
 
@@ -22,7 +22,7 @@ def test_get_archive_search_paths_excludes_parent_by_default() -> None:
 def test_get_archive_search_paths_includes_parent_when_enabled() -> None:
     target = ScanTarget(
         anchor=AnchoredPath(Path("test_files"), PurePath("sfv")),
-        config=DiscoveryConfig(search_parent=True),
+        search_parent=True,
     )
     paths = target.get_archive_search_paths()
     assert paths[0] == target.anchor
@@ -35,7 +35,7 @@ def test_get_archive_search_paths_skips_parent_for_storage_root_itself() -> None
     even with search_parent enabled."""
     target = ScanTarget(
         anchor=AnchoredPath(Path("test_files"), PurePath(".")),
-        config=DiscoveryConfig(search_parent=True),
+        search_parent=True,
     )
     assert target.get_archive_search_paths() == [target.anchor]
 
@@ -44,7 +44,7 @@ def test_get_archive_search_paths_includes_archive_paths() -> None:
     extra = AnchoredPath(Path("test_files"), PurePath("hnf"))
     target = ScanTarget(
         anchor=AnchoredPath(Path("test_files"), PurePath("sfv")),
-        config=DiscoveryConfig(search_parent=False, archive_paths=[extra]),
+        archive_paths=[extra],
     )
     assert target.get_archive_search_paths() == [target.anchor, extra]
 
@@ -57,7 +57,7 @@ def test_get_archive_search_paths_archive_path_need_not_be_under_anchor_root() -
     other_root = AnchoredPath(Path("test_files/compare"), PurePath("files"))
     target = ScanTarget(
         anchor=AnchoredPath(Path("test_files"), PurePath("sfv")),
-        config=DiscoveryConfig(search_parent=False, archive_paths=[other_root]),
+        archive_paths=[other_root],
     )
     assert target.get_archive_search_paths() == [target.anchor, other_root]
 

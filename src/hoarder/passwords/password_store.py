@@ -16,10 +16,16 @@ class PasswordStore:
 
         Args:
             data: Optional dictionary mapping titles to sets of passwords.
+
+        Raises:
+            TypeError: If a title or password is not a str.
+            ValueError: If a title or password is empty.
         """
         self._store: dict[str, set[str]] = defaultdict(set)
         if data is not None:
             for title, passwords in data.items():
+                for password in passwords:
+                    self._validate(title, password)
                 self._store[title] = set(passwords)
 
     def __getitem__(self, title: str) -> set[str]:
@@ -32,8 +38,8 @@ class PasswordStore:
     def __len__(self) -> int:
         return len(self._store)
 
-    def add_password(self, title: str, password: str) -> None:
-        """Add a password to the specified title."""
+    @staticmethod
+    def _validate(title: str, password: str) -> None:
         if not isinstance(title, str):
             raise TypeError(f"title must be str, got {type(title).__name__}")
         if not isinstance(password, str):
@@ -42,6 +48,10 @@ class PasswordStore:
             raise ValueError("Empty title")
         if password == "":
             raise ValueError("Empty password")
+
+    def add_password(self, title: str, password: str) -> None:
+        """Add a password to the specified title."""
+        self._validate(title, password)
         self._store[title].add(password)
 
     def remove_password(self, title: str, password: str) -> bool:

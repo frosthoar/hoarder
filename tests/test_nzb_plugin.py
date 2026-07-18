@@ -57,6 +57,26 @@ def test_nzb_plugin_rejects_non_list_nzb_paths(tmp_path: pathlib.Path) -> None:
         NzbPasswordPlugin({"nzb_paths": str(tmp_path)})  # type: ignore[dict-item]
 
 
+@pytest.mark.skip(
+    reason="TODO: needs a committed encrypted-RAR fixture containing NZB "
+    "entries (test_files/rar has none yet)."
+)
+def test_nzb_plugin_handles_encrypted_rar_containing_nzbs(
+    tmp_path: pathlib.Path,
+) -> None:
+    """A RAR wrapping NZB files can itself be password-protected.
+
+    Two behaviors to cover once the fixture exists:
+    - named "<name>{{password}}.rar": the password embedded in the RAR's
+      own filename should be tried to open it, and its NZB entries
+      processed normally from there.
+    - no recoverable password (wrong/missing {{password}} in the name):
+      extract_passwords() must not raise - the RarPasswordError has to be
+      caught and that archive skipped, without aborting the rest of the
+      directory walk.
+    """
+
+
 def test_nzb_plugin_skips_unreadable_nzb_and_continues(
     tmp_path: pathlib.Path,
 ) -> None:

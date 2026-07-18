@@ -181,3 +181,16 @@ def test_storage_path_validation_on_init(tmpdir_factory):
 
     # Verify the path was normalized
     assert sfv_path.resolve() in repo.allowed_storage_paths
+
+
+def test_storage_path_accepts_str(tmpdir_factory):
+    """allowed_storage_paths entries may be given as plain strings, matching
+    db_path's own str | Path leniency."""
+    p = tmpdir_factory.mktemp("db")
+
+    sfv_path = pathlib.Path("./test_files/sfv/")
+    assert sfv_path.exists(), f"Committed test fixture missing: {sfv_path}"
+
+    repo = HoarderRepository(pathlib.Path(p / "hoarder.db"), [str(sfv_path)])
+
+    assert sfv_path.resolve() in repo.allowed_storage_paths

@@ -1,7 +1,11 @@
 """Retry password-protected archives against known candidate passwords."""
 
+import logging
+
 from ..archives import AbstractRarArchive, HashArchive, RarPasswordError
 from ..passwords import PasswordStore
+
+logger = logging.getLogger("hoarder.phases.password_resolution")
 
 
 def resolve_passwords(
@@ -18,7 +22,19 @@ def resolve_passwords(
     retry (e.g. once a new password is learned) rather than silently lost.
     """
     if title not in password_store:
+        logger.debug(
+            "No known passwords for title %r; leaving %d archive(s) as-is",
+            title,
+            len(archives),
+        )
         return archives
+
+    candidates = password_store[title]
+    logger.debug(
+        "Resolving passwords for title %r against %d known candidate(s)",
+        title,
+        len(candidates),
+    )
 
     resolved: list[HashArchive] = []
     for archive in archives:
@@ -26,16 +42,30 @@ def resolve_passwords(
             resolved.append(archive)
             continue
 
+        logger.debug(
+            "%s requires a password; trying %d candidate(s) for title %r",
+            archive.full_path,
+            len(candidates),
+            title,
+        )
         working: HashArchive | None = None
-        for candidate in password_store[title]:
+        for candidate in candidates:
             try:
                 working = type(archive).from_path(
                     archive.anchor.storage_path,
                     archive.anchor.relative_path,
                     password=candidate,
                 )
+                logger.debug("Found a working password for %s", archive.full_path)
                 break
             except RarPasswordError:
                 continue
+        if working is None:
+            logger.warning(
+                "None of %d known password(s) for title %r worked for %s",
+                len(candidates),
+                title,
+                archive.full_path,
+            )
         resolved.append(working if working is not None else archive)
     return resolved
