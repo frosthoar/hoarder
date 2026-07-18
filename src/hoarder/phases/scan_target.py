@@ -11,8 +11,18 @@ from ..utils.path_utils import AnchoredPath
 class DiscoveryConfig:
     """Configuration controlling where a ScanTarget looks for archives."""
 
-    search_parent: bool = True
-    additional_paths: list[AnchoredPath] = dataclasses.field(default_factory=list)
+    # Off by default: a ScanTarget's anchor is normally a directory holding
+    # one release/download, and its parent is one level ABOVE that (e.g. the
+    # whole downloads folder) - not a useful place to look for archives, and
+    # searching it risks pulling in unrelated archives. Turn this on only
+    # when the anchor is nested one level deeper than its archive, e.g. a
+    # per-disc "CD1/", "CD2/" subfolder sharing one .sfv in the parent.
+    search_parent: bool = False
+    # Extra locations to search for archives, independent of the anchor's
+    # own storage root - each AnchoredPath carries its own storage_path, so
+    # these need not live anywhere near (or even share a root with) the
+    # file(s) they end up correlated with.
+    archive_paths: list[AnchoredPath] = dataclasses.field(default_factory=list)
 
 
 @dataclasses.dataclass
@@ -33,7 +43,7 @@ class ScanTarget:
             paths.append(
                 self.anchor.with_relative_path(self.anchor.relative_path.parent)
             )
-        paths.extend(self.config.additional_paths)
+        paths.extend(self.config.archive_paths)
         return paths
 
     def get_file_search_paths(self) -> list[AnchoredPath]:

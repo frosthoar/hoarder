@@ -2,8 +2,12 @@
 
 from pathlib import Path, PurePath
 
+from hoarder.passwords import PasswordStore
 from hoarder.phases import ScanTarget, process_target
 from hoarder.utils import AnchoredPath
+
+ENCRYPTED_RAR_FIXTURE = Path("test_files/rar/v4_encrypted.rar")
+ENCRYPTED_RAR_PASSWORD = "secret"
 
 
 def test_process_target_discovers_and_correlates_a_release() -> None:
@@ -24,6 +28,54 @@ def test_process_target_discovers_and_correlates_a_release() -> None:
     entries = result.matches[real_file]
     assert len(entries) == 1
     assert entries[0].path == PurePath("data/note.txt")
+
+
+def test_process_target_resolves_a_password_protected_archive_when_known() -> None:
+    """title defaults to the anchor's own name, since the anchor here is
+    the archive file itself (not a release directory)."""
+    assert (
+        ENCRYPTED_RAR_FIXTURE.exists()
+    ), f"Committed RAR fixture missing: {ENCRYPTED_RAR_FIXTURE}"
+    target = ScanTarget(
+        anchor=AnchoredPath(
+            ENCRYPTED_RAR_FIXTURE.parent, PurePath(ENCRYPTED_RAR_FIXTURE.name)
+        )
+    )
+    store = PasswordStore()
+    store.add_password(ENCRYPTED_RAR_FIXTURE.name, "wrong-guess")
+    store.add_password(ENCRYPTED_RAR_FIXTURE.name, ENCRYPTED_RAR_PASSWORD)
+
+    result = process_target(target, password_store=store)
+
+    assert len(result.archives) == 1
+    archive = result.archives[0]
+    assert archive.requires_password is True
+    assert archive.password == ENCRYPTED_RAR_PASSWORD
+    assert len(archive.files) > 0
+
+
+def test_process_target_keeps_unresolved_password_protected_archive_visible() -> None:
+    """No known password works: the archive still shows up in results
+    (so it's findable/persistable later) rather than vanishing, but stays
+    an unopened placeholder."""
+    assert (
+        ENCRYPTED_RAR_FIXTURE.exists()
+    ), f"Committed RAR fixture missing: {ENCRYPTED_RAR_FIXTURE}"
+    target = ScanTarget(
+        anchor=AnchoredPath(
+            ENCRYPTED_RAR_FIXTURE.parent, PurePath(ENCRYPTED_RAR_FIXTURE.name)
+        )
+    )
+    store = PasswordStore()
+    store.add_password(ENCRYPTED_RAR_FIXTURE.name, "wrong-guess")
+
+    result = process_target(target, password_store=store)
+
+    assert len(result.archives) == 1
+    archive = result.archives[0]
+    assert archive.requires_password is True
+    assert archive.password is None
+    assert archive.files == set()
 
 
 def test_process_target_finds_nothing_for_an_empty_directory(tmp_path: Path) -> None:

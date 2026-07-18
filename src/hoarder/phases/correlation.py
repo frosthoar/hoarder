@@ -1,9 +1,9 @@
-"""Correlate discovered archives with discovered real files."""
+"""Correlation: matching discovered archives with discovered real files."""
 
 import collections
 from pathlib import Path
 
-from ..archives import FileEntry, HashArchive
+from ..archives import AbstractRarArchive, FileEntry, HashArchive
 from ..downloads import RealFile
 
 
@@ -15,10 +15,18 @@ def correlate_archives(
     Compares absolute paths (archive.anchor.full_path.parent / entry.path vs.
     real_file.full_path) rather than storage-relative ones, so this doesn't
     assume every archive and real file share one storage root.
+
+    A password-protected archive we couldn't open (requires_password=True,
+    no files - see AbstractRarArchive.discover()) can never match by
+    content, but is kept anyway: dropping it here would undo discover()'s
+    whole point of keeping it visible for a later password retry.
     """
     real_paths = {rf.full_path for rf in real_files}
     relevant = []
     for archive in archives:
+        if isinstance(archive, AbstractRarArchive) and archive.requires_password:
+            relevant.append(archive)
+            continue
         archive_dir = archive.anchor.full_path.parent
         archive_paths = {archive_dir / fe.path for fe in archive.files}
         if archive_paths & real_paths:
