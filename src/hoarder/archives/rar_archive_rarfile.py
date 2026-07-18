@@ -68,6 +68,8 @@ class RarfileRarArchive(AbstractRarArchive):
         password: str | None = None,
     ) -> T:
         volumes = locate_main_volume(AnchoredPath(storage_path, relative_path))
+        if volumes is None:
+            raise ValueError(f"Path {relative_path} does not match any RAR pattern")
 
         version = _detect_version(volumes.main_volume)
 

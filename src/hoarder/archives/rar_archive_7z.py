@@ -42,6 +42,8 @@ class Rar7zArchive(AbstractRarArchive):
         password: str | None = None,
     ) -> T:
         volumes = locate_main_volume(AnchoredPath(storage_path, relative_path))
+        if volumes is None:
+            raise ValueError(f"Path {relative_path} does not match any RAR pattern")
 
         infos = Rar7zArchive.list_rar(volumes.main_volume, password)
         type_entries = [entry for entry in infos if "Type" in entry]

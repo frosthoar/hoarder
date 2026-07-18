@@ -122,6 +122,7 @@ def test_locate_main_volume_part_n_padding_not_derivable_from_volume_count() -> 
         AnchoredPath(RAR_TEST_DIR, PurePath("locate_forced_padding.part01.rar"))
     )
 
+    assert volumes is not None
     assert volumes.scheme == RarScheme.PART_N
     assert volumes.n_volumes == 5
     assert volumes.part_n_padding == 2
@@ -136,6 +137,7 @@ def test_locate_main_volume_part_n_no_padding() -> None:
         AnchoredPath(RAR_TEST_DIR, PurePath("locate_padding.part1.rar"))
     )
 
+    assert volumes is not None
     assert volumes.scheme == RarScheme.PART_N
     assert volumes.n_volumes == 3
     assert volumes.part_n_padding == 1
@@ -150,9 +152,20 @@ def test_locate_main_volume_dot_rnn_has_no_part_n_padding() -> None:
         AnchoredPath(RAR_TEST_DIR, PurePath("v4_split_headers_unencrypted.rar"))
     )
 
+    assert volumes is not None
     assert volumes.scheme == RarScheme.DOT_RNN
     assert volumes.n_volumes == 18
     assert volumes.part_n_padding is None
+
+
+def test_locate_main_volume_returns_none_for_non_rar_file() -> None:
+    """A real, existing file that just doesn't match any RAR naming scheme."""
+    fixture = Path("test_files/sfv/files.sfv")
+    assert fixture.exists(), f"Committed fixture missing: {fixture}"
+
+    volumes = locate_main_volume(AnchoredPath(Path("test_files/sfv"), PurePath("files.sfv")))
+
+    assert volumes is None
 
 
 if __name__ == "__main__":

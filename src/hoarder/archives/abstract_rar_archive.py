@@ -178,6 +178,9 @@ class AbstractRarArchive(HashArchive, abc.ABC):
         purely from the on-disk file layout, so no password is needed to
         build it."""
         volumes = locate_main_volume(AnchoredPath(storage_path, relative_path))
+        # Only called after a RarPasswordError from a successful naming-pattern
+        # match, so the path is already known to be a RAR archive.
+        assert volumes is not None, f"{relative_path} does not match any RAR pattern"
         return cls(
             storage_path,
             volumes.main_volume_path,

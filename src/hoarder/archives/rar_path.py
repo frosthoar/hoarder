@@ -204,7 +204,7 @@ class RarVolumeSet(typing.NamedTuple):
     part_n_padding: int | None
 
 
-def locate_main_volume(anchor: AnchoredPath) -> RarVolumeSet:
+def locate_main_volume(anchor: AnchoredPath) -> RarVolumeSet | None:
     """Locate the main RAR volume and its sibling volumes for a given file.
 
     `anchor` guarantees its relative_path cannot resolve outside
@@ -213,11 +213,10 @@ def locate_main_volume(anchor: AnchoredPath) -> RarVolumeSet:
     Returns:
         A RarVolumeSet where main_volume is the absolute path to the first
         volume and main_volume_path is that same path relative to
-        storage_path.
+        storage_path, or None if the file doesn't match any RAR naming
+        scheme.
 
     Raises:
-        ValueError: the path is ambiguous or does not match any RAR naming
-            scheme.
         FileNotFoundError: path does not refer to an existing file.
     """
     storage_path = anchor.storage_path
@@ -235,7 +234,7 @@ def locate_main_volume(anchor: AnchoredPath) -> RarVolumeSet:
         logger.debug("Path %s matches a DOT_RNN_PAT pattern", path)
 
     if not match:
-        raise ValueError(f"Path {full_path} does not match any RAR pattern")
+        return None
 
     seek_stem = match["stem"]
     search_dir = storage_path / path.parent
@@ -244,7 +243,7 @@ def locate_main_volume(anchor: AnchoredPath) -> RarVolumeSet:
     )
     rar_dict: dict[str, tuple[RarScheme, list[Path]]] = find_rar_files(search_dir, seek_stem)
     if not rar_dict:
-        raise ValueError(f"Path {full_path} does not match any RAR pattern")
+        return None
     logger.info(rar_dict)
     scheme, rar_volumes = rar_dict[seek_stem]
     n_volumes = len(rar_volumes)
@@ -256,11 +255,14 @@ def locate_main_volume(anchor: AnchoredPath) -> RarVolumeSet:
 
     part_n_padding: int | None = None
     if scheme == RarScheme.PART_N:
+        # parse_rar_list only assigns RarScheme.PART_N when every path in the
+        # group, main_volume included, already matched PART_N_PAT - so this
+        # cannot fail without find_rar_files/parse_rar_list itself being broken.
         padding_match = PART_N_PAT.match(main_volume.name)
-        if padding_match is None:
-            raise ValueError(
-                f"Main volume {main_volume} does not match the PART_N pattern"
-            )
+        assert padding_match is not None, (
+            f"{main_volume} was classified as PART_N but its name no longer "
+            "matches PART_N_PAT"
+        )
         part_n_padding = len(padding_match["volume_index"])
 
     return RarVolumeSet(
