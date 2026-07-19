@@ -74,9 +74,12 @@ def test_truncate_middle_keeps_both_ends():
 
 
 def test_truncate_middle_leaves_short_values_untouched():
-    assert TableFormatter._truncate_middle(  # pyright: ignore[reportPrivateUsage]
-        "short", 80
-    ) == "short"
+    assert (
+        TableFormatter._truncate_middle(  # pyright: ignore[reportPrivateUsage]
+            "short", 80
+        )
+        == "short"
+    )
 
 
 def test_format_table_truncates_long_values_in_the_middle():

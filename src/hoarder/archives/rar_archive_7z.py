@@ -166,9 +166,7 @@ class Rar7zArchive(AbstractRarArchive):
             sub = subprocess.run(command_line, capture_output=True, check=True)
         except subprocess.CalledProcessError as exc:
             if _is_password_stderr(exc.stderr):
-                raise RarPasswordError(
-                    f"Wrong password for {self.full_path}"
-                ) from exc
+                raise RarPasswordError(f"Wrong password for {self.full_path}") from exc
             raise RarArchiveError(
                 f"7z failed to get CRC32 for {entry_path} in {self.full_path}"
             ) from exc

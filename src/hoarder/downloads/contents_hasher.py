@@ -39,16 +39,13 @@ class ContentsHasher(ABC):
         return self.digest()
 
     @abstractmethod
-    def update(self, chunk: bytes) -> None:
-        ...
+    def update(self, chunk: bytes) -> None: ...
 
     @abstractmethod
-    def digest(self) -> bytes:
-        ...
+    def digest(self) -> bytes: ...
 
     @abstractmethod
-    def empty_hash(self) -> bytes:
-        ...
+    def empty_hash(self) -> bytes: ...
 
 
 class CRC32Hasher(ContentsHasher):

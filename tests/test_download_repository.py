@@ -73,7 +73,9 @@ def test_download_repository_roundtrip(
     real_files = _collect_files_from_directory(
         compare_storage_path, Path("compare/files")
     )
-    assert real_files, "Committed test fixture directory is empty: test_files/compare/files"
+    assert (
+        real_files
+    ), "Committed test fixture directory is empty: test_files/compare/files"
 
     # Create a download named "files"
     original = _build_download("files", real_files)
@@ -120,7 +122,9 @@ def test_download_repository_persists_real_files(
     real_files = _collect_files_from_directory(
         compare_storage_path, PurePath("compare/files")
     )
-    assert real_files, "Committed test fixture directory is empty: test_files/compare/files"
+    assert (
+        real_files
+    ), "Committed test fixture directory is empty: test_files/compare/files"
 
     # Take a subset for this test
     test_files = real_files[:5] if len(real_files) >= 5 else real_files
@@ -172,7 +176,9 @@ def test_download_repository_updates_existing_download(
     real_files = _collect_files_from_directory(
         compare_storage_path, PurePath("compare/files")
     )
-    assert real_files, "Committed test fixture directory is empty: test_files/compare/files"
+    assert (
+        real_files
+    ), "Committed test fixture directory is empty: test_files/compare/files"
 
     # Create initial download
     download1 = _build_download("files", real_files[:3])
@@ -268,7 +274,9 @@ def test_download_repository_persists_real_files_and_hash_archives(
     real_files = _collect_files_from_directory(
         compare_storage_path, Path("compare/files")
     )
-    assert real_files, "Committed test fixture directory is empty: test_files/compare/files"
+    assert (
+        real_files
+    ), "Committed test fixture directory is empty: test_files/compare/files"
 
     # Take a small subset
     test_files = real_files[:3] if len(real_files) >= 3 else real_files
@@ -303,7 +311,9 @@ def test_save_download_repairs_verification_back_reference(
     real_files = _collect_files_from_directory(
         compare_storage_path, PurePath("compare/files")
     )
-    assert real_files, "Committed test fixture directory is empty: test_files/compare/files"
+    assert (
+        real_files
+    ), "Committed test fixture directory is empty: test_files/compare/files"
 
     real_file = real_files[0]
     original_real_file = real_file

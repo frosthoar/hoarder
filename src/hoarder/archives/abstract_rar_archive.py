@@ -139,9 +139,7 @@ class AbstractRarArchive(HashArchive, abc.ABC):
                 return [cls.from_path(scope.storage_path, scope.relative_path)]
             except RarPasswordError:
                 return [
-                    cls._password_required_stub(
-                        scope.storage_path, scope.relative_path
-                    )
+                    cls._password_required_stub(scope.storage_path, scope.relative_path)
                 ]
         results = []
         for _scheme, volumes in find_rar_files(search_path).values():

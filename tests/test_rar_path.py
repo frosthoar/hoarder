@@ -163,7 +163,9 @@ def test_locate_main_volume_returns_none_for_non_rar_file() -> None:
     fixture = Path("test_files/sfv/files.sfv")
     assert fixture.exists(), f"Committed fixture missing: {fixture}"
 
-    volumes = locate_main_volume(AnchoredPath(Path("test_files/sfv"), PurePath("files.sfv")))
+    volumes = locate_main_volume(
+        AnchoredPath(Path("test_files/sfv"), PurePath("files.sfv"))
+    )
 
     assert volumes is None
 

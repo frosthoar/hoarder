@@ -82,9 +82,7 @@ class RarfileRarArchive(AbstractRarArchive):
                     rf.setpassword(pwd)
                 requires_password = rf.needs_password()
                 if requires_password and not pwd:
-                    raise RarPasswordError(
-                        f"{volumes.main_volume} requires a password"
-                    )
+                    raise RarPasswordError(f"{volumes.main_volume} requires a password")
                 for ri in rf.infolist():
                     entry_path = pathlib.PurePath(ri.filename)
                     size = ri.file_size
@@ -145,9 +143,7 @@ class RarfileRarArchive(AbstractRarArchive):
                         logger.error("Failed to get CRC32 for %s", entry.path)
         except rarfile.Error as exc:
             if _is_password_error(exc, pwd):
-                raise RarPasswordError(
-                    f"Wrong password for {self.full_path}"
-                ) from exc
+                raise RarPasswordError(f"Wrong password for {self.full_path}") from exc
             raise RarArchiveError(f"rarfile failed to open {self.full_path}") from exc
 
     @override

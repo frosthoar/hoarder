@@ -1,4 +1,5 @@
 """Password store module for managing title-password associations."""
+
 from __future__ import annotations
 
 import copy

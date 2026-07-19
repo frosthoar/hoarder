@@ -49,5 +49,7 @@ class ScanTarget:
 
     def get_file_search_paths(self) -> list[AnchoredPath]:
         """Where to look for real files belonging to this target."""
-        logger.debug("File search path for %s: %s", self.anchor.full_path, self.anchor.full_path)
+        logger.debug(
+            "File search path for %s: %s", self.anchor.full_path, self.anchor.full_path
+        )
         return [self.anchor]

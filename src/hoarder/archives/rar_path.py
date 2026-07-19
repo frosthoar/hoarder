@@ -241,7 +241,9 @@ def locate_main_volume(anchor: AnchoredPath) -> RarVolumeSet | None:
     logger.debug(
         "Finding RAR files with stem %s in directory %s", seek_stem, search_dir
     )
-    rar_dict: dict[str, tuple[RarScheme, list[Path]]] = find_rar_files(search_dir, seek_stem)
+    rar_dict: dict[str, tuple[RarScheme, list[Path]]] = find_rar_files(
+        search_dir, seek_stem
+    )
     if not rar_dict:
         return None
     logger.info(rar_dict)

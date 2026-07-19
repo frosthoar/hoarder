@@ -16,7 +16,9 @@ TITLE = "some-release"
 
 @pytest.fixture()
 def password_stub():
-    assert ENCRYPTED_FIXTURE.exists(), f"Committed RAR fixture missing: {ENCRYPTED_FIXTURE}"
+    assert (
+        ENCRYPTED_FIXTURE.exists()
+    ), f"Committed RAR fixture missing: {ENCRYPTED_FIXTURE}"
     scope = AnchoredPath(RAR_ROOT, PurePath(ENCRYPTED_FIXTURE.name))
     stub = RarArchive.discover(scope)[0]
     assert stub.requires_password is True

@@ -185,8 +185,8 @@ class NzbPasswordPlugin(PasswordPlugin):
                     logger.debug(f"Processing RARed NZB(s) {full_path}")
                     relative_path = full_path.relative_to(nzb_directory)
                     try:
-                        _, filename_password = NzbPasswordPlugin._extract_pw_from_filename(
-                            full_path
+                        _, filename_password = (
+                            NzbPasswordPlugin._extract_pw_from_filename(full_path)
                         )
                     except ValueError:
                         # Ambiguous {{...}} groups in the filename - fall back
@@ -204,9 +204,7 @@ class NzbPasswordPlugin(PasswordPlugin):
                         )
                         continue
                     except RarArchiveError as exc:
-                        logger.warning(
-                            "Skipping unreadable RAR %s: %s", full_path, exc
-                        )
+                        logger.warning("Skipping unreadable RAR %s: %s", full_path, exc)
                         continue
                     for file_entry in rar_file.files:
                         logger.debug(f"Read {file_entry.path}... extracting passwords")
