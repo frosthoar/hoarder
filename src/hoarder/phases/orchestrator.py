@@ -30,9 +30,10 @@ class ProcessingResult:
         """Convert this result to a presentation specification.
 
         Returns:
-            A PresentationSpec with target/archive/match counts as scalars
-            and one row per real file - its correlation status and which
-            archive entries it matched - as the collection.
+            A PresentationSpec with target/archive/match counts as scalars,
+            an "archives" collection summarizing each discovered archive,
+            and a "real_files" collection with each real file's correlation
+            status and which archive entries it matched.
         """
         scalar: dict[str, ScalarValue] = {
             "type": "ProcessingResult",
@@ -42,18 +43,31 @@ class ProcessingResult:
             "matched_files": sum(1 for f in self.real_files if self.matches.get(f)),
         }
 
-        collection: list[dict[str, ScalarValue]] = []
+        archive_rows: list[dict[str, ScalarValue]] = []
+        for archive in sorted(self.archives, key=lambda a: str(a.full_path)):
+            row: dict[str, ScalarValue] = {
+                "path": str(archive.full_path),
+                "type": type(archive).__name__,
+                "files": len(archive),
+                "requires_password": getattr(archive, "requires_password", False),
+            }
+            archive_rows.append(row)
+
+        real_file_rows: list[dict[str, ScalarValue]] = []
         for real_file in sorted(self.real_files, key=lambda f: str(f.full_path)):
             entries = self.matches.get(real_file, [])
-            row: dict[str, ScalarValue] = {
+            row = {
                 "path": str(real_file.full_path),
                 "size": real_file.size,
                 "matched": bool(entries),
                 "matched_entries": ", ".join(str(e.path) for e in entries) or None,
             }
-            collection.append(row)
+            real_file_rows.append(row)
 
-        return PresentationSpec(scalar=scalar, collection=collection)
+        return PresentationSpec(
+            scalar=scalar,
+            collections={"archives": archive_rows, "real_files": real_file_rows},
+        )
 
 
 def process_target(

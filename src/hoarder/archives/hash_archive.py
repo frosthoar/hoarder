@@ -181,7 +181,8 @@ class HashArchive(abc.ABC):
         """Convert this archive to a presentation specification.
 
         Returns:
-            A PresentationSpec with archive metadata as scalars and files as collection rows.
+            A PresentationSpec with archive metadata as scalars and a
+            "files" collection of file rows.
         """
         # Build scalar metadata
         scalar: dict[str, ScalarValue] = {
@@ -205,4 +206,4 @@ class HashArchive(abc.ABC):
             }
             collection.append(row)
 
-        return PresentationSpec(scalar=scalar, collection=collection)
+        return PresentationSpec(scalar=scalar, collections={"files": collection})

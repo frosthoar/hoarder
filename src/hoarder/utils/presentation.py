@@ -20,13 +20,17 @@ class PresentationSpec(TypedDict):
 
     Attributes:
         scalar: Header/metadata fields as key-value pairs.
-                These are displayed above the table (e.g., "path: /foo/bar").
-        collection: Rows of data for tabular display.
-                   Each row is a mapping of column names to scalar values.
+                These are displayed above the table(s) (e.g., "path: /foo/bar").
+        collections: Named tables of row data, in display order. Each row is
+                a mapping of column names to scalar values. Most Presentable
+                objects report exactly one collection; an object combining
+                several distinct kinds of rows (e.g. archives and real files)
+                can report more than one, each under its own name - the name
+                is only shown as a heading when there's more than one.
     """
 
     scalar: Mapping[str, ScalarValue]
-    collection: Sequence[Mapping[str, ScalarValue]]
+    collections: Mapping[str, Sequence[Mapping[str, ScalarValue]]]
 
 
 class Presentable(Protocol):
@@ -40,7 +44,8 @@ class Presentable(Protocol):
         """Convert this object to a presentation specification.
 
         Returns:
-            A PresentationSpec containing scalar metadata and collection rows.
+            A PresentationSpec containing scalar metadata and named
+            collections of rows.
         """
         ...
 
@@ -67,7 +72,8 @@ class TableFormatter:
             spec: The presentation specification to format.
 
         Returns:
-            A formatted string with scalar fields as header and collection as table.
+            A formatted string with scalar fields as header, followed by
+            each named collection as its own table.
         """
         lines: list[str] = []
 
@@ -86,13 +92,18 @@ class TableFormatter:
                 if key not in excluded_keys:
                     lines.append(f"  {key}: {self._format_value(value)}")
 
-        # Format collection as table
-        collection = spec["collection"]
-        if collection:
+        # Format each named collection as its own table. Only label the
+        # table with its name when there's more than one - a single
+        # collection reads fine as just "the table" under the scalar header.
+        collections = spec["collections"]
+        show_names = len(collections) > 1
+        for name, rows in collections.items():
             if lines:
-                # Add separator between header and table
+                # Add separator before this table
                 lines.append("")
-            lines.extend(self._format_table(collection))
+            if show_names:
+                lines.append(f"{name}:")
+            lines.extend(self._format_table(rows))
 
         return "\n".join(lines)
 

@@ -85,9 +85,37 @@ def test_format_table_truncates_long_values_in_the_middle():
     long_path = "/mnt/ds423plus/usenet/" + "x" * 40 + "-DISTINCTIVE-SUFFIX"
     spec: PresentationSpec = {
         "scalar": {},
-        "collection": [{"path": long_path}],
+        "collections": {"rows": [{"path": long_path}]},
     }
     output = TableFormatter().format(spec)
 
     assert "DISTINCTIVE-SUFFIX" in output
     assert "/mnt/ds423plus/usenet/" in output
+
+
+def test_format_single_collection_has_no_heading():
+    spec: PresentationSpec = {
+        "scalar": {"type": "Thing"},
+        "collections": {"files": [{"path": "a"}]},
+    }
+    output = TableFormatter().format(spec)
+
+    assert "files:" not in output
+
+
+def test_format_multiple_collections_are_each_labeled_and_shown():
+    spec: PresentationSpec = {
+        "scalar": {"type": "Thing"},
+        "collections": {
+            "archives": [{"path": "archive.rar"}],
+            "real_files": [{"path": "movie.mkv"}],
+        },
+    }
+    output = TableFormatter().format(spec)
+
+    assert "archives:" in output
+    assert "real_files:" in output
+    assert "archive.rar" in output
+    assert "movie.mkv" in output
+    # The archives table should come before the real_files table.
+    assert output.index("archive.rar") < output.index("movie.mkv")

@@ -43,10 +43,14 @@ def test_processing_result_to_presentation() -> None:
     assert spec["scalar"]["real_files"] == 1
     assert spec["scalar"]["matched_files"] == 1
 
-    assert len(spec["collection"]) == 1
-    row = spec["collection"][0]
-    assert row["matched"] is True
-    assert row["matched_entries"] == "data/note.txt"
+    assert len(spec["collections"]["archives"]) == 1
+    archive_row = spec["collections"]["archives"][0]
+    assert archive_row["type"] == "SfvArchive"
+
+    assert len(spec["collections"]["real_files"]) == 1
+    file_row = spec["collections"]["real_files"][0]
+    assert file_row["matched"] is True
+    assert file_row["matched_entries"] == "data/note.txt"
 
 
 def test_process_target_resolves_a_password_protected_archive_when_known() -> None:

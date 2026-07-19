@@ -88,7 +88,8 @@ class PasswordStore:
         """Convert this password store to a presentation specification.
 
         Returns:
-            A PresentationSpec with store metadata as scalars and title-password pairs as collection rows.
+            A PresentationSpec with store metadata as scalars and a
+            "passwords" collection of title-password pair rows.
         """
         scalar: dict[str, ScalarValue] = {
             "type": "PasswordStore",
@@ -105,4 +106,4 @@ class PasswordStore:
                 }
                 collection.append(row)
 
-        return PresentationSpec(scalar=scalar, collection=collection)
+        return PresentationSpec(scalar=scalar, collections={"passwords": collection})
