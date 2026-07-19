@@ -22,7 +22,7 @@ def correlate_archives(
     whole point of keeping it visible for a later password retry.
     """
     real_paths = {rf.full_path for rf in real_files}
-    relevant = []
+    relevant: list[HashArchive] = []
     for archive in archives:
         if isinstance(archive, AbstractRarArchive) and archive.requires_password:
             relevant.append(archive)

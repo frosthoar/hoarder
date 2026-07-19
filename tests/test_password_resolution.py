@@ -3,7 +3,7 @@
 from pathlib import Path, PurePath
 
 import pytest
-from hoarder.archives import RarArchive, SfvArchive
+from hoarder.archives import AbstractRarArchive, RarArchive, SfvArchive
 from hoarder.passwords import PasswordStore
 from hoarder.phases import resolve_passwords
 from hoarder.utils import AnchoredPath
@@ -36,6 +36,7 @@ def test_resolve_passwords_replaces_stub_when_a_candidate_works(password_stub) -
     assert len(resolved) == 1
     archive = resolved[0]
     assert archive is not password_stub
+    assert isinstance(archive, AbstractRarArchive)
     assert archive.password == CORRECT_PASSWORD
     assert archive.requires_password is True
     assert len(archive.files) > 0
@@ -51,8 +52,10 @@ def test_resolve_passwords_leaves_stub_untouched_when_nothing_works(
     resolved = resolve_passwords([password_stub], store, TITLE)
 
     assert resolved == [password_stub]
-    assert resolved[0].password is None
-    assert resolved[0].files == set()
+    archive = resolved[0]
+    assert isinstance(archive, AbstractRarArchive)
+    assert archive.password is None
+    assert archive.files == set()
 
 
 def test_resolve_passwords_ignores_titles_with_no_candidates(password_stub) -> None:

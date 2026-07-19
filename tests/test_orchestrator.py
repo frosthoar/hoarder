@@ -2,6 +2,7 @@
 
 from pathlib import Path, PurePath
 
+from hoarder.archives import AbstractRarArchive
 from hoarder.passwords import PasswordStore
 from hoarder.phases import ScanTarget, process_target
 from hoarder.utils import AnchoredPath, Presentable
@@ -72,6 +73,7 @@ def test_process_target_resolves_a_password_protected_archive_when_known() -> No
 
     assert len(result.archives) == 1
     archive = result.archives[0]
+    assert isinstance(archive, AbstractRarArchive)
     assert archive.requires_password is True
     assert archive.password == ENCRYPTED_RAR_PASSWORD
     assert len(archive.files) > 0
@@ -96,6 +98,7 @@ def test_process_target_keeps_unresolved_password_protected_archive_visible() ->
 
     assert len(result.archives) == 1
     archive = result.archives[0]
+    assert isinstance(archive, AbstractRarArchive)
     assert archive.requires_password is True
     assert archive.password is None
     assert archive.files == set()
