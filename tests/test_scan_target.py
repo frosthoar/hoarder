@@ -11,6 +11,37 @@ def test_get_file_search_paths_is_just_the_target_itself() -> None:
     assert target.get_file_search_paths() == [target.anchor]
 
 
+def test_get_archive_search_paths_includes_subdirectories(tmp_path: Path) -> None:
+    """An archive living in a release's subdirectory (e.g. a per-disc
+    "CD1/checks.sfv") must be found even though it isn't in the anchor's own
+    top-level directory - discover() itself only looks at one directory, so
+    this method has to enumerate every subdirectory beneath the anchor,
+    matching the recursive walk get_file_search_paths()/discover_real_files()
+    already does for real files."""
+    (tmp_path / "CD1").mkdir()
+    (tmp_path / "CD2" / "nested").mkdir(parents=True)
+
+    target = ScanTarget(anchor=AnchoredPath(tmp_path, PurePath(".")))
+    paths = target.get_archive_search_paths()
+
+    relative_paths = {p.relative_path for p in paths}
+    assert relative_paths == {
+        PurePath("."),
+        PurePath("CD1"),
+        PurePath("CD2"),
+        PurePath("CD2/nested"),
+    }
+
+
+def test_get_archive_search_paths_single_file_anchor_is_not_walked() -> None:
+    """A file anchor (e.g. a RAR archive itself, not a release directory)
+    has no subdirectories to enumerate - it's just itself."""
+    target = ScanTarget(
+        anchor=AnchoredPath(Path("test_files/rar"), PurePath("v5_unencrypted.rar"))
+    )
+    assert target.get_archive_search_paths() == [target.anchor]
+
+
 def test_get_archive_search_paths_excludes_parent_by_default() -> None:
     """A ScanTarget's anchor is normally a directory holding one release, so
     its parent (e.g. the whole downloads folder) isn't a useful place to
@@ -30,11 +61,15 @@ def test_get_archive_search_paths_includes_parent_when_enabled() -> None:
     assert paths[1].storage_path == target.anchor.storage_path
 
 
-def test_get_archive_search_paths_skips_parent_for_storage_root_itself() -> None:
+def test_get_archive_search_paths_skips_parent_for_storage_root_itself(
+    tmp_path: Path,
+) -> None:
     """When the target *is* the storage root, there's no parent to add,
-    even with search_parent enabled."""
+    even with search_parent enabled. Uses an empty tmp_path (rather than
+    test_files, which has many subdirectories) so the assertion isn't also
+    exercising the subdirectory-recursion this method separately does."""
     target = ScanTarget(
-        anchor=AnchoredPath(Path("test_files"), PurePath(".")),
+        anchor=AnchoredPath(tmp_path, PurePath(".")),
         search_parent=True,
     )
     assert target.get_archive_search_paths() == [target.anchor]

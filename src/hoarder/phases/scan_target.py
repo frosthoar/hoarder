@@ -33,8 +33,25 @@ class ScanTarget:
         return self.anchor.full_path
 
     def get_archive_search_paths(self) -> list[AnchoredPath]:
-        """Where to look for archives related to this target."""
-        paths = [self.anchor]
+        """Where to look for archives related to this target.
+
+        Each archive type's own discover() only looks at one directory (see
+        HashArchive.discover), so a directory anchor is expanded into itself
+        plus every subdirectory beneath it - matching the recursive walk
+        get_file_search_paths()/discover_real_files() already does for real
+        files. Without this, an archive living in a release's subdirectory
+        (e.g. "subdir/checks.sfv" next to "subdir/payload.bin") would never
+        be found, even though its payload is.
+        """
+        if self.anchor.full_path.is_dir():
+            paths = [
+                self.anchor.with_relative_path(
+                    directory.relative_to(self.anchor.storage_path)
+                )
+                for directory, _, _ in self.anchor.full_path.walk()
+            ]
+        else:
+            paths = [self.anchor]
         if self.search_parent and self.anchor.relative_path != PurePath("."):
             paths.append(
                 self.anchor.with_relative_path(self.anchor.relative_path.parent)

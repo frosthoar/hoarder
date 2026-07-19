@@ -13,8 +13,11 @@ def test_discover_real_files_walks_directory() -> None:
     scope = AnchoredPath(SCAN_TARGET_ROOT, PurePath("release"))
     real_files = discover_real_files([scope])
 
-    relative_paths = {str(rf.anchor.relative_path) for rf in real_files}
-    assert relative_paths == {"release/data.sfv", "release/data/note.txt"}
+    relative_paths = {rf.anchor.relative_path for rf in real_files}
+    assert relative_paths == {
+        PurePath("release/data.sfv"),
+        PurePath("release/data/note.txt"),
+    }
 
 
 def test_discover_real_files_excludes_given_paths() -> None:
@@ -23,8 +26,8 @@ def test_discover_real_files_excludes_given_paths() -> None:
 
     real_files = discover_real_files([scope], exclude={sfv_full_path})
 
-    relative_paths = {str(rf.anchor.relative_path) for rf in real_files}
-    assert relative_paths == {"release/data/note.txt"}
+    relative_paths = {rf.anchor.relative_path for rf in real_files}
+    assert relative_paths == {PurePath("release/data/note.txt")}
 
 
 def test_discover_real_files_single_file_scope() -> None:

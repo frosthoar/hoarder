@@ -1,5 +1,6 @@
 """End-to-end tests for process_target()."""
 
+import zlib
 from pathlib import Path, PurePath
 
 from hoarder.archives import AbstractRarArchive
@@ -102,6 +103,33 @@ def test_process_target_keeps_unresolved_password_protected_archive_visible() ->
     assert archive.requires_password is True
     assert archive.password is None
     assert archive.files == set()
+
+
+def test_process_target_discovers_archives_in_a_release_subdirectory(
+    tmp_path: Path,
+) -> None:
+    """A release's archive isn't always at its top level - e.g. a per-disc
+    "CD1/checks.sfv" verifying "CD1/payload.bin". discover() itself only
+    looks at one directory, so this must be found via the anchor's
+    subdirectory recursion (ScanTarget.get_archive_search_paths), not
+    silently left as an unmatched real file."""
+    subdir = tmp_path / "release" / "CD1"
+    subdir.mkdir(parents=True)
+    payload = subdir / "payload.bin"
+    payload.write_bytes(b"hello world")
+    crc = zlib.crc32(payload.read_bytes()) & 0xFFFFFFFF
+    (subdir / "checks.sfv").write_text(f"payload.bin {crc:08X}\n")
+
+    target = ScanTarget(anchor=AnchoredPath(tmp_path, PurePath("release")))
+    result = process_target(target)
+
+    assert len(result.archives) == 1
+    assert result.archives[0].anchor.relative_path == PurePath("release/CD1/checks.sfv")
+
+    assert len(result.real_files) == 1
+    real_file = result.real_files[0]
+    assert real_file.anchor.relative_path == PurePath("release/CD1/payload.bin")
+    assert result.matches[real_file]
 
 
 def test_process_target_finds_nothing_for_an_empty_directory(tmp_path: Path) -> None:
