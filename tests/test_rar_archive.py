@@ -150,6 +150,20 @@ PROTECTED_RAR_DEFS = [
     entry for entry in tests.test_case_file_info.RAR_TEST_ARCHIVE_DEFS if entry[1]
 ]
 
+# Archives whose headers/filenames are encrypted (not just content) fail to
+# even list without the right password, so from_path() itself always raises
+# for a wrong password. Content-only-encrypted archives are listable
+# regardless of password correctness - a wrong password there can only be
+# detected once real content decryption is attempted.
+HEADER_ENCRYPTED_RAR_DEFS = [
+    entry
+    for entry in PROTECTED_RAR_DEFS
+    if "content_and_headers_encrypted" in entry[0].name
+]
+CONTENT_ONLY_ENCRYPTED_RAR_DEFS = [
+    entry for entry in PROTECTED_RAR_DEFS if entry not in HEADER_ENCRYPTED_RAR_DEFS
+]
+
 
 @pytest.mark.parametrize("archive_class", [Rar7zArchive, RarfileRarArchive])
 @pytest.mark.parametrize("rar_file_entry", PROTECTED_RAR_DEFS)
@@ -167,7 +181,7 @@ def test_from_path_raises_password_error_with_no_password(
 
 
 @pytest.mark.parametrize("archive_class", [Rar7zArchive, RarfileRarArchive])
-@pytest.mark.parametrize("rar_file_entry", PROTECTED_RAR_DEFS)
+@pytest.mark.parametrize("rar_file_entry", HEADER_ENCRYPTED_RAR_DEFS)
 def test_from_path_raises_password_error_with_wrong_password(
     archive_class: type[AbstractRarArchive],
     rar_file_entry: RarFileEntry,
@@ -181,6 +195,28 @@ def test_from_path_raises_password_error_with_wrong_password(
             pathlib.PurePath(rar_path.name),
             password="definitely-the-wrong-password",
         )
+
+
+@pytest.mark.parametrize("archive_class", [Rar7zArchive, RarfileRarArchive])
+@pytest.mark.parametrize("rar_file_entry", CONTENT_ONLY_ENCRYPTED_RAR_DEFS)
+def test_content_only_encrypted_wrong_password_detected_on_read(
+    archive_class: type[AbstractRarArchive],
+    rar_file_entry: RarFileEntry,
+) -> None:
+    """A wrong password can't be caught by from_path() alone here, since
+    listing succeeds regardless of password correctness when headers/
+    filenames aren't encrypted - it only surfaces once real content
+    decryption is attempted."""
+    rar_path = rar_file_entry[0]
+    assert rar_path.exists(), f"Committed RAR fixture missing: {rar_path}"
+
+    archive = archive_class.from_path(
+        rar_path.parent,
+        pathlib.PurePath(rar_path.name),
+        password="definitely-the-wrong-password",
+    )
+    with pytest.raises(RarPasswordError):
+        archive.update_hash_values()
 
 
 @pytest.mark.parametrize("archive_class", [Rar7zArchive, RarfileRarArchive])
@@ -234,7 +270,7 @@ def test_try_candidate_passwords_finds_the_correct_one(
     keep trying candidate passwords, using RarPasswordError specifically
     to know "wrong guess, try the next one" rather than "archive broken,
     give up"."""
-    rar_path = pathlib.Path("test_files/rar/v4_encrypted.rar")
+    rar_path = pathlib.Path("test_files/rar/v4_content_and_headers_encrypted.rar")
     assert rar_path.exists(), f"Committed RAR fixture missing: {rar_path}"
 
     candidates = ["wrong-1", "wrong-2", "secret", "wrong-3"]

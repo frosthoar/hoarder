@@ -54,13 +54,24 @@ class Rar7zArchive(AbstractRarArchive):
         else:
             version = type_entries[0]["Type"]
 
-        # RAR3/4 signals encryption via "BlockEncryption" in Characteristics;
-        # RAR5 instead has a separate Encrypted=+/- field on the same entry.
+        # RAR3/4 signals encryption via "BlockEncryption" in Characteristics
+        # on the archive-level Type entry (only present when headers/names
+        # are encrypted, since list_rar() itself fails before this point
+        # otherwise); RAR5 has a separate Encrypted=+/- field. Either format
+        # also puts Encrypted=+ on individual file entries whenever content
+        # is encrypted, even if headers/names are not - checking type_entries
+        # alone misses that case entirely, so scan every entry.
         requires_password = any(
-            "BlockEncryption" in te.get("Characteristics", "")
-            or te.get("Encrypted") == "+"
-            for te in type_entries
+            "BlockEncryption" in entry.get("Characteristics", "")
+            or entry.get("Encrypted") == "+"
+            for entry in infos
         )
+        if requires_password and not password:
+            # Headers/filenames aren't always encrypted even when content is,
+            # so list_rar() can succeed with no password at all - don't hand
+            # back a populated-looking archive whose content isn't actually
+            # readable; match RarfileRarArchive's rf.needs_password() check.
+            raise RarPasswordError(f"{volumes.main_volume} requires a password")
 
         files: set[FileEntry] = set()
         for entry in infos:
@@ -70,10 +81,16 @@ class Rar7zArchive(AbstractRarArchive):
                 is_dir = entry["Folder"] == "+"
                 hash_value = None
                 algo = None
-                if version and version.upper() in ("RAR", "RAR3"):
-                    # RAR5 CRC field is optional and may be absent; read it directly
-                    # from the header only for RAR3/4 where it is always present.
-                    hash_value = bytes.fromhex(entry["CRC"]) if "CRC" in entry else None
+                # A per-entry "Encrypted" marker means the header CRC (when
+                # present at all) reflects the stored ciphertext, not the
+                # actual plaintext content, whenever headers/filenames
+                # aren't themselves encrypted too - update_hash_values()
+                # must recompute it via real decryption instead of trusting
+                # this value. RAR5 also leaves CRC blank for such entries;
+                # unencrypted RAR5 entries do have a real CRC here.
+                if entry.get("Encrypted") != "+":
+                    crc = entry.get("CRC")
+                    hash_value = bytes.fromhex(crc) if crc else None
                     algo = Algo.CRC32 if hash_value else None
                 files.add(FileEntry(entry_path, size, is_dir, hash_value, algo))
         logger.info(volumes.scheme)

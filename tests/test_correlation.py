@@ -45,7 +45,7 @@ def test_correlate_archives_keeps_password_protected_archives_without_a_match() 
     """A password-protected archive we couldn't open has no files to match
     by content, but must not be dropped: that would undo discover()'s
     whole point of keeping it visible for a later password retry."""
-    fixture = RAR_ROOT / "v4_encrypted.rar"
+    fixture = RAR_ROOT / "v4_content_and_headers_encrypted.rar"
     assert fixture.exists(), f"Committed RAR fixture missing: {fixture}"
     stub = RarArchive.discover(AnchoredPath(RAR_ROOT, PurePath(fixture.name)))[0]
     assert stub.requires_password is True

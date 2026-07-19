@@ -87,8 +87,15 @@ class RarfileRarArchive(AbstractRarArchive):
                     entry_path = pathlib.PurePath(ri.filename)
                     size = ri.file_size
                     is_dir = ri.is_dir()
+                    # ri.CRC for a per-entry-encrypted file reflects the
+                    # stored (encrypted) bytes, not the actual plaintext
+                    # content, whenever headers/filenames aren't themselves
+                    # encrypted too - update_hash_values() must recompute it
+                    # via real decryption instead of trusting this value.
                     hash_value = (
-                        ri.CRC.to_bytes(4, "big") if ri.CRC is not None else None
+                        ri.CRC.to_bytes(4, "big")
+                        if ri.CRC is not None and not ri.needs_password()
+                        else None
                     )
                     algo = Algo.CRC32 if hash_value is not None else None
                     files.add(FileEntry(entry_path, size, is_dir, hash_value, algo))

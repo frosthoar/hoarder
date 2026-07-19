@@ -7,7 +7,7 @@ from hoarder.passwords import PasswordStore
 from hoarder.phases import ScanTarget, process_target
 from hoarder.utils import AnchoredPath, Presentable
 
-ENCRYPTED_RAR_FIXTURE = Path("test_files/rar/v4_encrypted.rar")
+ENCRYPTED_RAR_FIXTURE = Path("test_files/rar/v4_content_and_headers_encrypted.rar")
 ENCRYPTED_RAR_PASSWORD = "secret"
 
 

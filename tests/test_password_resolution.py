@@ -9,7 +9,7 @@ from hoarder.phases import resolve_passwords
 from hoarder.utils import AnchoredPath
 
 RAR_ROOT = Path("test_files/rar")
-ENCRYPTED_FIXTURE = RAR_ROOT / "v4_encrypted.rar"
+ENCRYPTED_FIXTURE = RAR_ROOT / "v4_content_and_headers_encrypted.rar"
 CORRECT_PASSWORD = "secret"
 TITLE = "some-release"
 

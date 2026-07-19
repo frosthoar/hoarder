@@ -145,11 +145,11 @@ def test_locate_main_volume_part_n_no_padding() -> None:
 
 def test_locate_main_volume_dot_rnn_has_no_part_n_padding() -> None:
     """A real old-style (.rar/.rNN) multi-volume archive."""
-    main_volume = RAR_TEST_DIR / "v4_split_headers_unencrypted.rar"
+    main_volume = RAR_TEST_DIR / "v4_unencrypted_multivolume.rar"
     assert main_volume.exists(), f"Committed RAR fixture missing: {main_volume}"
 
     volumes = locate_main_volume(
-        AnchoredPath(RAR_TEST_DIR, PurePath("v4_split_headers_unencrypted.rar"))
+        AnchoredPath(RAR_TEST_DIR, PurePath("v4_unencrypted_multivolume.rar"))
     )
 
     assert volumes is not None
