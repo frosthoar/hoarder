@@ -185,9 +185,10 @@ class NzbPasswordPlugin(PasswordPlugin):
                     logger.debug(f"Processing RARed NZB(s) {full_path}")
                     relative_path = full_path.relative_to(nzb_directory)
                     try:
-                        _, filename_password = (
-                            NzbPasswordPlugin._extract_pw_from_filename(full_path)
-                        )
+                        (
+                            _,
+                            filename_password,
+                        ) = NzbPasswordPlugin._extract_pw_from_filename(full_path)
                     except ValueError:
                         # Ambiguous {{...}} groups in the filename - fall back
                         # to opening without a password rather than aborting.

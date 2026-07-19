@@ -13,6 +13,16 @@ test = [
     "pytest",
     "typeguard",
 ]
+lint = [
+    # Pinned to match the Black version bundled by the super-linter image
+    # this repo's CI runs (see .github/workflows/super-linter.yml), whose
+    # 2023-01 build predates Black 24.1.0's "compact dummy implementations"
+    # stable-style change - confirmed empirically by reproducing CI's exact
+    # reformat diff for contents_hasher.py's `...`-only method bodies. A
+    # newer Black disagrees with this on how to format those (and possibly
+    # other) constructs, which shows up as spurious CI-only reformat diffs.
+    "black==23.12.1",
+]
 
 [build-system]
 requires = ["hatchling"]
