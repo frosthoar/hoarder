@@ -1,4 +1,4 @@
-from .abstract_rar_archive import AbstractRarArchive, RarArchiveError
+from .abstract_rar_archive import AbstractRarArchive, RarArchiveError, RarPasswordError
 from .hash_archive import Algo, FileEntry, HashArchive
 from .hash_archive_repository import HashArchiveRepository
 from .hash_name_archive import HashNameArchive
@@ -18,6 +18,7 @@ __all__ = [
     "Rar7zArchive",
     "RarArchive",
     "RarArchiveError",
+    "RarPasswordError",
     "RarfileRarArchive",
     "RarScheme",
     "SfvArchive",

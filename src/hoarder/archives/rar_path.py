@@ -5,6 +5,8 @@ import re
 import typing
 from pathlib import Path, PurePath
 
+from ..utils.path_utils import AnchoredPath
+
 try:
     from typing import override  # type: ignore [attr-defined]
 except ImportError:
@@ -202,80 +204,67 @@ class RarVolumeSet(typing.NamedTuple):
     part_n_padding: int | None
 
 
-def locate_main_volume(storage_path: Path, path: PurePath) -> RarVolumeSet:
-    """Locate the main RAR volume and its sibling volumes for a given path.
+def locate_main_volume(anchor: AnchoredPath) -> RarVolumeSet | None:
+    """Locate the main RAR volume and its sibling volumes for a given file.
 
-    `path` may point either directly at a volume file or at a directory
-    containing exactly one (possibly multi-volume) RAR archive.
+    `anchor` guarantees its relative_path cannot resolve outside
+    storage_path, so callers no longer need to check that themselves.
 
     Returns:
         A RarVolumeSet where main_volume is the absolute path to the first
         volume and main_volume_path is that same path relative to
-        storage_path.
+        storage_path, or None if the file doesn't match any RAR naming
+        scheme.
 
     Raises:
-        ValueError: the path is ambiguous or does not match any RAR naming
-            scheme.
-        FileNotFoundError: path does not refer to an existing file or
-            directory.
+        FileNotFoundError: path does not refer to an existing file.
     """
-    full_path = storage_path / path
+    storage_path = anchor.storage_path
+    path = anchor.relative_path
+    full_path = anchor.full_path
 
-    if full_path.is_dir():
-        logger.debug("A directory %s was given, trying to find RAR files", full_path)
-        rar_dict = find_rar_files(full_path)
-        if len(rar_dict) != 1:
-            raise ValueError(
-                f"Directory {full_path} contains multiple non-indexed RAR files"
-            )
-        _, (scheme, rar_volumes) = rar_dict.popitem()
-        n_volumes = len(rar_volumes)
-        main_volume = rar_volumes[0]
-        logger.debug("Found %d volumes in %s", n_volumes, full_path)
-    elif full_path.is_file():
-        logger.debug("A file %s was given, trying to find RAR files", full_path)
-        if match := PART_N_PAT.match(str(path.name)):
-            logger.debug("Path %s matches a PART_N_PAT pattern", path)
-        elif match := DOT_RNN_PAT.match(str(path.name)):
-            logger.debug("Path %s matches a DOT_RNN_PAT pattern", path)
-
-        if not match:
-            raise ValueError(f"Path {full_path} does not match any RAR pattern")
-
-        seek_stem = match["stem"]
-        search_dir = (
-            storage_path / path.parent if path.parent != PurePath(".") else storage_path
-        )
-        logger.debug(
-            "Finding RAR files with stem %s in directory %s", seek_stem, search_dir
-        )
-        rar_dict = find_rar_files(search_dir, seek_stem)
-        if not rar_dict:
-            raise ValueError(f"Path {full_path} does not match any RAR pattern")
-        logger.info(rar_dict)
-        scheme, rar_volumes = rar_dict[seek_stem]
-        n_volumes = len(rar_volumes)
-        logger.debug("Found %d volumes in %s", n_volumes, search_dir)
-        main_volume = rar_volumes[0]
-        logger.debug("Main volume is %s", main_volume)
-    else:
-        logger.debug("Path %s is not a file or directory", full_path)
+    if not full_path.is_file():
+        logger.debug("Path %s is not a file", full_path)
         raise FileNotFoundError(f"{full_path} could not be found")
 
-    try:
-        main_volume_path = main_volume.relative_to(storage_path)
-    except ValueError:
-        raise ValueError(
-            f"Main volume {main_volume} is not under storage_path {storage_path}"
-        )
+    logger.debug("A file %s was given, trying to find RAR files", full_path)
+    if match := PART_N_PAT.match(str(path.name)):
+        logger.debug("Path %s matches a PART_N_PAT pattern", path)
+    elif match := DOT_RNN_PAT.match(str(path.name)):
+        logger.debug("Path %s matches a DOT_RNN_PAT pattern", path)
+
+    if not match:
+        return None
+
+    seek_stem = match["stem"]
+    search_dir = storage_path / path.parent
+    logger.debug(
+        "Finding RAR files with stem %s in directory %s", seek_stem, search_dir
+    )
+    rar_dict: dict[str, tuple[RarScheme, list[Path]]] = find_rar_files(
+        search_dir, seek_stem
+    )
+    if not rar_dict:
+        return None
+    logger.info(rar_dict)
+    scheme, rar_volumes = rar_dict[seek_stem]
+    n_volumes = len(rar_volumes)
+    logger.debug("Found %d volumes in %s", n_volumes, search_dir)
+    main_volume = rar_volumes[0]
+    logger.debug("Main volume is %s", main_volume)
+
+    main_volume_path = main_volume.relative_to(storage_path)
 
     part_n_padding: int | None = None
     if scheme == RarScheme.PART_N:
+        # parse_rar_list only assigns RarScheme.PART_N when every path in the
+        # group, main_volume included, already matched PART_N_PAT - so this
+        # cannot fail without find_rar_files/parse_rar_list itself being broken.
         padding_match = PART_N_PAT.match(main_volume.name)
-        if padding_match is None:
-            raise ValueError(
-                f"Main volume {main_volume} does not match the PART_N pattern"
-            )
+        assert padding_match is not None, (
+            f"{main_volume} was classified as PART_N but its name no longer "
+            "matches PART_N_PAT"
+        )
         part_n_padding = len(padding_match["volume_index"])
 
     return RarVolumeSet(

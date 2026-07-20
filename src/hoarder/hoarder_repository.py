@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import collections.abc
+import dataclasses
 import sqlite3
 from pathlib import Path, PurePath
 
@@ -15,7 +16,9 @@ class HoarderRepository:
     """Facade that combines archive and real file repositories with one connection."""
 
     def __init__(
-        self, db_path: str | Path, allowed_storage_paths: collections.abc.Iterable[Path]
+        self,
+        db_path: str | Path,
+        allowed_storage_paths: collections.abc.Iterable[Path | str],
     ) -> None:
         self.db_path = Path(db_path)
         self.allowed_storage_paths = self._normalize_paths(allowed_storage_paths)
@@ -75,19 +78,27 @@ class HoarderRepository:
             return self.password_repo.load(con)
 
     def save_download(self, download: Download) -> None:
-        # Validate storage paths from real_files
-        for real_file in download.real_files:
+        # Validate storage paths from real_files. RealFile is hashed by
+        # full_path, so its anchor is never mutated in place - replace the
+        # instance instead, and repair Verification.real_file back-references
+        # to point at the replacement (they share the same verification list).
+        for index, real_file in enumerate(download.real_files):
             normalized_storage_path = self._check_storage_path_allowed(
                 real_file.anchor.storage_path
             )
-            real_file.anchor = real_file.anchor.with_storage_path(
-                normalized_storage_path
+            new_real_file = dataclasses.replace(
+                real_file,
+                anchor=real_file.anchor.with_storage_path(normalized_storage_path),
             )
-            for verification in real_file.verification:
+            for verification in new_real_file.verification:
+                verification.real_file = new_real_file
                 verification.source = verification.source.with_storage_path(
                     self._check_storage_path_allowed(verification.source.storage_path)
                 )
-        # Validate storage paths from hash_archives
+            download.real_files[index] = new_real_file
+        # Validate storage paths from hash_archives. HashArchive is a plain
+        # mutable class (not a dataclass, and never used as a dict/set key),
+        # so mutating .anchor in place here is fine - unlike RealFile above.
         for hash_archive in download.hash_archives:
             normalized_storage_path = self._check_storage_path_allowed(
                 hash_archive.anchor.storage_path
@@ -118,11 +129,11 @@ class HoarderRepository:
 
     @staticmethod
     def _normalize_paths(
-        storage_paths: collections.abc.Iterable[Path],
+        storage_paths: collections.abc.Iterable[Path | str],
     ) -> set[Path]:
         normalized_paths: set[Path] = set()
         for path in storage_paths:
-            resolved = path.resolve()
+            resolved = Path(path).resolve()
             if not resolved.exists():
                 raise FileNotFoundError(
                     f"Storage path does not exist on disk: {resolved}"

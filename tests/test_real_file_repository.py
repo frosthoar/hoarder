@@ -14,8 +14,7 @@ FROZEN_TS = dt.datetime(2024, 1, 1, tzinfo=dt.timezone.utc)
 
 
 def _require_path(path: Path) -> Path:
-    if not path.exists():
-        pytest.skip(f"Required test data missing: {path}")
+    assert path.exists(), f"Committed test fixture missing: {path}"
     return path.resolve()
 
 
@@ -33,7 +32,7 @@ def hoarder_repo(tmp_path, compare_storage_path: Path) -> HoarderRepository:
 def _build_real_file(entry: case_files.FileEntry, storage_path: Path) -> RealFile:
     real_file = RealFile.from_path(
         storage_path=storage_path,
-        path=Path("compare") / entry.path,
+        relative_path=Path("compare") / entry.path,
         include_hash=not entry.is_dir,
     )
     real_file.first_seen = FROZEN_TS
@@ -47,8 +46,7 @@ def test_real_file_repository_roundtrip(
 ) -> None:
     entry = next(file for file in case_files.TEST_FILES if not file.is_dir)
     full_path = compare_storage_path / "compare" / entry.path
-    if not full_path.exists():
-        pytest.skip(f"Fixture file missing: {full_path}")
+    assert full_path.exists(), f"Committed test fixture missing: {full_path}"
 
     original = _build_real_file(entry, compare_storage_path)
     hoarder_repo.save_real_file(original)
@@ -127,7 +125,6 @@ def test_real_file_repository_validates_paths_on_init(tmp_path) -> None:
         HoarderRepository(tmp_path / "db.sqlite", [missing_path])
 
     existing_path = Path("./test_files/compare")
-    if not existing_path.exists():
-        pytest.skip(f"Fixture path missing: {existing_path}")
+    assert existing_path.exists(), f"Committed test fixture missing: {existing_path}"
     repo = HoarderRepository(tmp_path / "db.sqlite", [existing_path])
     assert existing_path.resolve() in repo.allowed_storage_paths

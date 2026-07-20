@@ -8,7 +8,7 @@ import traceback
 import xml.etree.ElementTree as ET
 from typing import Callable, NamedTuple
 
-from ..archives import RarArchiveError
+from ..archives import RarArchiveError, RarPasswordError
 from ..archives.rar_archive import RarArchive
 from ..utils import TableFormatter
 from .password_plugin import PasswordPlugin
@@ -71,13 +71,16 @@ class NzbPasswordPlugin(PasswordPlugin):
         self._nzb_paths = paths
 
     @staticmethod
-    def _extract_pw_from_nzb_filename(
+    def _extract_pw_from_filename(
         file_path: pathlib.PurePath,
     ) -> ArchiveEntry:
-        """Extract the password from an NZB filename using the {{password}} pattern.
+        """Extract the password from a filename using the {{password}} pattern.
+
+        Used for both NZB filenames and RAR filenames wrapping password-
+        protected NZBs (e.g. "release{{secret}}.rar").
 
         Args:
-            file_path (pathlib.PurePath): Path to the NZB file.
+            file_path (pathlib.PurePath): Path to the file.
 
         Returns:
             ArchiveEntry: title and password (password may be empty if extraction was unsuccesful)
@@ -142,7 +145,7 @@ class NzbPasswordPlugin(PasswordPlugin):
             (
                 title,
                 password,
-            ) = NzbPasswordPlugin._extract_pw_from_nzb_filename(p)
+            ) = NzbPasswordPlugin._extract_pw_from_filename(p)
             if not password:
                 content = read_file_content(p)
                 password = NzbPasswordPlugin._extract_pw_from_nzb_file_content(content)
@@ -166,7 +169,7 @@ class NzbPasswordPlugin(PasswordPlugin):
         dir_store = PasswordStore()
         for root, _, files in os.walk(nzb_directory):
             for file in files:
-                full_path: pathlib.Path = nzb_directory / root / file
+                full_path: pathlib.Path = pathlib.Path(root) / file
                 if full_path.suffix == ".nzb":
                     try:
                         title_password = NzbPasswordPlugin._process_file(
@@ -180,8 +183,30 @@ class NzbPasswordPlugin(PasswordPlugin):
                         dir_store.add_password(*title_password)
                 elif full_path.suffix == ".rar":
                     logger.debug(f"Processing RARed NZB(s) {full_path}")
-                    path = pathlib.PurePath(full_path)
-                    rar_file: RarArchive = RarArchive.from_path(nzb_directory, path)
+                    relative_path = full_path.relative_to(nzb_directory)
+                    try:
+                        (
+                            _,
+                            filename_password,
+                        ) = NzbPasswordPlugin._extract_pw_from_filename(full_path)
+                    except ValueError:
+                        # Ambiguous {{...}} groups in the filename - fall back
+                        # to opening without a password rather than aborting.
+                        filename_password = None
+                    try:
+                        rar_file: RarArchive = RarArchive.from_path(
+                            nzb_directory, relative_path, password=filename_password
+                        )
+                    except RarPasswordError:
+                        logger.warning(
+                            "Skipping password-protected RAR %s: no working "
+                            "password found",
+                            full_path,
+                        )
+                        continue
+                    except RarArchiveError as exc:
+                        logger.warning("Skipping unreadable RAR %s: %s", full_path, exc)
+                        continue
                     for file_entry in rar_file.files:
                         logger.debug(f"Read {file_entry.path}... extracting passwords")
                         try:

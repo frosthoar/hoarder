@@ -289,6 +289,29 @@ def test_init_with_empty_dict():
     assert list(store) == []
 
 
+def test_init_with_data_rejects_empty_title():
+    """__init__ must apply the same validation as add_password."""
+    with pytest.raises(ValueError):
+        PasswordStore({"": {"password1"}})
+
+
+def test_init_with_data_rejects_empty_password():
+    with pytest.raises(ValueError):
+        PasswordStore({"title1": {""}})
+
+
+@suppress_type_checks
+def test_init_with_data_rejects_non_string_password():
+    with pytest.raises(TypeError, match="password must be str"):
+        PasswordStore({"title1": {123}})  # type: ignore[dict-item]
+
+
+@suppress_type_checks
+def test_init_with_data_rejects_non_string_title():
+    with pytest.raises(TypeError, match="title must be str"):
+        PasswordStore({123: {"password1"}})  # type: ignore[dict-item]
+
+
 def test_contains_existing_title(password_store: PasswordStore):
     """Test __contains__ with existing title."""
     password_store.add_password("title1", "password1")

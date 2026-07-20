@@ -57,3 +57,32 @@ def test_calculate_hash_unsupported_algo_raises() -> None:
 
     with pytest.raises(NotImplementedError):
         real_file.calculate_hash(algo=Algo.SHA1)
+
+
+def test_real_file_hash_is_based_on_full_path_not_full_equality() -> None:
+    """Two RealFiles with the same full_path hash equal even when other
+    fields differ - the intentional relaxation that makes RealFile usable
+    as a dict/set key while staying mutable (mirrors FileEntry)."""
+    entry = case_files.TEST_FILES[0]
+    same_path_a = RealFile(
+        anchor=AnchoredPath(STORAGE_ROOT, entry.path), size=1, is_dir=False
+    )
+    same_path_b = RealFile(
+        anchor=AnchoredPath(STORAGE_ROOT, entry.path), size=999, is_dir=False
+    )
+    different_entry = next(
+        fe for fe in case_files.TEST_FILES if fe.path != entry.path and not fe.is_dir
+    )
+    different_path = RealFile(
+        anchor=AnchoredPath(STORAGE_ROOT, different_entry.path), size=1, is_dir=False
+    )
+
+    assert hash(same_path_a) == hash(same_path_b)
+    assert same_path_a != same_path_b
+
+    as_dict_keys = {
+        same_path_a: "first",
+        same_path_b: "second",
+        different_path: "third",
+    }
+    assert len(as_dict_keys) == 3

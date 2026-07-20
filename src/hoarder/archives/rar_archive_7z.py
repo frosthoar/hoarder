@@ -8,7 +8,8 @@ import subprocess
 import typing
 
 from ..utils import SEVENZIP
-from .abstract_rar_archive import AbstractRarArchive, RarArchiveError
+from ..utils.path_utils import AnchoredPath
+from .abstract_rar_archive import AbstractRarArchive, RarArchiveError, RarPasswordError
 from .hash_archive import Algo, FileEntry
 from .rar_path import locate_main_volume
 
@@ -22,6 +23,13 @@ logger = logging.getLogger("hoarder.archives.rar_archive_7z")
 T = typing.TypeVar("T", bound="Rar7zArchive")
 
 
+def _is_password_stderr(stderr: bytes) -> bool:
+    """7z reports both a missing and a wrong password the same way, via
+    this stderr message (verified against 7z 25.01) rather than a
+    distinct exit code, so string-matching it is the only signal available."""
+    return b"wrong password" in stderr.lower()
+
+
 class Rar7zArchive(AbstractRarArchive):
     """RAR archive implementation that uses 7-zip for all operations."""
 
@@ -30,10 +38,12 @@ class Rar7zArchive(AbstractRarArchive):
     def _from_path(
         cls: type[T],
         storage_path: pathlib.Path,
-        path: pathlib.PurePath,
+        relative_path: pathlib.PurePath,
         password: str | None = None,
     ) -> T:
-        volumes = locate_main_volume(storage_path, path)
+        volumes = locate_main_volume(AnchoredPath(storage_path, relative_path))
+        if volumes is None:
+            raise ValueError(f"Path {relative_path} does not match any RAR pattern")
 
         infos = Rar7zArchive.list_rar(volumes.main_volume, password)
         type_entries = [entry for entry in infos if "Type" in entry]
@@ -44,6 +54,25 @@ class Rar7zArchive(AbstractRarArchive):
         else:
             version = type_entries[0]["Type"]
 
+        # RAR3/4 signals encryption via "BlockEncryption" in Characteristics
+        # on the archive-level Type entry (only present when headers/names
+        # are encrypted, since list_rar() itself fails before this point
+        # otherwise); RAR5 has a separate Encrypted=+/- field. Either format
+        # also puts Encrypted=+ on individual file entries whenever content
+        # is encrypted, even if headers/names are not - checking type_entries
+        # alone misses that case entirely, so scan every entry.
+        requires_password = any(
+            "BlockEncryption" in entry.get("Characteristics", "")
+            or entry.get("Encrypted") == "+"
+            for entry in infos
+        )
+        if requires_password and not password:
+            # Headers/filenames aren't always encrypted even when content is,
+            # so list_rar() can succeed with no password at all - don't hand
+            # back a populated-looking archive whose content isn't actually
+            # readable; match RarfileRarArchive's rf.needs_password() check.
+            raise RarPasswordError(f"{volumes.main_volume} requires a password")
+
         files: set[FileEntry] = set()
         for entry in infos:
             if "Path" in entry and "Type" not in entry:
@@ -52,10 +81,16 @@ class Rar7zArchive(AbstractRarArchive):
                 is_dir = entry["Folder"] == "+"
                 hash_value = None
                 algo = None
-                if version and version.upper() in ("RAR", "RAR3"):
-                    # RAR5 CRC field is optional and may be absent; read it directly
-                    # from the header only for RAR3/4 where it is always present.
-                    hash_value = bytes.fromhex(entry["CRC"]) if "CRC" in entry else None
+                # A per-entry "Encrypted" marker means the header CRC (when
+                # present at all) reflects the stored ciphertext, not the
+                # actual plaintext content, whenever headers/filenames
+                # aren't themselves encrypted too - update_hash_values()
+                # must recompute it via real decryption instead of trusting
+                # this value. RAR5 also leaves CRC blank for such entries;
+                # unencrypted RAR5 entries do have a real CRC here.
+                if entry.get("Encrypted") != "+":
+                    crc = entry.get("CRC")
+                    hash_value = bytes.fromhex(crc) if crc else None
                     algo = Algo.CRC32 if hash_value else None
                 files.add(FileEntry(entry_path, size, is_dir, hash_value, algo))
         logger.info(volumes.scheme)
@@ -68,6 +103,7 @@ class Rar7zArchive(AbstractRarArchive):
             volumes.scheme,
             volumes.n_volumes,
             volumes.part_n_padding,
+            requires_password,
         )
 
     @classmethod
@@ -92,7 +128,11 @@ class Rar7zArchive(AbstractRarArchive):
 
         try:
             sub = subprocess.run(command_line, capture_output=True, check=True)
-        except (subprocess.CalledProcessError, OSError) as exc:
+        except subprocess.CalledProcessError as exc:
+            if _is_password_stderr(exc.stderr):
+                raise RarPasswordError(f"Wrong password for {path}") from exc
+            raise RarArchiveError(f"7z failed to list {path}") from exc
+        except OSError as exc:
             raise RarArchiveError(f"7z failed to list {path}") from exc
 
         entries = sub.stdout.decode(errors="ignore", encoding="utf-8").split(
@@ -141,7 +181,13 @@ class Rar7zArchive(AbstractRarArchive):
 
         try:
             sub = subprocess.run(command_line, capture_output=True, check=True)
-        except (subprocess.CalledProcessError, OSError) as exc:
+        except subprocess.CalledProcessError as exc:
+            if _is_password_stderr(exc.stderr):
+                raise RarPasswordError(f"Wrong password for {self.full_path}") from exc
+            raise RarArchiveError(
+                f"7z failed to get CRC32 for {entry_path} in {self.full_path}"
+            ) from exc
+        except OSError as exc:
             raise RarArchiveError(
                 f"7z failed to get CRC32 for {entry_path} in {self.full_path}"
             ) from exc
@@ -188,6 +234,10 @@ class Rar7zArchive(AbstractRarArchive):
                     if crc is not None:
                         entry.hash_value = crc
                         entry.algo = Algo.CRC32
+                except RarPasswordError:
+                    # Wrong for one entry means wrong for all; abort rather
+                    # than silently leaving every remaining hash unset.
+                    raise
                 except RarArchiveError:
                     logger.error(
                         "Failed to get CRC32 for %(entry_path)s",
@@ -213,7 +263,15 @@ class Rar7zArchive(AbstractRarArchive):
 
         try:
             sub = subprocess.run(command_line, capture_output=True, check=True)
-        except (subprocess.CalledProcessError, OSError) as exc:
+        except subprocess.CalledProcessError as exc:
+            if _is_password_stderr(exc.stderr):
+                raise RarPasswordError(
+                    f"Wrong password for {path} in {self.full_path}"
+                ) from exc
+            raise RarArchiveError(
+                f"7z failed to extract {path} from {self.full_path}"
+            ) from exc
+        except OSError as exc:
             raise RarArchiveError(
                 f"7z failed to extract {path} from {self.full_path}"
             ) from exc

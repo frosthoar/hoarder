@@ -5,7 +5,7 @@ import pathlib
 import pytest
 import tests.test_case_file_info
 from hoarder.archives import SfvArchive
-from hoarder.utils.presentation import TableFormatter
+from hoarder.utils.presentation import PresentationSpec, TableFormatter
 
 SFV_TUPLES = [
     (
@@ -50,3 +50,75 @@ def test_hash_archive_table_formatter(sfv_data_tuple):
     assert (
         file_paths_in_output
     ), "At least one file path should appear in the formatted output"
+
+
+def test_truncate_middle_keeps_both_ends():
+    """Long values should be elided in the middle, not just cut off at the
+    end - the distinguishing part of a long release-name path is often at
+    the tail, which a naive tail-truncation would discard entirely."""
+    long_name = (
+        "Gate.2.E01.Das.Bankett.ist.eroeffnet.German.2016.ANiME.DL.1080p."
+        "BluRay.x264-STARS"
+    )
+    assert len(long_name) > TableFormatter.MAX_COL_WIDTH
+
+    truncated = TableFormatter._truncate_middle(  # pyright: ignore[reportPrivateUsage]
+        long_name, TableFormatter.MAX_COL_WIDTH
+    )
+
+    assert len(truncated) == TableFormatter.MAX_COL_WIDTH
+    assert "..." in truncated
+    assert truncated.startswith(long_name[:10])
+    assert truncated.endswith(long_name[-10:])
+    assert "STARS" in truncated
+
+
+def test_truncate_middle_leaves_short_values_untouched():
+    assert (
+        TableFormatter._truncate_middle(  # pyright: ignore[reportPrivateUsage]
+            "short", 80
+        )
+        == "short"
+    )
+
+
+def test_format_table_truncates_long_values_in_the_middle():
+    """End-to-end: a long path cell must show both start and end, not just
+    the start followed by "..."."""
+    long_path = "/mnt/ds423plus/usenet/" + "x" * 40 + "-DISTINCTIVE-SUFFIX"
+    spec: PresentationSpec = {
+        "scalar": {},
+        "collections": {"rows": [{"path": long_path}]},
+    }
+    output = TableFormatter().format(spec)
+
+    assert "DISTINCTIVE-SUFFIX" in output
+    assert "/mnt/ds423plus/usenet/" in output
+
+
+def test_format_single_collection_has_no_heading():
+    spec: PresentationSpec = {
+        "scalar": {"type": "Thing"},
+        "collections": {"files": [{"path": "a"}]},
+    }
+    output = TableFormatter().format(spec)
+
+    assert "files:" not in output
+
+
+def test_format_multiple_collections_are_each_labeled_and_shown():
+    spec: PresentationSpec = {
+        "scalar": {"type": "Thing"},
+        "collections": {
+            "archives": [{"path": "archive.rar"}],
+            "real_files": [{"path": "movie.mkv"}],
+        },
+    }
+    output = TableFormatter().format(spec)
+
+    assert "archives:" in output
+    assert "real_files:" in output
+    assert "archive.rar" in output
+    assert "movie.mkv" in output
+    # The archives table should come before the real_files table.
+    assert output.index("archive.rar") < output.index("movie.mkv")

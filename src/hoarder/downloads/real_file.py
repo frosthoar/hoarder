@@ -10,6 +10,11 @@ from ..archives import Algo
 from ..utils import AnchoredPath
 from .contents_hasher import ContentsHasher, CRC32Hasher
 
+try:
+    from typing import override  # type: ignore [attr-defined]
+except ImportError:
+    from typing_extensions import override
+
 
 class VerificationSource(enum.IntEnum):
     """Identifies where the verification information originated."""
@@ -23,7 +28,16 @@ class VerificationSource(enum.IntEnum):
 
 @dataclasses.dataclass(slots=True, eq=True)
 class RealFile:
-    """Represents a file or directory we encountered in storage."""
+    """Represents a file or directory we encountered in storage.
+
+    Identity and hashing are based on full_path (anchor.storage_path resolved
+    against anchor.relative_path), independent of storage root layout. DO NOT
+    reassign `anchor` on an instance that is live in a dict/set keyed by it —
+    like `FileEntry`, this class is mutable, and mutating the field the hash
+    depends on after insertion corrupts the containing collection. Replace
+    the instance (e.g. via `dataclasses.replace`) instead of mutating `anchor`
+    in place.
+    """
 
     anchor: AnchoredPath
     size: int
@@ -48,6 +62,10 @@ class RealFile:
         """Return the resolved path on disk."""
         return self.anchor.full_path
 
+    @override
+    def __hash__(self) -> int:
+        return hash(self.full_path)
+
     def calculate_hash(self, algo: Algo = Algo.CRC32) -> bytes:
         """Calculate and assign hash/algo for this real file."""
         hasher_cls = self._HASHERS.get(algo)
@@ -66,13 +84,13 @@ class RealFile:
     def from_path(
         cls,
         storage_path: Path | str,
-        path: PurePath | str,
+        relative_path: PurePath | str,
         *,
         include_hash: bool = False,
         algo: Algo = Algo.CRC32,
     ) -> RealFile:
         """Create a RealFile instance by inspecting the filesystem."""
-        anchor = AnchoredPath(Path(storage_path), PurePath(path))
+        anchor = AnchoredPath(Path(storage_path), PurePath(relative_path))
         full_path = anchor.full_path
         if not full_path.exists():
             raise FileNotFoundError(full_path)

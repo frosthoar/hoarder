@@ -54,6 +54,12 @@ class AnchoredPath:
         """Return a new, revalidated AnchoredPath with a different storage_path."""
         return dataclasses.replace(self, storage_path=pathlib.Path(storage_path))
 
+    def with_relative_path(
+        self, relative_path: pathlib.PurePath | str
+    ) -> "AnchoredPath":
+        """Return a new, revalidated AnchoredPath with a different relative_path."""
+        return dataclasses.replace(self, relative_path=pathlib.PurePath(relative_path))
+
     @classmethod
     def from_absolute_path(
         cls, storage_path: pathlib.Path | str, absolute_path: pathlib.Path | str

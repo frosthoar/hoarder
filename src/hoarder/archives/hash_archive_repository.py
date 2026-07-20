@@ -73,6 +73,10 @@ class HashArchiveRepository:
     ) -> HashArchive:
         """Return the archive (plus its FileEntry set) previously stored."""
         storage_path_str = str(storage_path.resolve())
+        # SERIALIZATION BOUNDARY: this lookup key must match the canonical form
+        # written by save() above. A native str() won't match posix-stored
+        # values on Windows.
+        # TODO(path-serialization): normalize with .as_posix() (needs Windows verification).
         path_str = str(path)
 
         con.row_factory = sqlite3.Row
@@ -142,6 +146,12 @@ class HashArchiveRepository:
         """Return a dict used directly with named-parameter SQL."""
         base: dict[str, str | int | None] = {
             "type": type(arch).__name__,
+            # SERIALIZATION BOUNDARY: at runtime relative_path is a native
+            # PurePath, so str() emits OS-specific separators (backslashes on
+            # Windows). The DB must hold an OS-independent form or a database
+            # written on one platform won't match lookups on another. Normalize
+            # here, e.g. arch.anchor.relative_path.as_posix().
+            # TODO(path-serialization): apply .as_posix() (needs Windows verification).
             "path": str(arch.anchor.relative_path),
             "is_deleted": int(arch.is_deleted),
             "hash_enclosure": None,
@@ -150,6 +160,7 @@ class HashArchiveRepository:
             "rar_version": None,
             "n_volumes": None,
             "part_n_padding": None,
+            "requires_password": None,
         }
         if isinstance(arch, HashNameArchive):
             base["hash_enclosure"] = arch.enc.value
@@ -160,6 +171,7 @@ class HashArchiveRepository:
                 rar_version=arch.version,
                 n_volumes=arch.n_volumes,
                 part_n_padding=arch.part_n_padding,
+                requires_password=int(arch.requires_password),
             )
         elif isinstance(arch, SfvArchive):
             pass
@@ -175,6 +187,9 @@ class HashArchiveRepository:
     ) -> collections.abc.Iterable[dict[str, str | int | None | bytes]]:
         for fe in entries:
             ret_dict: dict[str, str | int | None | bytes] = {
+                # SERIALIZATION BOUNDARY: fe.path is a native PurePath at
+                # runtime; store the OS-independent form so the DB is portable.
+                # TODO(path-serialization): apply fe.path.as_posix() (needs Windows verification).
                 "path": str(fe.path),
                 "size": fe.size,
                 "is_dir": int(fe.is_dir),
@@ -218,6 +233,7 @@ class HashArchiveRepository:
                 ),
                 n_volumes=cast(int | None, row["n_volumes"]),
                 part_n_padding=cast(int | None, row["part_n_padding"]),
+                requires_password=bool(row["requires_password"]),
             )
         elif archive_type == "SfvArchive":
             arch = SfvArchive(storage_path, PurePath(archive_path), files=set())

@@ -7,7 +7,8 @@ import zlib
 
 import rarfile
 
-from .abstract_rar_archive import AbstractRarArchive, RarArchiveError
+from ..utils.path_utils import AnchoredPath
+from .abstract_rar_archive import AbstractRarArchive, RarArchiveError, RarPasswordError
 from .hash_archive import Algo, FileEntry
 from .rar_path import locate_main_volume
 
@@ -34,6 +35,22 @@ def _detect_version(path: pathlib.Path) -> str | None:
     return None
 
 
+def _is_password_error(exc: rarfile.Error, pwd: bytes | None) -> bool:
+    """Best-effort classification of a rarfile.Error as password-related.
+
+    RAR5 has a real password-check hash and raises a dedicated exception
+    on mismatch; rarfile also raises a dedicated exception when a file
+    needs a password and none was set. RAR4 has no such check - a wrong
+    password just corrupts header parsing, surfacing as a generic
+    BadRarFile (whose own message hints "wrong password?"). Since that
+    message text isn't part of the library's stable API, treat any
+    BadRarFile as password-related when a password was actually supplied.
+    """
+    if isinstance(exc, (rarfile.PasswordRequired, rarfile.RarWrongPassword)):
+        return True
+    return isinstance(exc, rarfile.BadRarFile) and pwd is not None
+
+
 class RarfileRarArchive(AbstractRarArchive):
     """RAR archive implementation using the rarfile library.
 
@@ -47,29 +64,46 @@ class RarfileRarArchive(AbstractRarArchive):
     def _from_path(
         cls: type[T],
         storage_path: pathlib.Path,
-        path: pathlib.PurePath,
+        relative_path: pathlib.PurePath,
         password: str | None = None,
     ) -> T:
-        volumes = locate_main_volume(storage_path, path)
+        volumes = locate_main_volume(AnchoredPath(storage_path, relative_path))
+        if volumes is None:
+            raise ValueError(f"Path {relative_path} does not match any RAR pattern")
 
         version = _detect_version(volumes.main_volume)
 
         pwd = password.encode() if password else None
         files: set[FileEntry] = set()
+        requires_password = False
         try:
             with rarfile.RarFile(str(volumes.main_volume), errors="stop") as rf:
                 if pwd:
                     rf.setpassword(pwd)
+                requires_password = rf.needs_password()
+                if requires_password and not pwd:
+                    raise RarPasswordError(f"{volumes.main_volume} requires a password")
                 for ri in rf.infolist():
                     entry_path = pathlib.PurePath(ri.filename)
                     size = ri.file_size
                     is_dir = ri.is_dir()
+                    # ri.CRC for a per-entry-encrypted file reflects the
+                    # stored (encrypted) bytes, not the actual plaintext
+                    # content, whenever headers/filenames aren't themselves
+                    # encrypted too - update_hash_values() must recompute it
+                    # via real decryption instead of trusting this value.
                     hash_value = (
-                        ri.CRC.to_bytes(4, "big") if ri.CRC is not None else None
+                        ri.CRC.to_bytes(4, "big")
+                        if ri.CRC is not None and not ri.needs_password()
+                        else None
                     )
                     algo = Algo.CRC32 if hash_value is not None else None
                     files.add(FileEntry(entry_path, size, is_dir, hash_value, algo))
         except rarfile.Error as exc:
+            if _is_password_error(exc, pwd):
+                raise RarPasswordError(
+                    f"Wrong password for {volumes.main_volume}"
+                ) from exc
             raise RarArchiveError(
                 f"rarfile failed to list {volumes.main_volume}"
             ) from exc
@@ -83,6 +117,7 @@ class RarfileRarArchive(AbstractRarArchive):
             volumes.scheme,
             volumes.n_volumes,
             volumes.part_n_padding,
+            requires_password,
         )
 
     @override
@@ -93,6 +128,8 @@ class RarfileRarArchive(AbstractRarArchive):
             with rarfile.RarFile(str(self.full_path), errors="stop") as rf:
                 if pwd:
                     rf.setpassword(pwd)
+                if rf.needs_password() and not pwd:
+                    raise RarPasswordError(f"{self.full_path} requires a password")
                 for entry in self:
                     if entry.hash_value:
                         continue
@@ -105,9 +142,15 @@ class RarfileRarArchive(AbstractRarArchive):
                         crc = zlib.crc32(data) & 0xFFFFFFFF
                         entry.hash_value = crc.to_bytes(4, "big")
                         entry.algo = Algo.CRC32
-                    except rarfile.Error:
+                    except rarfile.Error as exc:
+                        if _is_password_error(exc, pwd):
+                            raise RarPasswordError(
+                                f"Wrong password for {self.full_path}"
+                            ) from exc
                         logger.error("Failed to get CRC32 for %s", entry.path)
         except rarfile.Error as exc:
+            if _is_password_error(exc, pwd):
+                raise RarPasswordError(f"Wrong password for {self.full_path}") from exc
             raise RarArchiveError(f"rarfile failed to open {self.full_path}") from exc
 
     @override
@@ -123,6 +166,10 @@ class RarfileRarArchive(AbstractRarArchive):
                     rf.setpassword(pwd)
                 return rf.read(str(path))
         except rarfile.Error as exc:
+            if _is_password_error(exc, pwd):
+                raise RarPasswordError(
+                    f"Wrong password for {path} in {self.full_path}"
+                ) from exc
             raise RarArchiveError(
                 f"rarfile failed to extract {path} from {self.full_path}"
             ) from exc

@@ -12,7 +12,15 @@ from .real_file import RealFile, Verification, VerificationSource
 
 
 class RealFileRepository:
-    """Repository handling persistence for RealFile and Verification instances."""
+    """Repository handling persistence for RealFile and Verification instances.
+
+    SERIALIZATION BOUNDARY: at runtime paths are native PurePath, so str()
+    emits OS-specific separators (backslashes on Windows). Any path written to
+    or used as a query key against the DB must be normalized to an OS-independent
+    form (.as_posix()) so a database stays portable across platforms. The sites
+    below are tagged `TODO(path-serialization)`; the fix is not applied yet
+    because it is unverified on Windows.
+    """
 
     def save(self, real_file: RealFile, con: sqlite3.Connection) -> None:
         """Insert or replace a RealFile and its verifications."""
@@ -27,6 +35,7 @@ class RealFileRepository:
             WHERE storage_path_id = (SELECT id FROM storage_paths WHERE storage_path = ?)
               AND path = ?;
             """,
+            # TODO(path-serialization): delete key must match stored form — .as_posix()
             (storage_path_str, str(real_file.anchor.relative_path)),
         )
         _ = cur.execute(
@@ -62,6 +71,7 @@ class RealFileRepository:
             verification_rows = list(
                 self._build_verification_rows(
                     real_file.verification,
+                    # TODO(path-serialization): match key must match stored form — .as_posix()
                     str(real_file.anchor.relative_path),
                     storage_path_str,
                 )
@@ -110,6 +120,7 @@ class RealFileRepository:
     ) -> RealFile:
         """Load one RealFile (including all Verification records)."""
         storage_path_str = str(storage_path.resolve())
+        # TODO(path-serialization): lookup key must match stored form — .as_posix()
         path_str = str(path)
 
         con.row_factory = sqlite3.Row
@@ -137,6 +148,7 @@ class RealFileRepository:
     @staticmethod
     def _build_real_file_row(real_file: RealFile) -> dict[str, object]:
         return {
+            # TODO(path-serialization): store OS-independent form — .as_posix()
             "path": str(real_file.anchor.relative_path),
             "size": real_file.size,
             "is_dir": int(real_file.is_dir),
@@ -160,6 +172,7 @@ class RealFileRepository:
         for verification in verifications:
             yield {
                 "source_type": verification.source_type.value,
+                # TODO(path-serialization): store OS-independent form — .as_posix()
                 "source_path": str(verification.source.relative_path),
                 "source_storage_path": str(verification.source.storage_path),
                 "hash_value": verification.hash_value,
