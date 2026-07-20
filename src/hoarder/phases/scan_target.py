@@ -44,11 +44,15 @@ class ScanTarget:
         be found, even though its payload is.
         """
         if self.anchor.full_path.is_dir():
+            directories = [
+                self.anchor.full_path,
+                *(p for p in self.anchor.full_path.rglob("*") if p.is_dir()),
+            ]
             paths = [
                 self.anchor.with_relative_path(
                     directory.relative_to(self.anchor.storage_path)
                 )
-                for directory, _, _ in self.anchor.full_path.walk()
+                for directory in directories
             ]
         else:
             paths = [self.anchor]

@@ -1233,7 +1233,7 @@ V5_CONTENT_ENCRYPTED_FILES = [
     ),
     FileEntry(
         path=PurePath(
-            "files/(2XVR83rF)environmental[EwI!EhWI]/[sjYDtb_q]life[wr7v_0D0]/[Nc4Jvep!]while(!JheDpw2)/(n6Wysr57)choice(zJJFVlzT)"
+            "files/(2XVR83rF)environmental[EwI!EhWI]/[sjYDtb_q]life[wr7v_0D0]/[Nc4Jvep!]while(!JheDpw2)/(n6Wysr57)choice(zJJFVlzT)"  # noqa: E501
         ),
         size=0,
         is_dir=True,
@@ -1243,7 +1243,7 @@ V5_CONTENT_ENCRYPTED_FILES = [
     ),
     FileEntry(
         path=PurePath(
-            "files/(2XVR83rF)environmental[EwI!EhWI]/[sjYDtb_q]life[wr7v_0D0]/[Nc4Jvep!]while(!JheDpw2)/(n6Wysr57)choice(zJJFVlzT)/measure.raw"
+            "files/(2XVR83rF)environmental[EwI!EhWI]/[sjYDtb_q]life[wr7v_0D0]/[Nc4Jvep!]while(!JheDpw2)/(n6Wysr57)choice(zJJFVlzT)/measure.raw"  # noqa: E501
         ),
         size=1786,
         is_dir=False,
@@ -1307,7 +1307,7 @@ V5_CONTENT_ENCRYPTED_FILES = [
     ),
     FileEntry(
         path=PurePath(
-            "files/(F1AuIP S)reason(3RDyXXVL)/(2s.05hWf)bill(sU R_I6T)/(z02d8Iu )him[BAx0mnec]/[pt56uDci]show[tgZ96hM8]/career.bin"
+            "files/(F1AuIP S)reason(3RDyXXVL)/(2s.05hWf)bill(sU R_I6T)/(z02d8Iu )him[BAx0mnec]/[pt56uDci]show[tgZ96hM8]/career.bin"  # noqa: E501
         ),
         size=1962,
         is_dir=False,
@@ -1357,7 +1357,7 @@ V5_CONTENT_ENCRYPTED_FILES = [
     ),
     FileEntry(
         path=PurePath(
-            "files/(F1AuIP S)reason(3RDyXXVL)/[O!NKsn9!]collection[5yu 9oBc]/(xrg118hG)form(THgxXePF)/[jLEOP5nA]do(onks8SXc)"
+            "files/(F1AuIP S)reason(3RDyXXVL)/[O!NKsn9!]collection[5yu 9oBc]/(xrg118hG)form(THgxXePF)/[jLEOP5nA]do(onks8SXc)"  # noqa: E501
         ),
         size=0,
         is_dir=True,
@@ -1367,7 +1367,7 @@ V5_CONTENT_ENCRYPTED_FILES = [
     ),
     FileEntry(
         path=PurePath(
-            "files/(F1AuIP S)reason(3RDyXXVL)/[O!NKsn9!]collection[5yu 9oBc]/(xrg118hG)form(THgxXePF)/[jLEOP5nA]do(onks8SXc)/challenge.raw"
+            "files/(F1AuIP S)reason(3RDyXXVL)/[O!NKsn9!]collection[5yu 9oBc]/(xrg118hG)form(THgxXePF)/[jLEOP5nA]do(onks8SXc)/challenge.raw"  # noqa: E501
         ),
         size=1876,
         is_dir=False,
@@ -1449,7 +1449,7 @@ V5_CONTENT_ENCRYPTED_FILES = [
     ),
     FileEntry(
         path=PurePath(
-            "files/(qq0wEAwI)admit[VgRSg86a]/(Fq7P.ug0)follow(iHcDMpCN)/[5AjIycF_]international(B..x1.AV)/[ _4ugNJ2]page(Hmz0rVlE)"
+            "files/(qq0wEAwI)admit[VgRSg86a]/(Fq7P.ug0)follow(iHcDMpCN)/[5AjIycF_]international(B..x1.AV)/[ _4ugNJ2]page(Hmz0rVlE)"  # noqa: E501
         ),
         size=0,
         is_dir=True,
@@ -1459,7 +1459,7 @@ V5_CONTENT_ENCRYPTED_FILES = [
     ),
     FileEntry(
         path=PurePath(
-            "files/(qq0wEAwI)admit[VgRSg86a]/(Fq7P.ug0)follow(iHcDMpCN)/[5AjIycF_]international(B..x1.AV)/[ _4ugNJ2]page(Hmz0rVlE)/would.dat"
+            "files/(qq0wEAwI)admit[VgRSg86a]/(Fq7P.ug0)follow(iHcDMpCN)/[5AjIycF_]international(B..x1.AV)/[ _4ugNJ2]page(Hmz0rVlE)/would.dat"  # noqa: E501
         ),
         size=1127,
         is_dir=False,
@@ -1509,7 +1509,7 @@ V5_CONTENT_ENCRYPTED_FILES = [
     ),
     FileEntry(
         path=PurePath(
-            "files/(qq0wEAwI)admit[VgRSg86a]/(Fq7P.ug0)follow(iHcDMpCN)/[l EyatoF]outside(!4.QZ M_)/[!LteGMmg]Mrs(Yn pbAtG)"
+            "files/(qq0wEAwI)admit[VgRSg86a]/(Fq7P.ug0)follow(iHcDMpCN)/[l EyatoF]outside(!4.QZ M_)/[!LteGMmg]Mrs(Yn pbAtG)"  # noqa: E501
         ),
         size=0,
         is_dir=True,
@@ -1519,7 +1519,7 @@ V5_CONTENT_ENCRYPTED_FILES = [
     ),
     FileEntry(
         path=PurePath(
-            "files/(qq0wEAwI)admit[VgRSg86a]/(Fq7P.ug0)follow(iHcDMpCN)/[l EyatoF]outside(!4.QZ M_)/[!LteGMmg]Mrs(Yn pbAtG)/decide.bin"
+            "files/(qq0wEAwI)admit[VgRSg86a]/(Fq7P.ug0)follow(iHcDMpCN)/[l EyatoF]outside(!4.QZ M_)/[!LteGMmg]Mrs(Yn pbAtG)/decide.bin"  # noqa: E501
         ),
         size=1693,
         is_dir=False,
@@ -1597,7 +1597,7 @@ V5_CONTENT_ENCRYPTED_FILES = [
     ),
     FileEntry(
         path=PurePath(
-            "files/(qq0wEAwI)admit[VgRSg86a]/(SA7foiQ2)apply(y4ZN9hZ6)/[lteMTjC!]yeah[jFglBSKa]/(Qc XKSTy)her[1gAMct0 ]/fight.dat"
+            "files/(qq0wEAwI)admit[VgRSg86a]/(SA7foiQ2)apply(y4ZN9hZ6)/[lteMTjC!]yeah[jFglBSKa]/(Qc XKSTy)her[1gAMct0 ]/fight.dat"  # noqa: E501
         ),
         size=1788,
         is_dir=False,
@@ -1785,7 +1785,7 @@ V5_CONTENT_ENCRYPTED_FILES = [
     ),
     FileEntry(
         path=PurePath(
-            "files/(ugjO0h7V)job(WLss1CFo)/[m9Tk6LxN]never[87zRG Z4]/[PV!TfReD]show(KbLJCgZ7)/[_7Wb1Zt8]send[BxdYTDT_]/TV.dat"
+            "files/(ugjO0h7V)job(WLss1CFo)/[m9Tk6LxN]never[87zRG Z4]/[PV!TfReD]show(KbLJCgZ7)/[_7Wb1Zt8]send[BxdYTDT_]/TV.dat"  # noqa: E501
         ),
         size=1997,
         is_dir=False,
