@@ -20,11 +20,11 @@ def test_process_target_discovers_and_correlates_a_release() -> None:
     result = process_target(target)
 
     assert len(result.archives) == 1
-    assert str(result.archives[0].anchor.relative_path) == "release/data.sfv"
+    assert str(result.archives[0].anchor.relative_path) == str(PurePath("release/data.sfv"))
 
     assert len(result.real_files) == 1
     real_file = result.real_files[0]
-    assert str(real_file.anchor.relative_path) == "release/data/note.txt"
+    assert str(real_file.anchor.relative_path) == str(PurePath("release/data/note.txt"))
 
     assert len(result.matches) == 1
     entries = result.matches[real_file]
@@ -52,7 +52,7 @@ def test_processing_result_to_presentation() -> None:
     assert len(spec["collections"]["real_files"]) == 1
     file_row = spec["collections"]["real_files"][0]
     assert file_row["matched"] is True
-    assert file_row["matched_entries"] == "data/note.txt"
+    assert file_row["matched_entries"] == str(PurePath("data/note.txt"))
 
 
 def test_process_target_resolves_a_password_protected_archive_when_known() -> None:
