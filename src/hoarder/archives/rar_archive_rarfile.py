@@ -138,7 +138,7 @@ class RarfileRarArchive(AbstractRarArchive):
                         entry.algo = Algo.CRC32
                         continue
                     try:
-                        data = rf.read(str(entry.path))
+                        data = rf.read(str(pathlib.PurePosixPath(entry.path)))
                         crc = zlib.crc32(data) & 0xFFFFFFFF
                         entry.hash_value = crc.to_bytes(4, "big")
                         entry.algo = Algo.CRC32
@@ -147,7 +147,8 @@ class RarfileRarArchive(AbstractRarArchive):
                             raise RarPasswordError(
                                 f"Wrong password for {self.full_path}"
                             ) from exc
-                        logger.error("Failed to get CRC32 for %s", entry.path)
+                        logger.error("Failed to get CRC32 for %s (%s)",
+                                     entry.path, exc)
         except rarfile.Error as exc:
             if _is_password_error(exc, pwd):
                 raise RarPasswordError(f"Wrong password for {self.full_path}") from exc
@@ -164,7 +165,7 @@ class RarfileRarArchive(AbstractRarArchive):
             with rarfile.RarFile(str(self.full_path), errors="stop") as rf:
                 if pwd:
                     rf.setpassword(pwd)
-                return rf.read(str(path))
+                return rf.read(str(pathlib.PurePosixPath(path)))
         except rarfile.Error as exc:
             if _is_password_error(exc, pwd):
                 raise RarPasswordError(
