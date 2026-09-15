@@ -210,7 +210,9 @@ class DownloadRepository:
             yield {
                 "download_title": download_title,
                 "real_file_storage_path": str(real_file.anchor.storage_path),
-                "real_file_path": str(real_file.anchor.relative_path),
+                # Match key must agree with the posix form real_files.path is
+                # stored in (see RealFileRepository._build_real_file_row).
+                "real_file_path": real_file.anchor.relative_path.as_posix(),
             }
 
     def _build_archive_association_rows(
@@ -223,7 +225,9 @@ class DownloadRepository:
             yield {
                 "download_title": download_title,
                 "archive_storage_path": str(hash_archive.anchor.storage_path),
-                "archive_path": str(hash_archive.anchor.relative_path),
+                # Match key must agree with the posix form hash_archives.path is
+                # stored in (see HashArchiveRepository._build_archive_row).
+                "archive_path": hash_archive.anchor.relative_path.as_posix(),
             }
 
     def _load_real_files(
