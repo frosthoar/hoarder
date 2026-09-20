@@ -11,6 +11,7 @@ from .correlation import correlate_archives, correlate_files_to_entries
 from .discovery import collect_archive_paths, discover_real_files
 from .password_resolution import resolve_passwords
 from .scan_target import ScanTarget
+from .verification import verify_real_files
 
 logger = logging.getLogger("hoarder.phases.orchestrator")
 
@@ -41,6 +42,12 @@ class ProcessingResult:
             "archives": len(self.archives),
             "real_files": len(self.real_files),
             "matched_files": sum(1 for f in self.real_files if self.matches.get(f)),
+            "verified_files": sum(
+                1 for f in self.real_files if any(v.verified for v in f.verification)
+            ),
+            "trusted_files": sum(
+                1 for f in self.real_files if any(v.is_trusted for v in f.verification)
+            ),
         }
 
         archive_rows: list[dict[str, ScalarValue]] = []
@@ -61,6 +68,12 @@ class ProcessingResult:
                 "size": real_file.size,
                 "matched": bool(entries),
                 "matched_entries": ", ".join(str(e.path) for e in entries) or None,
+                "verified": any(v.verified for v in real_file.verification),
+                "trusted": any(v.is_trusted for v in real_file.verification),
+                "verification_sources": ", ".join(
+                    v.source_type.name for v in real_file.verification
+                )
+                or None,
             }
             real_file_rows.append(row)
 
@@ -131,6 +144,14 @@ def process_target(
         "Correlated %d relevant archive(s) and %d file match(es) for target %s",
         len(relevant_archives),
         len(file_matches),
+        target.full_path,
+    )
+
+    verify_real_files(relevant_archives, real_files)
+    logger.debug(
+        "Verified %d of %d real file(s) for target %s",
+        sum(1 for f in real_files if any(v.verified for v in f.verification)),
+        len(real_files),
         target.full_path,
     )
 

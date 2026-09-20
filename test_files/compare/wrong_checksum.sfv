@@ -1,0 +1,3 @@
+; Deliberately incorrect checksum for files/stock.raw (real CRC32 is A086542D),
+; used to test verification mismatch handling against committed real content.
+files/stock.raw 5F79ABD2
