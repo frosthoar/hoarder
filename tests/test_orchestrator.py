@@ -20,7 +20,9 @@ def test_process_target_discovers_and_correlates_a_release() -> None:
     result = process_target(target)
 
     assert len(result.archives) == 1
-    assert str(result.archives[0].anchor.relative_path) == str(PurePath("release/data.sfv"))
+    assert str(result.archives[0].anchor.relative_path) == str(
+        PurePath("release/data.sfv")
+    )
 
     assert len(result.real_files) == 1
     real_file = result.real_files[0]
