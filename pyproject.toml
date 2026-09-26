@@ -6,6 +6,7 @@ description = "Library for handling hash-based archives and file collections"
 requires-python = ">=3.13"
 dependencies = [
     "rarfile",
+    "cryptography",
 ]
 
 [project.optional-dependencies]
