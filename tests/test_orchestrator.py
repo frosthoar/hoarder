@@ -20,7 +20,9 @@ def test_process_target_discovers_and_correlates_a_release() -> None:
     result = process_target(target)
 
     assert len(result.archives) == 1
-    assert str(result.archives[0].anchor.relative_path) == str(PurePath("release/data.sfv"))
+    assert str(result.archives[0].anchor.relative_path) == str(
+        PurePath("release/data.sfv")
+    )
 
     assert len(result.real_files) == 1
     real_file = result.real_files[0]
@@ -44,6 +46,8 @@ def test_processing_result_to_presentation() -> None:
     assert spec["scalar"]["archives"] == 1
     assert spec["scalar"]["real_files"] == 1
     assert spec["scalar"]["matched_files"] == 1
+    assert spec["scalar"]["verified_files"] == 1
+    assert spec["scalar"]["trusted_files"] == 1
 
     assert len(spec["collections"]["archives"]) == 1
     archive_row = spec["collections"]["archives"][0]
@@ -53,6 +57,9 @@ def test_processing_result_to_presentation() -> None:
     file_row = spec["collections"]["real_files"][0]
     assert file_row["matched"] is True
     assert file_row["matched_entries"] == str(PurePath("data/note.txt"))
+    assert file_row["verified"] is True
+    assert file_row["trusted"] is True
+    assert file_row["verification_sources"] == "ARCHIVE"
 
 
 def test_process_target_resolves_a_password_protected_archive_when_known() -> None:

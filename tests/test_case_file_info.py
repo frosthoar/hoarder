@@ -39,6 +39,16 @@ HNF_FILES = [
         algo=Algo.CRC32,
         info=None,
     ),
+    FileEntry(
+        # The name's hash does not match the file's real content - see
+        # test_verification.py's FILENAME-source mismatch-detection test.
+        path=PurePath("[Corrupt] 06. Wrong Hash In Name [x265][1080p][56217F28].mkv"),
+        size=131072,
+        is_dir=False,
+        hash_value=b"\x56\x21\x7f\x28",
+        algo=Algo.CRC32,
+        info=None,
+    ),
 ]
 
 TEST_FILES_MAIN_DIR = FileEntry(

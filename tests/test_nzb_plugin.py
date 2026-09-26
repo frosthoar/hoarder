@@ -22,10 +22,17 @@ def nzb_plugin() -> NzbPasswordPlugin:
 
 
 def test_nzb_plugin(nzb_plugin: NzbPasswordPlugin) -> None:
+    """Covers plain NZBs, an unencrypted RAR wrapping NZBs, and an
+    encrypted RAR wrapping NZBs opened via its filename's {{password}}.
+
+    Also proves a RAR whose filename password doesn't actually open it
+    (linux-isos-locked{{wrongguess}}.rar) is skipped rather than aborting
+    the directory walk - the entries above and below it still show up.
+    """
     password_store: PasswordStore = nzb_plugin.extract_passwords()
     formatter = TableFormatter(merge_first_column=True)
     logger.info(formatter.format_presentable(password_store))
-    assert len(password_store) == 4
+    assert len(password_store) == 5
 
     assert "archlinux-2025.07.01-x86_64.iso" in password_store
     assert password_store["archlinux-2025.07.01-x86_64.iso"] == set(["letmein"])
@@ -41,6 +48,9 @@ def test_nzb_plugin(nzb_plugin: NzbPasswordPlugin) -> None:
     assert "debian-12.11.0-amd64-netinst.iso" in password_store
     assert password_store["debian-12.11.0-amd64-netinst.iso"] == set(["guessme"])
 
+    assert "fedora-42-x86_64-dvd.iso" in password_store
+    assert password_store["fedora-42-x86_64-dvd.iso"] == set(["letmein2"])
+
 
 def test_nzb_plugin_requires_list_nzb_paths(tmp_path: pathlib.Path) -> None:
     with pytest.raises(KeyError, match="nzb_paths"):
@@ -55,26 +65,6 @@ def test_nzb_plugin_rejects_non_list_nzb_paths(tmp_path: pathlib.Path) -> None:
     """A bare string is iterable char-by-char; it must be rejected."""
     with pytest.raises(TypeError, match="nzb_paths"):
         NzbPasswordPlugin({"nzb_paths": str(tmp_path)})  # type: ignore[dict-item]
-
-
-@pytest.mark.skip(
-    reason="TODO: needs a committed encrypted-RAR fixture containing NZB "
-    "entries (test_files/rar has none yet)."
-)
-def test_nzb_plugin_handles_encrypted_rar_containing_nzbs(
-    tmp_path: pathlib.Path,
-) -> None:
-    """A RAR wrapping NZB files can itself be password-protected.
-
-    Two behaviors to cover once the fixture exists:
-    - named "<name>{{password}}.rar": the password embedded in the RAR's
-      own filename should be tried to open it, and its NZB entries
-      processed normally from there.
-    - no recoverable password (wrong/missing {{password}} in the name):
-      extract_passwords() must not raise - the RarPasswordError has to be
-      caught and that archive skipped, without aborting the rest of the
-      directory walk.
-    """
 
 
 def test_nzb_plugin_skips_unreadable_nzb_and_continues(

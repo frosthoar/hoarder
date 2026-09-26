@@ -133,7 +133,11 @@ class Verification:
         Whether the verification can be relied upon.
 
         Self-hashes are not considered trusted because they do not provide an
-        independent validation source.
+        independent validation source. "Trusted" means safe against accidental
+        corruption (bit rot, truncated transfers), not against an adversarial
+        source: FILENAME hashes come from the same provider as the content
+        and are trusted anyway, since that's still sufficient to catch
+        unintentional mismatches.
         """
         if self.source_type is VerificationSource.SELF_HASH:
             return False
