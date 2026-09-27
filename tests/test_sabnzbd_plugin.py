@@ -136,13 +136,21 @@ def fake_posix_home(
     return tmp_path
 
 
-def test_sabnzbd_plugin_autodetects_default_history_db(
+@pytest.fixture
+def autodetectable_history_db(
     fake_posix_home: pathlib.Path, history_db_path: pathlib.Path
-) -> None:
+) -> pathlib.Path:
+    """Place a copy of history_db_path where _default_admin_dirs() will find it."""
     admin_dir = fake_posix_home / ".config" / "sabnzbd" / "admin"
     admin_dir.mkdir(parents=True)
-    (admin_dir / "history1.db").write_bytes(history_db_path.read_bytes())
+    default_db = admin_dir / "history1.db"
+    default_db.write_bytes(history_db_path.read_bytes())
+    return default_db
 
+
+def test_sabnzbd_plugin_autodetects_default_history_db(
+    autodetectable_history_db: pathlib.Path,
+) -> None:
     plugin = SabnzbdPasswordPlugin({})
 
     password_store = plugin.extract_passwords()
@@ -150,26 +158,17 @@ def test_sabnzbd_plugin_autodetects_default_history_db(
 
 
 def test_sabnzbd_plugin_merges_explicit_and_autodetected_paths_by_default(
-    fake_posix_home: pathlib.Path, history_db_path: pathlib.Path
+    autodetectable_history_db: pathlib.Path, history_db_path: pathlib.Path
 ) -> None:
-    admin_dir = fake_posix_home / ".config" / "sabnzbd" / "admin"
-    admin_dir.mkdir(parents=True)
-    (admin_dir / "history1.db").write_bytes(history_db_path.read_bytes())
-
     plugin = SabnzbdPasswordPlugin({"history_paths": [str(history_db_path)]})
 
     assert len(plugin._history_paths) == 2
 
 
 def test_sabnzbd_plugin_deduplicates_autodetected_path_already_given_explicitly(
-    fake_posix_home: pathlib.Path, history_db_path: pathlib.Path
+    autodetectable_history_db: pathlib.Path,
 ) -> None:
-    admin_dir = fake_posix_home / ".config" / "sabnzbd" / "admin"
-    admin_dir.mkdir(parents=True)
-    default_db = admin_dir / "history1.db"
-    default_db.write_bytes(history_db_path.read_bytes())
-
-    plugin = SabnzbdPasswordPlugin({"history_paths": [str(default_db)]})
+    plugin = SabnzbdPasswordPlugin({"history_paths": [str(autodetectable_history_db)]})
 
     assert len(plugin._history_paths) == 1
 
