@@ -1,5 +1,6 @@
 """Tests for the SABnzbd history password plugin."""
 
+import logging
 import os
 import pathlib
 
@@ -215,3 +216,61 @@ def test_sabnzbd_plugin_default_auto_detect_raises_when_nothing_found(
 ) -> None:
     with pytest.raises(ValueError, match="history_paths"):
         SabnzbdPasswordPlugin({})
+
+
+def test_sabnzbd_plugin_repr_shows_configured_paths(
+    sabnzbd_plugin: SabnzbdPasswordPlugin, history_db_path: pathlib.Path
+) -> None:
+    assert repr(sabnzbd_plugin) == (
+        f"SabnzbdPasswordPlugin(history_paths=['{history_db_path}'])"
+    )
+
+
+def test_sabnzbd_plugin_extract_passwords_logs_what_it_loaded(
+    sabnzbd_plugin: SabnzbdPasswordPlugin, caplog: pytest.LogCaptureFixture
+) -> None:
+    with caplog.at_level(
+        logging.INFO, logger="hoarder.passwords.sabnzbd_password_plugin"
+    ):
+        sabnzbd_plugin.extract_passwords()
+
+    messages = [record.getMessage() for record in caplog.records]
+    assert any(
+        "Reading SABnzbd history database" in m
+        and str(next(iter(sabnzbd_plugin._history_paths))) in m
+        for m in messages
+    )
+    assert any(
+        "Loaded 2 entries from 1 SABnzbd history database" in m for m in messages
+    )
+
+
+def test_sabnzbd_plugin_summary_log_excludes_unreadable_databases(
+    tmp_path: pathlib.Path,
+    history_db_path: pathlib.Path,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """The summary must count only the databases actually read, not every
+    configured path - a corrupt database is warned about and skipped, so it
+    shouldn't inflate the final "loaded from N database(s)" count."""
+    broken_db = tmp_path / "broken.db"
+    broken_db.write_bytes(b"not a sqlite database")
+
+    plugin = SabnzbdPasswordPlugin(
+        {
+            "history_paths": [str(broken_db), str(history_db_path)],
+            "auto_detect_history_paths": False,
+        }
+    )
+
+    with caplog.at_level(
+        logging.INFO, logger="hoarder.passwords.sabnzbd_password_plugin"
+    ):
+        plugin.extract_passwords()
+
+    assert plugin._history_paths == {broken_db: False, history_db_path: True}
+
+    messages = [record.getMessage() for record in caplog.records]
+    assert any(
+        "Loaded 2 entries from 1 SABnzbd history database" in m for m in messages
+    )

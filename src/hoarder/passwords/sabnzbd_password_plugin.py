@@ -35,7 +35,10 @@ class SabnzbdPasswordPlugin(PasswordPlugin):
     history SQLite database (history1.db).
     """
 
-    _history_paths: list[Path]
+    # Maps each configured history db path to whether it was successfully
+    # read on the most recent extract_passwords() call - load status lives
+    # here as state, rather than as a counter local to that method.
+    _history_paths: dict[Path, bool]
 
     @staticmethod
     def _default_admin_dirs() -> list[Path]:
@@ -119,7 +122,12 @@ class SabnzbdPasswordPlugin(PasswordPlugin):
                 "history_paths must map to a non-empty list, or "
                 "auto_detect_history_paths must locate a SABnzbd history database"
             )
-        self._history_paths = list({p.resolve(): p for p in paths}.values())
+        deduped_paths = list({p.resolve(): p for p in paths}.values())
+        self._history_paths = {p: False for p in deduped_paths}
+
+    def __repr__(self) -> str:
+        paths = [str(p) for p in self._history_paths]
+        return f"{self.__class__.__name__}(history_paths={paths})"
 
     @staticmethod
     def _read_history_db(db_path: Path) -> PasswordStore:
@@ -146,12 +154,23 @@ class SabnzbdPasswordPlugin(PasswordPlugin):
         """
         password_store = PasswordStore()
         for db_path in self._history_paths:
+            logger.info("Reading SABnzbd history database %s", db_path)
             try:
-                password_store |= self._read_history_db(db_path)
+                db_store = self._read_history_db(db_path)
             except (sqlite3.Error, OSError) as exc:
+                self._history_paths[db_path] = False
                 logger.warning(
                     "Skipping unreadable SABnzbd history database %s: %s",
                     db_path,
                     exc,
                 )
+                continue
+            logger.info("Loaded %d entries from %s", len(db_store), db_path)
+            password_store |= db_store
+            self._history_paths[db_path] = True
+        logger.info(
+            "Loaded %d entries from %d SABnzbd history database(s)",
+            len(password_store),
+            sum(self._history_paths.values()),
+        )
         return password_store
