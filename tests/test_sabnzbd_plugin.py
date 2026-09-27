@@ -103,6 +103,7 @@ def test_default_admin_dirs_on_posix(
     assert SabnzbdPasswordPlugin._default_admin_dirs() == [
         tmp_path / ".config" / "sabnzbd" / "admin",
         tmp_path / ".sabnzbd" / "admin",
+        tmp_path / ".var" / "app" / "org.sabnzbd.sabnzbd" / ".sabnzbd" / "admin",
     ]
 
 
@@ -151,6 +152,21 @@ def autodetectable_history_db(
 def test_sabnzbd_plugin_autodetects_default_history_db(
     autodetectable_history_db: pathlib.Path,
 ) -> None:
+    plugin = SabnzbdPasswordPlugin({})
+
+    password_store = plugin.extract_passwords()
+    assert "archlinux-2025.07.01-x86_64.iso" in password_store
+
+
+def test_sabnzbd_plugin_autodetects_flatpak_history_db(
+    fake_posix_home: pathlib.Path, history_db_path: pathlib.Path
+) -> None:
+    admin_dir = (
+        fake_posix_home / ".var" / "app" / "org.sabnzbd.sabnzbd" / ".sabnzbd" / "admin"
+    )
+    admin_dir.mkdir(parents=True)
+    (admin_dir / "history1.db").write_bytes(history_db_path.read_bytes())
+
     plugin = SabnzbdPasswordPlugin({})
 
     password_store = plugin.extract_passwords()
