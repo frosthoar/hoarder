@@ -1,7 +1,8 @@
-"""Example demonstrating TableFormatter with PasswordStore.
+"""Example demonstrating pprint with PasswordStore.
 
-This example shows how to use TableFormatter to display a PasswordStore
-with and without cell merging in the first column.
+This example shows how to pretty-print a PasswordStore with a single call -
+PasswordStore's own to_presentation() already requests that its repeated
+"title" column be merged, so no formatter configuration is needed.
 """
 
 import hoarder.passwords
@@ -15,7 +16,4 @@ p.add_password("bar", "guessme")
 p.add_password("bar", "vampire")
 p.add_password("bar", "udontkow")
 
-a = hoarder.utils.TableFormatter()
-b = hoarder.utils.TableFormatter(merge_first_column=True)
-print(a.format_presentable(p))
-print(b.format_presentable(p))
+hoarder.utils.pprint(p)
