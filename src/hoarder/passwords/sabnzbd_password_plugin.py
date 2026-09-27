@@ -142,6 +142,7 @@ class SabnzbdPasswordPlugin(PasswordPlugin):
             PasswordStore: A PasswordStore containing all extracted name-password pairs.
         """
         password_store = PasswordStore()
+        loaded = 0
         for db_path in self._history_paths:
             logger.info("Reading SABnzbd history database %s", db_path)
             try:
@@ -155,9 +156,10 @@ class SabnzbdPasswordPlugin(PasswordPlugin):
                 continue
             logger.info("Loaded %d entries from %s", len(db_store), db_path)
             password_store |= db_store
+            loaded += 1
         logger.info(
             "Loaded %d entries from %d SABnzbd history database(s)",
             len(password_store),
-            len(self._history_paths),
+            loaded,
         )
         return password_store

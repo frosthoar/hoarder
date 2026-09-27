@@ -227,3 +227,32 @@ def test_sabnzbd_plugin_extract_passwords_logs_what_it_loaded(
     assert any(
         "Loaded 2 entries from 1 SABnzbd history database" in m for m in messages
     )
+
+
+def test_sabnzbd_plugin_summary_log_excludes_unreadable_databases(
+    tmp_path: pathlib.Path,
+    history_db_path: pathlib.Path,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """The summary must count only the databases actually read, not every
+    configured path - a corrupt database is warned about and skipped, so it
+    shouldn't inflate the final "loaded from N database(s)" count."""
+    broken_db = tmp_path / "broken.db"
+    broken_db.write_bytes(b"not a sqlite database")
+
+    plugin = SabnzbdPasswordPlugin(
+        {
+            "history_paths": [str(broken_db), str(history_db_path)],
+            "auto_detect_history_paths": False,
+        }
+    )
+
+    with caplog.at_level(
+        logging.INFO, logger="hoarder.passwords.sabnzbd_password_plugin"
+    ):
+        plugin.extract_passwords()
+
+    messages = [record.getMessage() for record in caplog.records]
+    assert any(
+        "Loaded 2 entries from 1 SABnzbd history database" in m for m in messages
+    )
