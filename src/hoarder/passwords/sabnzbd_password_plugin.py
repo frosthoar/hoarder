@@ -44,13 +44,20 @@ class SabnzbdPasswordPlugin(PasswordPlugin):
         SABnzbd's own default (Windows: %LOCALAPPDATA%\\sabnzbd\\admin, POSIX:
         ~/.sabnzbd/admin) plus ~/.config/sabnzbd/admin, since some POSIX
         packages/services set up SABnzbd to follow the XDG base directory
-        convention instead.
+        convention instead, and ~/.var/app/org.sabnzbd.sabnzbd/.sabnzbd/admin
+        for the Flatpak build, whose sandbox $HOME is
+        ~/.var/app/org.sabnzbd.sabnzbd - SABnzbd's own POSIX default
+        (~/.sabnzbd/admin) then resolves inside that sandboxed home.
         """
         if sys.platform == "win32":
             local_appdata = os.environ.get("LOCALAPPDATA")
             return [Path(local_appdata) / "sabnzbd" / "admin"] if local_appdata else []
         home = Path.home()
-        return [home / ".config" / "sabnzbd" / "admin", home / ".sabnzbd" / "admin"]
+        return [
+            home / ".config" / "sabnzbd" / "admin",
+            home / ".sabnzbd" / "admin",
+            home / ".var" / "app" / "org.sabnzbd.sabnzbd" / ".sabnzbd" / "admin",
+        ]
 
     @classmethod
     def _autodetect_history_paths(cls) -> list[Path]:
