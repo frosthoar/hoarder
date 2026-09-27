@@ -221,7 +221,7 @@ def test_sabnzbd_plugin_extract_passwords_logs_what_it_loaded(
     messages = [record.getMessage() for record in caplog.records]
     assert any(
         "Reading SABnzbd history database" in m
-        and str(sabnzbd_plugin._history_paths[0]) in m
+        and str(next(iter(sabnzbd_plugin._history_paths))) in m
         for m in messages
     )
     assert any(
@@ -251,6 +251,8 @@ def test_sabnzbd_plugin_summary_log_excludes_unreadable_databases(
         logging.INFO, logger="hoarder.passwords.sabnzbd_password_plugin"
     ):
         plugin.extract_passwords()
+
+    assert plugin._history_paths == {broken_db: False, history_db_path: True}
 
     messages = [record.getMessage() for record in caplog.records]
     assert any(
