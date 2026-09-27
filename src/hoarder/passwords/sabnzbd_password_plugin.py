@@ -82,9 +82,11 @@ class SabnzbdPasswordPlugin(PasswordPlugin):
             FileNotFoundError: If any explicit path in 'history_paths' is not
                 a valid file.
         """
-        if "history_paths" not in config and not config.get(
-            "auto_detect_history_paths", True
-        ):
+        auto_detect = config.get("auto_detect_history_paths", True)
+        if not isinstance(auto_detect, bool):
+            raise TypeError("auto_detect_history_paths must be a bool")
+
+        if "history_paths" not in config and not auto_detect:
             raise KeyError("history_paths not set")
 
         history_paths = config.get("history_paths", [])
@@ -102,9 +104,6 @@ class SabnzbdPasswordPlugin(PasswordPlugin):
                 )
             )
 
-        auto_detect = config.get("auto_detect_history_paths", True)
-        if not isinstance(auto_detect, bool):
-            raise TypeError("auto_detect_history_paths must be a bool")
         if auto_detect:
             paths += self._autodetect_history_paths()
 

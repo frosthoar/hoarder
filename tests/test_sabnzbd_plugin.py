@@ -186,6 +186,15 @@ def test_sabnzbd_plugin_rejects_non_bool_auto_detect_flag(
         )
 
 
+def test_sabnzbd_plugin_falsey_non_bool_flag_reports_type_error() -> None:
+    """A falsey-but-wrong-type flag (e.g. 0, []) with no history_paths should
+    still report the type error, not a misleading "history_paths not set" -
+    `not 0` and `not []` are both True, so a naive presence check evaluates
+    the flag as "disabled" before ever validating its type."""
+    with pytest.raises(TypeError, match="auto_detect_history_paths"):
+        SabnzbdPasswordPlugin({"auto_detect_history_paths": 0})
+
+
 def test_sabnzbd_plugin_default_auto_detect_raises_when_nothing_found(
     fake_posix_home: pathlib.Path,
 ) -> None:
