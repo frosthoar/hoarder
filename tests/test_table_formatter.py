@@ -5,7 +5,7 @@ import pathlib
 import pytest
 import tests.test_case_file_info
 from hoarder.archives import SfvArchive
-from hoarder.utils.presentation import PresentationSpec, TableFormatter
+from hoarder.utils.presentation import PresentationSpec, TableFormatter, pformat, pprint
 
 SFV_TUPLES = [
     (
@@ -122,3 +122,48 @@ def test_format_multiple_collections_are_each_labeled_and_shown():
     assert "movie.mkv" in output
     # The archives table should come before the real_files table.
     assert output.index("archive.rar") < output.index("movie.mkv")
+
+
+def test_format_honors_spec_merge_first_column_hint():
+    """A spec's own merge_first_column hint should be honored - this is what
+    lets pformat/pprint work with no configuration, since the object
+    producing the spec (e.g. PasswordStore) is the one that knows its first
+    column repeats."""
+    spec: PresentationSpec = {
+        "scalar": {},
+        "collections": {"rows": [{"title": "a", "x": 1}, {"title": "a", "x": 2}]},
+        "merge_first_column": True,
+    }
+    output = TableFormatter().format(spec)
+    lines = output.splitlines()
+    data_lines = [line for line in lines if line.startswith("┃")]
+    assert len(data_lines) == 3  # header + 2 rows, merged so no separator between them
+
+
+def test_format_defaults_to_not_merging_when_spec_omits_the_hint():
+    spec: PresentationSpec = {
+        "scalar": {},
+        "collections": {"rows": [{"title": "a", "x": 1}, {"title": "a", "x": 2}]},
+    }
+    output = TableFormatter().format(spec)
+    lines = output.splitlines()
+    row_separators = [line for line in lines if line.startswith("┠")]
+    assert len(row_separators) == 1
+
+
+class _FakePresentable:
+    def to_presentation(self) -> PresentationSpec:
+        return {"scalar": {"type": "Fake"}, "collections": {"rows": [{"a": 1}]}}
+
+
+def test_pformat_formats_a_presentable_without_any_setup():
+    output = pformat(_FakePresentable())
+    assert "Fake" in output
+    assert "┏" in output
+
+
+def test_pprint_prints_the_same_output_as_pformat(capsys: pytest.CaptureFixture[str]):
+    obj = _FakePresentable()
+    pprint(obj)
+    captured = capsys.readouterr()
+    assert captured.out.rstrip("\n") == pformat(obj)

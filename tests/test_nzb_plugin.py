@@ -6,7 +6,7 @@ import pathlib
 
 import pytest
 from hoarder.passwords import NzbPasswordPlugin, PasswordStore
-from hoarder.utils import TableFormatter
+from hoarder.utils import pformat
 from typeguard import suppress_type_checks
 
 logger = logging.getLogger("hoarder.tests.test_nzb_plugin")
@@ -30,8 +30,7 @@ def test_nzb_plugin(nzb_plugin: NzbPasswordPlugin) -> None:
     the directory walk - the entries above and below it still show up.
     """
     password_store: PasswordStore = nzb_plugin.extract_passwords()
-    formatter = TableFormatter(merge_first_column=True)
-    logger.info(formatter.format_presentable(password_store))
+    logger.info(pformat(password_store))
     assert len(password_store) == 5
 
     assert "archlinux-2025.07.01-x86_64.iso" in password_store
