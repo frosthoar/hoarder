@@ -4,7 +4,6 @@ import os
 import pathlib
 
 import pytest
-
 from hoarder.passwords import PasswordStore, SabnzbdPasswordPlugin
 
 
