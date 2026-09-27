@@ -125,6 +125,5 @@ def test_nzb_plugin_reports_vanished_directory_instead_of_empty(
     assert plugin._nzb_paths == {nzb_dir: False}
 
     messages = [record.getMessage() for record in caplog.records]
-    assert any("Skipping unreadable NZB directory" in m for m in messages)
-    assert not any(m.startswith("Found 0 entries in") for m in messages)
+    assert any("Failed to list part of NZB directory" in m for m in messages)
     assert any("Found 0 entries across 0 NZB directories" in m for m in messages)

@@ -22,14 +22,6 @@ except ImportError:
 logger = logging.getLogger("hoarder.passwords.nzb_password_plugin")
 
 
-def _reraise(exc: OSError) -> None:
-    """os.walk's default onerror silently swallows listing failures - passing
-    this instead makes a directory that disappears or becomes unreadable
-    raise, rather than yielding zero files indistinguishable from an empty
-    but readable directory."""
-    raise exc
-
-
 class ArchiveEntry(NamedTuple):
     title: str
     password: str | None
@@ -38,6 +30,19 @@ class ArchiveEntry(NamedTuple):
 class SecureArchiveEntry(NamedTuple):
     title: str
     password: str
+
+
+class DirectoryScanResult(NamedTuple):
+    """Result of scanning one configured NZB directory.
+
+    fully_scanned is False if nzb_directory or any subdirectory of it
+    couldn't be listed (e.g. it no longer exists or isn't readable) - such a
+    failure doesn't discard passwords already found elsewhere in the tree,
+    since os.walk keeps walking whatever siblings it still can.
+    """
+
+    passwords: PasswordStore
+    fully_scanned: bool
 
 
 class NzbPasswordPlugin(PasswordPlugin):
@@ -171,21 +176,19 @@ class NzbPasswordPlugin(PasswordPlugin):
     @staticmethod
     def _process_directory(
         nzb_directory: pathlib.Path,
-    ) -> PasswordStore:
+    ) -> DirectoryScanResult:
         """Process all NZB and RAR files in a directory to extract passwords.
 
         Args:
             nzb_directory (pathlib.Path): Directory containing NZB and RAR files.
 
         Returns:
-            PasswordStore: A PasswordStore containing extracted title-password pairs.
-
-        Raises:
-            OSError: If nzb_directory or a subdirectory of it can't be listed
-                (e.g. it no longer exists or isn't readable).
+            DirectoryScanResult: passwords found, plus whether the whole
+            tree was listed without error - see DirectoryScanResult.
         """
         dir_store = PasswordStore()
-        for root, _, files in os.walk(nzb_directory, onerror=_reraise):
+        walk_errors: list[OSError] = []
+        for root, _, files in os.walk(nzb_directory, onerror=walk_errors.append):
             for file in files:
                 full_path: pathlib.Path = pathlib.Path(root) / file
                 if full_path.suffix == ".nzb":
@@ -249,7 +252,11 @@ class NzbPasswordPlugin(PasswordPlugin):
                             continue
                         if title_password:
                             dir_store.add_password(*title_password)
-        return dir_store
+        for walk_exc in walk_errors:
+            logger.warning(
+                "Failed to list part of NZB directory %s: %s", nzb_directory, walk_exc
+            )
+        return DirectoryScanResult(dir_store, not walk_errors)
 
     @override
     def extract_passwords(self) -> PasswordStore:
@@ -261,15 +268,10 @@ class NzbPasswordPlugin(PasswordPlugin):
         password_store = PasswordStore()
         for p in self._nzb_paths:
             logger.info("Reading NZB directory %s", p)
-            try:
-                dir_store = NzbPasswordPlugin._process_directory(p)
-            except OSError as exc:
-                self._nzb_paths[p] = False
-                logger.warning("Skipping unreadable NZB directory %s: %s", p, exc)
-                continue
+            dir_store, fully_scanned = NzbPasswordPlugin._process_directory(p)
             logger.info("Found %d entries in %s", len(dir_store), p)
             password_store |= dir_store
-            self._nzb_paths[p] = True
+            self._nzb_paths[p] = fully_scanned
         logger.info(
             "Found %d entries across %d NZB directories",
             len(password_store),
