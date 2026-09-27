@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
 from datetime import datetime
-from typing import Protocol, TypedDict
+from typing import NotRequired, Protocol, TypedDict
 
 # Scalar values that can appear as leaf values in presentation data.
 # These are types that can be straightforwardly serialized as JSON leaf types.
@@ -27,10 +27,16 @@ class PresentationSpec(TypedDict):
                 several distinct kinds of rows (e.g. archives and real files)
                 can report more than one, each under its own name - the name
                 is only shown as a heading when there's more than one.
+        merge_first_column: Whether repeated first-column values in
+                consecutive rows should be merged visually. This is a
+                property of the data's shape (e.g. a title repeated across
+                its passwords), so the object producing the spec - not the
+                caller formatting it - decides this. Defaults to False.
     """
 
     scalar: Mapping[str, ScalarValue]
     collections: Mapping[str, Sequence[Mapping[str, ScalarValue]]]
+    merge_first_column: NotRequired[bool]
 
 
 class Presentable(Protocol):
@@ -55,15 +61,7 @@ class TableFormatter:
 
     PLACEHOLDER = "-"
     MAX_COL_WIDTH = 80
-
-    def __init__(self, merge_first_column: bool = False) -> None:
-        """Initialize the table formatter.
-
-        Args:
-            merge_first_column: If True, merge cells in the first column when consecutive
-                                rows have the same value. Defaults to False.
-        """
-        self.merge_first_column = merge_first_column
+    _merge_first_column: bool = False
 
     def format(self, spec: PresentationSpec) -> str:
         """Format a PresentationSpec as a table string.
@@ -73,8 +71,11 @@ class TableFormatter:
 
         Returns:
             A formatted string with scalar fields as header, followed by
-            each named collection as its own table.
+            each named collection as its own table. Whether repeated
+            first-column values are merged is decided by the spec's own
+            "merge_first_column" hint - see PresentationSpec.
         """
+        self._merge_first_column = spec.get("merge_first_column", False)
         lines: list[str] = []
 
         # Format scalar fields as header
@@ -151,7 +152,7 @@ class TableFormatter:
     ) -> bool:
         if i == 0:
             return False
-        if not self.merge_first_column or first_col is None:
+        if not self._merge_first_column or first_col is None:
             return True
 
         previous_row = rows[i - 1]
@@ -236,3 +237,28 @@ class TableFormatter:
         lines.append(f"┗{'┷'.join(bottom_segments)}┛")
 
         return lines
+
+
+def pformat(obj: Presentable) -> str:
+    """Pretty-format any Presentable object as a human-readable string.
+
+    Porcelain for the common case: instantiate a TableFormatter and call
+    format_presentable, using whatever merge_first_column the object's own
+    to_presentation() requests.
+
+    Args:
+        obj: An object implementing the Presentable protocol.
+
+    Returns:
+        A formatted string representation.
+    """
+    return TableFormatter().format_presentable(obj)
+
+
+def pprint(obj: Presentable) -> None:
+    """Pretty-print any Presentable object to stdout.
+
+    Args:
+        obj: An object implementing the Presentable protocol.
+    """
+    print(pformat(obj))

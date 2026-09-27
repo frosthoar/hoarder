@@ -90,7 +90,9 @@ class PasswordStore:
 
         Returns:
             A PresentationSpec with store metadata as scalars and a
-            "passwords" collection of title-password pair rows.
+            "passwords" collection of title-password pair rows, requesting
+            that repeated titles (a title can have multiple passwords) be
+            merged visually.
         """
         scalar: dict[str, ScalarValue] = {
             "type": "PasswordStore",
@@ -107,4 +109,8 @@ class PasswordStore:
                 }
                 collection.append(row)
 
-        return PresentationSpec(scalar=scalar, collections={"passwords": collection})
+        return PresentationSpec(
+            scalar=scalar,
+            collections={"passwords": collection},
+            merge_first_column=True,
+        )
