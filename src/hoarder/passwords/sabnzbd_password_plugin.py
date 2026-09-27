@@ -1,7 +1,9 @@
 """Password extraction plugin for SABnzbd history databases (history1.db)."""
 
 import logging
+import os
 import sqlite3
+import sys
 import typing
 from pathlib import Path
 
@@ -20,37 +22,76 @@ _SELECT_NAME_PASSWORD = """
     WHERE password IS NOT NULL AND password != '';
 """
 
+# SABnzbd names its history db from DB_HISTORY_VERSION (constants.py), which
+# has been 1 since introduction - i.e. "history1.db" isn't a guess, it's
+# SABnzbd's current actual default filename.
+_DEFAULT_HISTORY_DB_NAME = "history1.db"
+
 
 class SabnzbdPasswordPlugin(PasswordPlugin):
     """Plugin to extract passwords from a SABnzbd history database.
 
     Reads the "history" table's name/password columns of a SABnzbd
-    history*.db SQLite database (e.g. history1.db).
+    history SQLite database (history1.db).
     """
 
     _history_paths: list[Path]
+
+    @staticmethod
+    def _default_admin_dirs() -> list[Path]:
+        """Return SABnzbd's default per-platform admin-directory candidates.
+
+        SABnzbd's own default (Windows: %LOCALAPPDATA%\\sabnzbd\\admin, POSIX:
+        ~/.sabnzbd/admin) plus ~/.config/sabnzbd/admin, since some POSIX
+        packages/services set up SABnzbd to follow the XDG base directory
+        convention instead.
+        """
+        if sys.platform == "win32":
+            local_appdata = os.environ.get("LOCALAPPDATA")
+            return [Path(local_appdata) / "sabnzbd" / "admin"] if local_appdata else []
+        home = Path.home()
+        return [home / ".config" / "sabnzbd" / "admin", home / ".sabnzbd" / "admin"]
+
+    @classmethod
+    def _autodetect_history_paths(cls) -> list[Path]:
+        """Return existing default-location history db paths for this platform."""
+        candidates = (d / _DEFAULT_HISTORY_DB_NAME for d in cls._default_admin_dirs())
+        return [p for p in candidates if p.is_file()]
 
     @override
     def __init__(self, config: dict[str, typing.Any]) -> None:
         """Initialize the SabnzbdPasswordPlugin with configuration.
 
         Args:
-            config: Must contain "history_paths", a non-empty list of paths
-                to SABnzbd history SQLite databases.
+            config: "history_paths" (list of paths to SABnzbd history SQLite
+                databases) and/or "auto_detect_history_paths" (bool, default
+                True) to additionally look for a history db under SABnzbd's
+                default per-platform admin directory. Defaulting to True
+                means zero-config usage works out of the box; set it to False
+                to require 'history_paths' to be given explicitly instead. At
+                least one of the two must yield a database; explicit and
+                auto-detected paths are merged and deduplicated.
 
         Raises:
-            KeyError: If 'history_paths' is not present in the config dictionary.
-            TypeError: If 'history_paths' is not a list.
-            ValueError: If 'history_paths' is empty.
-            FileNotFoundError: If any path in 'history_paths' is not a valid file.
+            KeyError: If 'history_paths' is absent and
+                'auto_detect_history_paths' is explicitly set to False.
+            TypeError: If 'history_paths' is present and not a list, or
+                'auto_detect_history_paths' is present and not a bool.
+            ValueError: If no history database paths result from either
+                'history_paths' or auto-detection.
+            FileNotFoundError: If any explicit path in 'history_paths' is not
+                a valid file.
         """
-        if "history_paths" not in config:
+        auto_detect = config.get("auto_detect_history_paths", True)
+        if not isinstance(auto_detect, bool):
+            raise TypeError("auto_detect_history_paths must be a bool")
+
+        if "history_paths" not in config and not auto_detect:
             raise KeyError("history_paths not set")
-        history_paths = config["history_paths"]
+
+        history_paths = config.get("history_paths", [])
         if not isinstance(history_paths, list):
             raise TypeError("history_paths must be a list")
-        if not history_paths:
-            raise ValueError("history_paths must map to a non-empty list")
         paths = [Path(p) for p in history_paths]
         missing_paths = [p for p in paths if not p.is_file()]
         if missing_paths:
@@ -62,7 +103,16 @@ class SabnzbdPasswordPlugin(PasswordPlugin):
                     else ""
                 )
             )
-        self._history_paths = paths
+
+        if auto_detect:
+            paths += self._autodetect_history_paths()
+
+        if not paths:
+            raise ValueError(
+                "history_paths must map to a non-empty list, or "
+                "auto_detect_history_paths must locate a SABnzbd history database"
+            )
+        self._history_paths = list({p.resolve(): p for p in paths}.values())
 
     @staticmethod
     def _read_history_db(db_path: Path) -> PasswordStore:

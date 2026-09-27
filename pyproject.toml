@@ -43,6 +43,12 @@ profile = "black"
 line_length = 88
 multi_line_output = 0  # Single line output to match GitHub super-linter
 force_single_line = false
+# Without this, isort auto-detects "hoarder" (via src_paths) and "tests" as
+# first-party/local-folder sections, which places a blank line before them
+# and sorts them after other third-party imports - contradicting how every
+# existing import block in this repo is actually written (one flat,
+# alphabetically-sorted group after stdlib, no separate first-party section).
+known_third_party = ["hoarder", "tests"]
 
 [[tool.mypy.overrides]]
 module = "rarfile"

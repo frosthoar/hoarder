@@ -20,7 +20,12 @@ def history_db_path() -> pathlib.Path:
 
 @pytest.fixture
 def sabnzbd_plugin(history_db_path: pathlib.Path) -> SabnzbdPasswordPlugin:
-    return SabnzbdPasswordPlugin({"history_paths": [str(history_db_path)]})
+    return SabnzbdPasswordPlugin(
+        {
+            "history_paths": [str(history_db_path)],
+            "auto_detect_history_paths": False,
+        }
+    )
 
 
 def test_sabnzbd_plugin_extracts_passwords(
@@ -46,12 +51,12 @@ def test_sabnzbd_plugin_skips_entries_without_password(
     assert "no-password-download" not in password_store
 
 
-def test_sabnzbd_plugin_requires_history_paths() -> None:
+def test_sabnzbd_plugin_requires_history_paths_when_auto_detect_disabled() -> None:
     with pytest.raises(KeyError, match="history_paths"):
-        SabnzbdPasswordPlugin({})
+        SabnzbdPasswordPlugin({"auto_detect_history_paths": False})
 
     with pytest.raises(ValueError, match="history_paths"):
-        SabnzbdPasswordPlugin({"history_paths": []})
+        SabnzbdPasswordPlugin({"history_paths": [], "auto_detect_history_paths": False})
 
 
 def test_sabnzbd_plugin_rejects_non_list_history_paths(
@@ -77,10 +82,120 @@ def test_sabnzbd_plugin_skips_unreadable_database_and_continues(
     broken_db.write_bytes(b"not a sqlite database")
 
     plugin = SabnzbdPasswordPlugin(
-        {"history_paths": [str(broken_db), str(history_db_path)]}
+        {
+            "history_paths": [str(broken_db), str(history_db_path)],
+            "auto_detect_history_paths": False,
+        }
     )
 
     password_store = plugin.extract_passwords()
 
     assert "archlinux-2025.07.01-x86_64.iso" in password_store
     assert password_store["archlinux-2025.07.01-x86_64.iso"] == {"letmein"}
+
+
+def test_default_admin_dirs_on_posix(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: pathlib.Path
+) -> None:
+    monkeypatch.setattr("sys.platform", "linux")
+    monkeypatch.setattr(pathlib.Path, "home", lambda: tmp_path)
+
+    assert SabnzbdPasswordPlugin._default_admin_dirs() == [
+        tmp_path / ".config" / "sabnzbd" / "admin",
+        tmp_path / ".sabnzbd" / "admin",
+    ]
+
+
+def test_default_admin_dirs_on_windows(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: pathlib.Path
+) -> None:
+    monkeypatch.setattr("sys.platform", "win32")
+    monkeypatch.setenv("LOCALAPPDATA", str(tmp_path))
+
+    assert SabnzbdPasswordPlugin._default_admin_dirs() == [
+        tmp_path / "sabnzbd" / "admin"
+    ]
+
+
+def test_default_admin_dirs_on_windows_without_localappdata(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr("sys.platform", "win32")
+    monkeypatch.delenv("LOCALAPPDATA", raising=False)
+
+    assert SabnzbdPasswordPlugin._default_admin_dirs() == []
+
+
+@pytest.fixture
+def fake_posix_home(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: pathlib.Path
+) -> pathlib.Path:
+    """Point _default_admin_dirs()'s POSIX branch at an empty tmp_path home."""
+    monkeypatch.setattr("sys.platform", "linux")
+    monkeypatch.setattr(pathlib.Path, "home", lambda: tmp_path)
+    return tmp_path
+
+
+@pytest.fixture
+def autodetectable_history_db(
+    fake_posix_home: pathlib.Path, history_db_path: pathlib.Path
+) -> pathlib.Path:
+    """Place a copy of history_db_path where _default_admin_dirs() will find it."""
+    admin_dir = fake_posix_home / ".config" / "sabnzbd" / "admin"
+    admin_dir.mkdir(parents=True)
+    default_db = admin_dir / "history1.db"
+    default_db.write_bytes(history_db_path.read_bytes())
+    return default_db
+
+
+def test_sabnzbd_plugin_autodetects_default_history_db(
+    autodetectable_history_db: pathlib.Path,
+) -> None:
+    plugin = SabnzbdPasswordPlugin({})
+
+    password_store = plugin.extract_passwords()
+    assert "archlinux-2025.07.01-x86_64.iso" in password_store
+
+
+def test_sabnzbd_plugin_merges_explicit_and_autodetected_paths_by_default(
+    autodetectable_history_db: pathlib.Path, history_db_path: pathlib.Path
+) -> None:
+    plugin = SabnzbdPasswordPlugin({"history_paths": [str(history_db_path)]})
+
+    assert len(plugin._history_paths) == 2
+
+
+def test_sabnzbd_plugin_deduplicates_autodetected_path_already_given_explicitly(
+    autodetectable_history_db: pathlib.Path,
+) -> None:
+    plugin = SabnzbdPasswordPlugin({"history_paths": [str(autodetectable_history_db)]})
+
+    assert len(plugin._history_paths) == 1
+
+
+def test_sabnzbd_plugin_rejects_non_bool_auto_detect_flag(
+    history_db_path: pathlib.Path,
+) -> None:
+    with pytest.raises(TypeError, match="auto_detect_history_paths"):
+        SabnzbdPasswordPlugin(
+            {
+                "history_paths": [str(history_db_path)],
+                "auto_detect_history_paths": "true",
+            }
+        )
+
+
+def test_sabnzbd_plugin_falsey_non_bool_flag_reports_type_error() -> None:
+    """A falsey-but-wrong-type flag (e.g. 0, []) with no history_paths should
+    still report the type error, not a misleading "history_paths not set" -
+    `not 0` and `not []` are both True, so a naive presence check evaluates
+    the flag as "disabled" before ever validating its type."""
+    with pytest.raises(TypeError, match="auto_detect_history_paths"):
+        SabnzbdPasswordPlugin({"auto_detect_history_paths": 0})
+
+
+def test_sabnzbd_plugin_default_auto_detect_raises_when_nothing_found(
+    fake_posix_home: pathlib.Path,
+) -> None:
+    with pytest.raises(ValueError, match="history_paths"):
+        SabnzbdPasswordPlugin({})
