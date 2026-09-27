@@ -70,6 +70,10 @@ class NzbPasswordPlugin(PasswordPlugin):
             )
         self._nzb_paths = paths
 
+    def __repr__(self) -> str:
+        paths = [str(p) for p in self._nzb_paths]
+        return f"{self.__class__.__name__}(nzb_paths={paths})"
+
     @staticmethod
     def _extract_pw_from_filename(
         file_path: pathlib.PurePath,
@@ -237,7 +241,15 @@ class NzbPasswordPlugin(PasswordPlugin):
         """
         password_store = PasswordStore()
         for p in self._nzb_paths:
-            password_store = password_store | NzbPasswordPlugin._process_directory(p)
+            logger.info("Reading NZB directory %s", p)
+            dir_store = NzbPasswordPlugin._process_directory(p)
+            logger.info("Found %d entries in %s", len(dir_store), p)
+            password_store |= dir_store
+        logger.info(
+            "Found %d entries across %d NZB directories",
+            len(password_store),
+            len(self._nzb_paths),
+        )
         return password_store
 
 

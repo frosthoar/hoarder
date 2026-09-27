@@ -114,6 +114,10 @@ class SabnzbdPasswordPlugin(PasswordPlugin):
             )
         self._history_paths = list({p.resolve(): p for p in paths}.values())
 
+    def __repr__(self) -> str:
+        paths = [str(p) for p in self._history_paths]
+        return f"{self.__class__.__name__}(history_paths={paths})"
+
     @staticmethod
     def _read_history_db(db_path: Path) -> PasswordStore:
         """Read name/password pairs from one SABnzbd history database."""
@@ -139,12 +143,21 @@ class SabnzbdPasswordPlugin(PasswordPlugin):
         """
         password_store = PasswordStore()
         for db_path in self._history_paths:
+            logger.info("Reading SABnzbd history database %s", db_path)
             try:
-                password_store |= self._read_history_db(db_path)
+                db_store = self._read_history_db(db_path)
             except (sqlite3.Error, OSError) as exc:
                 logger.warning(
                     "Skipping unreadable SABnzbd history database %s: %s",
                     db_path,
                     exc,
                 )
+                continue
+            logger.info("Loaded %d entries from %s", len(db_store), db_path)
+            password_store |= db_store
+        logger.info(
+            "Loaded %d entries from %d SABnzbd history database(s)",
+            len(password_store),
+            len(self._history_paths),
+        )
         return password_store

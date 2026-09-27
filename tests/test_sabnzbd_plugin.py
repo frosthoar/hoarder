@@ -1,5 +1,6 @@
 """Tests for the SABnzbd history password plugin."""
 
+import logging
 import os
 import pathlib
 
@@ -199,3 +200,30 @@ def test_sabnzbd_plugin_default_auto_detect_raises_when_nothing_found(
 ) -> None:
     with pytest.raises(ValueError, match="history_paths"):
         SabnzbdPasswordPlugin({})
+
+
+def test_sabnzbd_plugin_repr_shows_configured_paths(
+    sabnzbd_plugin: SabnzbdPasswordPlugin, history_db_path: pathlib.Path
+) -> None:
+    assert repr(sabnzbd_plugin) == (
+        f"SabnzbdPasswordPlugin(history_paths=['{history_db_path}'])"
+    )
+
+
+def test_sabnzbd_plugin_extract_passwords_logs_what_it_loaded(
+    sabnzbd_plugin: SabnzbdPasswordPlugin, caplog: pytest.LogCaptureFixture
+) -> None:
+    with caplog.at_level(
+        logging.INFO, logger="hoarder.passwords.sabnzbd_password_plugin"
+    ):
+        sabnzbd_plugin.extract_passwords()
+
+    messages = [record.getMessage() for record in caplog.records]
+    assert any(
+        "Reading SABnzbd history database" in m
+        and str(sabnzbd_plugin._history_paths[0]) in m
+        for m in messages
+    )
+    assert any(
+        "Loaded 2 entries from 1 SABnzbd history database" in m for m in messages
+    )

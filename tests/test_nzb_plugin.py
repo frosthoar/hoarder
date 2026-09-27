@@ -84,3 +84,22 @@ def test_nzb_plugin_skips_unreadable_nzb_and_continues(
     assert "good-download" in password_store
     assert password_store["good-download"] == set(["secret123"])
     assert "broken-download" not in password_store
+
+
+def test_nzb_plugin_repr_shows_configured_paths(tmp_path: pathlib.Path) -> None:
+    plugin = NzbPasswordPlugin({"nzb_paths": [str(tmp_path)]})
+    assert repr(plugin) == f"NzbPasswordPlugin(nzb_paths=['{tmp_path}'])"
+
+
+def test_nzb_plugin_extract_passwords_logs_what_it_loaded(
+    nzb_plugin: NzbPasswordPlugin, caplog: pytest.LogCaptureFixture
+) -> None:
+    with caplog.at_level(logging.INFO, logger="hoarder.passwords.nzb_password_plugin"):
+        nzb_plugin.extract_passwords()
+
+    messages = [record.getMessage() for record in caplog.records]
+    assert any(
+        "Reading NZB directory" in m and str(nzb_plugin._nzb_paths[0]) in m
+        for m in messages
+    )
+    assert any("Found 5 entries across 1 NZB director" in m for m in messages)
