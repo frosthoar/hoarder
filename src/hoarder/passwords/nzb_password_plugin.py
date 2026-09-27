@@ -222,7 +222,12 @@ class NzbPasswordPlugin(PasswordPlugin):
                             full_path,
                         )
                         continue
-                    except RarArchiveError as exc:
+                    except (RarArchiveError, OSError) as exc:
+                        # OSError alongside RarArchiveError: RarArchive.from_path
+                        # raises a bare FileNotFoundError if the RAR vanishes
+                        # between os.walk's listing and this call - that must
+                        # skip just this file, not fall through to the whole
+                        # directory being treated as unreadable.
                         logger.warning("Skipping unreadable RAR %s: %s", full_path, exc)
                         continue
                     for file_entry in rar_file.files:
