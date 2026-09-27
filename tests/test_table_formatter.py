@@ -136,8 +136,16 @@ def test_format_honors_spec_merge_first_column_hint():
     }
     output = TableFormatter().format(spec)
     lines = output.splitlines()
+
+    # Merged rows draw no separator between them.
+    row_separators = [line for line in lines if line.startswith("┠")]
+    assert len(row_separators) == 0
+
+    # The second row's repeated first-column cell is blanked out, not "a".
     data_lines = [line for line in lines if line.startswith("┃")]
-    assert len(data_lines) == 3  # header + 2 rows, merged so no separator between them
+    assert len(data_lines) == 3  # header + 2 rows
+    second_row_first_cell = data_lines[2].split("│")[0]
+    assert "a" not in second_row_first_cell
 
 
 def test_format_defaults_to_not_merging_when_spec_omits_the_hint():
