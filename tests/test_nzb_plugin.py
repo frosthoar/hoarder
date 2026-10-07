@@ -126,4 +126,42 @@ def test_nzb_plugin_reports_vanished_directory_instead_of_empty(
 
     messages = [record.getMessage() for record in caplog.records]
     assert any("Failed to list part of NZB directory" in m for m in messages)
-    assert any("Found 0 entries across 0 NZB directories" in m for m in messages)
+    assert any(
+        "Found 0 entries across 1 NZB directories (0 fully scanned, 1 partially scanned)"
+        in m
+        for m in messages
+    )
+
+
+def test_nzb_plugin_counts_partially_scanned_directory_with_entries(
+    tmp_path: pathlib.Path, caplog: pytest.LogCaptureFixture
+) -> None:
+    """A directory with one unreadable subdirectory but a readable NZB
+    elsewhere in it is only partially scanned, but it did contribute an
+    entry - the summary must say so, not report it as one of "0 NZB
+    directories" alongside the entries it actually produced."""
+    nzb_dir = tmp_path / "nzbs"
+    nzb_dir.mkdir()
+    (nzb_dir / "good-download{{secret123}}.nzb").write_text("<nzb></nzb>")
+    locked = nzb_dir / "locked"
+    locked.mkdir()
+    locked.chmod(0o000)
+
+    plugin = NzbPasswordPlugin({"nzb_paths": [str(nzb_dir)]})
+    try:
+        with caplog.at_level(
+            logging.INFO, logger="hoarder.passwords.nzb_password_plugin"
+        ):
+            password_store = plugin.extract_passwords()
+    finally:
+        locked.chmod(0o755)
+
+    assert "good-download" in password_store
+    assert plugin._nzb_paths == {nzb_dir: False}
+
+    messages = [record.getMessage() for record in caplog.records]
+    assert any(
+        "Found 1 entries across 1 NZB directories (0 fully scanned, 1 partially scanned)"
+        in m
+        for m in messages
+    )

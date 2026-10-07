@@ -272,11 +272,28 @@ class NzbPasswordPlugin(PasswordPlugin):
             logger.info("Found %d entries in %s", len(dir_store), p)
             password_store |= dir_store
             self._nzb_paths[p] = fully_scanned
-        logger.info(
-            "Found %d entries across %d NZB directories",
-            len(password_store),
-            sum(self._nzb_paths.values()),
-        )
+        total = len(self._nzb_paths)
+        partially_scanned = total - sum(self._nzb_paths.values())
+        if partially_scanned:
+            # A directory can be "partially scanned" and still have
+            # contributed entries (os.walk keeps walking past an unreadable
+            # subdirectory) - call that out explicitly rather than excluding
+            # it from the directory count, which would misstate how many
+            # directories the entries above actually came from.
+            logger.info(
+                "Found %d entries across %d NZB directories "
+                "(%d fully scanned, %d partially scanned)",
+                len(password_store),
+                total,
+                total - partially_scanned,
+                partially_scanned,
+            )
+        else:
+            logger.info(
+                "Found %d entries across %d NZB directories",
+                len(password_store),
+                total,
+            )
         return password_store
 
 
