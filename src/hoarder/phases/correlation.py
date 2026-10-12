@@ -1,10 +1,13 @@
 """Correlation: matching discovered archives with discovered real files."""
 
 import collections
+import logging
 from pathlib import Path
 
 from ..archives import AbstractRarArchive, FileEntry, HashArchive
 from ..downloads import RealFile
+
+logger = logging.getLogger("hoarder.phases.correlation")
 
 
 def correlate_archives(
@@ -39,13 +42,32 @@ def correlate_files_to_entries(
 ) -> dict[RealFile, list[FileEntry]]:
     """Match real files to their corresponding FileEntry records."""
     path_to_entries: dict[Path, list[FileEntry]] = collections.defaultdict(list)
+    logger.debug("archives: %s", str(archives))
     for archive in archives:
         archive_dir = archive.anchor.full_path.parent
+        logger.debug("archive files %s", str(archive.files))
         for entry in archive.files:
             path_to_entries[archive_dir / entry.path].append(entry)
+    logger.debug(
+        "Indexed %d entry path(s) from %d archive(s)",
+        len(path_to_entries),
+        len(archives),
+    )
+    for p in path_to_entries:
+        logger.debug(
+            "Index result: %s",
+            p
+        )
 
     matches: dict[RealFile, list[FileEntry]] = {}
     for rf in real_files:
         if rf.full_path in path_to_entries:
             matches[rf] = path_to_entries[rf.full_path]
+        else:
+            logger.debug("No archive entry for real file %s", rf.full_path)
+    logger.info(
+        "Matched %d of %d real file(s) to archive entries",
+        len(matches),
+        len(real_files),
+    )
     return matches

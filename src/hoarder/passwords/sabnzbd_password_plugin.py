@@ -137,7 +137,10 @@ class SabnzbdPasswordPlugin(PasswordPlugin):
         con = sqlite3.connect(uri, uri=True)
         try:
             cur = con.execute(_SELECT_NAME_PASSWORD)
-            for name, password in cur.fetchall():
+            rows = cur.fetchall()
+            logger.info(f"Processing %d rows in database", len(rows))
+
+            for name, password in rows:
                 if not name or not password:
                     continue
                 store.add_password(name, password)

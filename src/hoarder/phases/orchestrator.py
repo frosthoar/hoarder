@@ -66,6 +66,8 @@ class ProcessingResult:
             row = {
                 "path": str(real_file.full_path),
                 "size": real_file.size,
+                "hash": real_file.hash_value.hex() if real_file.hash_value else None,
+                "algo": real_file.algo.name if real_file.algo else None,
                 "matched": bool(entries),
                 "matched_entries": ", ".join(str(e.path) for e in entries) or None,
                 "verified": any(v.verified for v in real_file.verification),
@@ -111,6 +113,18 @@ def process_target(
         "Discovered %d archive(s) total for target %s", len(archives), target.full_path
     )
 
+    if password_store is None:
+        logger.warning(
+            "No password_store given for target %s; password-protected archives "
+            "won't be resolved",
+            target.full_path,
+        )
+    elif not password_store:
+        logger.warning(
+            "Empty password_store given for target %s; password-protected archives "
+            "won't be resolved",
+            target.full_path,
+        )
     if password_store is not None:
         resolved_title = (
             title if title is not None else target.anchor.relative_path.name
@@ -121,11 +135,6 @@ def process_target(
             resolved_title,
         )
         archives = resolve_passwords(archives, password_store, resolved_title)
-    else:
-        logger.debug(
-            "No password_store given for target %s; skipping password resolution",
-            target.full_path,
-        )
 
     archive_volume_paths = collect_archive_paths(archives)
     real_files = discover_real_files(

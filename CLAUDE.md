@@ -51,6 +51,10 @@ python -m pytest
 - Test files are located in `test_files/` with sample archives for each format
 - Password-protected RAR archives are supported via the `password` field
 
+## Code Comments
+
+Default to no comments; keep docstrings to one short line. Add a comment only for something genuinely surprising, and sign it `# Claude: ...`.
+
 ## File Structure
 - `src/hoarder/` - Main package source
 - `tests/` - Pytest test suite  

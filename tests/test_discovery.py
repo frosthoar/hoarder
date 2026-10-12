@@ -37,6 +37,30 @@ def test_discover_real_files_single_file_scope() -> None:
     assert real_files[0].anchor.relative_path == PurePath("release/data/note.txt")
 
 
+def test_discover_real_files_ignores_nfo_and_par2(tmp_path: Path) -> None:
+    (tmp_path / "payload.bin").write_bytes(b"data")
+    (tmp_path / "release.nfo").write_text("scene info")
+    (tmp_path / "release.par2").write_bytes(b"recovery")
+    (tmp_path / "release.vol000+01.PAR2").write_bytes(b"recovery")
+
+    scope = AnchoredPath(tmp_path, PurePath("."))
+    real_files = discover_real_files([scope])
+
+    relative_paths = {rf.anchor.relative_path for rf in real_files}
+    assert relative_paths == {PurePath("payload.bin")}
+
+
+def test_discover_real_files_ignores_single_file_scope_with_ignored_extension(
+    tmp_path: Path,
+) -> None:
+    (tmp_path / "release.nfo").write_text("scene info")
+
+    scope = AnchoredPath(tmp_path, PurePath("release.nfo"))
+    real_files = discover_real_files([scope])
+
+    assert real_files == []
+
+
 def test_collect_archive_paths_returns_full_path_for_single_file_archives() -> None:
     archive = SfvArchive.from_path(SCAN_TARGET_ROOT / "release", PurePath("data.sfv"))
     paths = collect_archive_paths([archive])

@@ -6,6 +6,13 @@ from ..archives import HashArchive
 from ..downloads import RealFile
 from ..utils.path_utils import AnchoredPath
 
+# Claude: .par2 will move to archive discovery once that's supported; ignored for now.
+IGNORED_EXTENSIONS = frozenset({".nfo", ".par2"})
+
+
+def _is_ignored(path: Path) -> bool:
+    return path.suffix.lower() in IGNORED_EXTENSIONS
+
 
 def discover_real_files(
     scopes: list[AnchoredPath], exclude: set[Path] | None = None
@@ -16,13 +23,13 @@ def discover_real_files(
     for scope in scopes:
         search_path = scope.full_path
         if search_path.is_file():
-            if search_path not in exclude:
+            if search_path not in exclude and not _is_ignored(search_path):
                 results.append(
                     RealFile.from_path(scope.storage_path, scope.relative_path)
                 )
         else:
             for p in search_path.rglob("*"):
-                if p.is_file() and p not in exclude:
+                if p.is_file() and p not in exclude and not _is_ignored(p):
                     relative = p.relative_to(scope.storage_path)
                     results.append(RealFile.from_path(scope.storage_path, relative))
     return results

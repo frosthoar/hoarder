@@ -34,6 +34,11 @@ def verify_real_files(archives: list[HashArchive], real_files: list[RealFile]) -
     rather than replacement - see their docstrings). Directories are
     skipped entirely; there's nothing meaningful to hash.
     """
+    logger.debug(
+        "Verifying %d real file(s) against %d archive(s)",
+        len(real_files),
+        len(archives),
+    )
     real_files_by_path = {rf.full_path: rf for rf in real_files}
 
     for archive in archives:
@@ -43,9 +48,12 @@ def verify_real_files(archives: list[HashArchive], real_files: list[RealFile]) -
             if isinstance(archive, HashNameArchive)
             else VerificationSource.ARCHIVE
         )
+        logger.debug("Real files by path %s", "; ".join([str(key) + "-> " + str(real_files_by_path[key]) for key in real_files_by_path]))
+        logger.debug("Archive files for matching %s", archive.files)
         for entry in archive.files:
             if entry.is_dir or entry.hash_value is None or entry.algo is None:
                 continue
+            logger.debug("Trying to get %s", archive_dir / entry.path)
             real_file = real_files_by_path.get(archive_dir / entry.path)
             if real_file is None:
                 continue
@@ -68,7 +76,14 @@ def verify_real_files(archives: list[HashArchive], real_files: list[RealFile]) -
                     algo=entry.algo,
                 )
             )
+            logger.debug(
+                "Verified %s against %s (%s)",
+                real_file.full_path,
+                archive.full_path,
+                source_type.name,
+            )
 
+    self_hashed = 0
     for real_file in real_files:
         if real_file.is_dir or real_file.verification:
             continue
@@ -82,3 +97,15 @@ def verify_real_files(archives: list[HashArchive], real_files: list[RealFile]) -
                 algo=Algo.CRC32,
             )
         )
+        self_hashed += 1
+    if self_hashed:
+        logger.debug(
+            "Recorded untrusted self-hash for %d real file(s) no archive matched",
+            self_hashed,
+        )
+
+    logger.info(
+        "Verified %d of %d real file(s)",
+        sum(1 for f in real_files if any(v.verified for v in f.verification)),
+        len(real_files),
+    )

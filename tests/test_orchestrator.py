@@ -55,6 +55,8 @@ def test_processing_result_to_presentation() -> None:
 
     assert len(spec["collections"]["real_files"]) == 1
     file_row = spec["collections"]["real_files"][0]
+    assert file_row["hash"] == result.real_files[0].hash_value.hex()
+    assert file_row["algo"] == "CRC32"
     assert file_row["matched"] is True
     assert file_row["matched_entries"] == str(PurePath("data/note.txt"))
     assert file_row["verified"] is True
