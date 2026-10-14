@@ -3,7 +3,14 @@
 import dataclasses
 import logging
 
-from ..archives import FileEntry, HashArchive, HashNameArchive, RarArchive, SfvArchive
+from ..archives import (
+    FileEntry,
+    HashArchive,
+    HashNameArchive,
+    RarArchive,
+    RarArchiveError,
+    SfvArchive,
+)
 from ..downloads import RealFile
 from ..passwords import PasswordStore
 from ..utils import PresentationSpec, ScalarValue
@@ -148,6 +155,14 @@ def process_target(
     )
 
     relevant_archives = correlate_archives(archives, real_files)
+    for archive in relevant_archives:
+        try:
+            archive.update_hash_values()
+        except RarArchiveError as exc:
+            logger.warning(
+                "Could not update hash values for %s: %s", archive.full_path, exc
+            )
+
     file_matches = correlate_files_to_entries(real_files, relevant_archives)
     logger.debug(
         "Correlated %d relevant archive(s) and %d file match(es) for target %s",

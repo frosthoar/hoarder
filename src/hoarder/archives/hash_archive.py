@@ -158,6 +158,15 @@ class HashArchive(abc.ABC):
     def __iter__(self) -> collections.abc.Iterator[FileEntry]:
         return iter(self.files)
 
+    def update_hash_values(self) -> None:
+        """Update the hash values of all files in the archive, if needed.
+
+        Default no-op: SFV and hash-name archives already have every
+        entry's hash populated from parsing. RAR archives override this,
+        since header CRCs can be absent or unusable (see
+        AbstractRarArchive.update_hash_values).
+        """
+
     def _printable_attributes(self):
         return [
             a
