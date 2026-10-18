@@ -1,5 +1,7 @@
 """RAR archive implementation backed by 7-zip."""
 
+import collections.abc
+import contextlib
 import logging
 import os
 import pathlib
@@ -156,7 +158,7 @@ class Rar7zArchive(AbstractRarArchive):
     def get_crc32_slow(
         self,
         entry_path: pathlib.PurePath | str,
-    ) -> bytes | None:
+    ) -> bytes:
         """Extract a file internally via 7z to compute its CRC32.
         Necessary for RAR5 archives where the header CRC may be absent."""
         command_line = [
@@ -204,11 +206,9 @@ class Rar7zArchive(AbstractRarArchive):
         )
 
         if not crc_match:
-            logger.error(
-                "Failed to get CRC for %(name)s: %(entry_path)s",
-                {"name": self.anchor.relative_path.name, "entry_path": entry_path},
+            raise RarArchiveError(
+                f"7z listed no CRC32 for {entry_path} in {self.full_path}"
             )
-            return None
         logger.debug(
             "Got CRC %(crc_match)s for %(name)s: %(entry_path)s",
             {
@@ -219,30 +219,15 @@ class Rar7zArchive(AbstractRarArchive):
         )
         return bytes.fromhex(crc_match)
 
+    @contextlib.contextmanager
     @override
-    def update_hash_values(self) -> None:
-        logger.debug("Updating hash values for %(name)s", {"name": self.full_path.name})
-        for entry in self:
-            if not entry.hash_value:
-                try:
-                    crc: bytes | None
-                    if entry.is_dir:
-                        crc = b"\x00" * 4
-                    else:
-                        crc = self.get_crc32_slow(entry.path)
-
-                    if crc is not None:
-                        entry.hash_value = crc
-                        entry.algo = Algo.CRC32
-                except RarPasswordError:
-                    # Wrong for one entry means wrong for all; abort rather
-                    # than silently leaving every remaining hash unset.
-                    raise
-                except RarArchiveError:
-                    logger.error(
-                        "Failed to get CRC32 for %(entry_path)s",
-                        {"entry_path": entry.path},
-                    )
+    def _hash_session(
+        self,
+    ) -> collections.abc.Iterator[collections.abc.Callable[[pathlib.PurePath], bytes]]:
+        # 7z has no persistent handle to keep open across entries - each
+        # get_crc32_slow call is already a self-contained subprocess, so
+        # there is nothing to set up or tear down here.
+        yield self.get_crc32_slow
 
     @override
     def read_file(self, path: pathlib.PurePath) -> bytes:

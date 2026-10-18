@@ -1,13 +1,15 @@
 """Abstract base class for RAR archive implementations."""
 
 import abc
+import collections.abc
+import contextlib
 import logging
 import pathlib
 import typing
 from abc import abstractmethod
 
 from ..utils.path_utils import AnchoredPath
-from .hash_archive import FileEntry, HashArchive
+from .hash_archive import Algo, FileEntry, HashArchive
 from .rar_path import PART_N_PAT, RarScheme, find_rar_files, locate_main_volume
 
 try:
@@ -200,9 +202,48 @@ class AbstractRarArchive(HashArchive, abc.ABC):
         """Check if *all* files already have hash values."""
         return all(file.hash_value for file in self if not file.is_dir)
 
-    @abstractmethod
+    @override
     def update_hash_values(self) -> None:
-        """Update the hash values of all files in the archive."""
+        """Update the hash values of all files in the archive.
+
+        Shared between backends: skips entries that already have a hash,
+        fills directories in with a trivial CRC, and delegates fetching a
+        real entry's CRC to whatever session the backend opens.
+        """
+        logger.debug("Updating hash values for %(name)s", {"name": self.full_path.name})
+        with self._hash_session() as get_crc32:
+            for entry in self:
+                if entry.hash_value:
+                    continue
+                if entry.is_dir:
+                    entry.hash_value = b"\x00" * 4
+                    entry.algo = Algo.CRC32
+                    continue
+                try:
+                    entry.hash_value = get_crc32(entry.path)
+                    entry.algo = Algo.CRC32
+                except RarPasswordError:
+                    # Wrong for one entry means wrong for all; abort rather
+                    # than silently leaving every remaining hash unset.
+                    raise
+                except RarArchiveError:
+                    logger.error(
+                        "Failed to get CRC32 for %(entry_path)s",
+                        {"entry_path": entry.path},
+                    )
+
+    @abstractmethod
+    def _hash_session(
+        self,
+    ) -> contextlib.AbstractContextManager[
+        collections.abc.Callable[[pathlib.PurePath], bytes]
+    ]:
+        """Open whatever backend-specific resource is needed to read entry
+        content, yielding a callable that returns one entry's CRC32.
+
+        The callable must either succeed or raise RarPasswordError/
+        RarArchiveError - no silent "couldn't get it" return value.
+        """
 
     @abstractmethod
     def read_file(self, path: pathlib.PurePath) -> bytes:

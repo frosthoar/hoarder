@@ -1,5 +1,7 @@
 """RAR archive implementation backed by the rarfile library."""
 
+import collections.abc
+import contextlib
 import logging
 import pathlib
 import typing
@@ -120,9 +122,11 @@ class RarfileRarArchive(AbstractRarArchive):
             requires_password,
         )
 
+    @contextlib.contextmanager
     @override
-    def update_hash_values(self) -> None:
-        logger.debug("Updating hash values for %s", self.full_path.name)
+    def _hash_session(
+        self,
+    ) -> collections.abc.Iterator[collections.abc.Callable[[pathlib.PurePath], bytes]]:
         pwd = self.password.encode() if self.password else None
         try:
             with rarfile.RarFile(str(self.full_path), errors="stop") as rf:
@@ -130,25 +134,21 @@ class RarfileRarArchive(AbstractRarArchive):
                     rf.setpassword(pwd)
                 if rf.needs_password() and not pwd:
                     raise RarPasswordError(f"{self.full_path} requires a password")
-                for entry in self:
-                    if entry.hash_value:
-                        continue
-                    if entry.is_dir:
-                        entry.hash_value = b"\x00" * 4
-                        entry.algo = Algo.CRC32
-                        continue
+
+                def get_crc32(path: pathlib.PurePath) -> bytes:
                     try:
-                        data = rf.read(str(pathlib.PurePosixPath(entry.path)))
-                        crc = zlib.crc32(data) & 0xFFFFFFFF
-                        entry.hash_value = crc.to_bytes(4, "big")
-                        entry.algo = Algo.CRC32
+                        data = rf.read(str(pathlib.PurePosixPath(path)))
                     except rarfile.Error as exc:
                         if _is_password_error(exc, pwd):
                             raise RarPasswordError(
                                 f"Wrong password for {self.full_path}"
                             ) from exc
-                        logger.error("Failed to get CRC32 for %s (%s)",
-                                     entry.path, exc)
+                        raise RarArchiveError(
+                            f"rarfile failed to read {path} from {self.full_path}"
+                        ) from exc
+                    return (zlib.crc32(data) & 0xFFFFFFFF).to_bytes(4, "big")
+
+                yield get_crc32
         except rarfile.Error as exc:
             if _is_password_error(exc, pwd):
                 raise RarPasswordError(f"Wrong password for {self.full_path}") from exc
