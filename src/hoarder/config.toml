@@ -1,3 +1,6 @@
 [executables]
 sevenzip = "/usr/bin/7z"
 
+[discovery]
+# .par2 will move to archive discovery once that's supported; ignored for now.
+ignored_extensions = [".nfo", ".par2"]

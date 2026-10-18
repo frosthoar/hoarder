@@ -9,7 +9,7 @@ from .presentation import (
     pformat,
     pprint,
 )
-from .shared import SEVENZIP, config
+from .shared import IGNORED_EXTENSIONS, SEVENZIP, config
 from .sql3_fk import Sqlite3FK
 
 __all__ = [
@@ -30,6 +30,7 @@ __all__ = [
     "AnchoredPath",
     "PathType",
     "determine_path_type",
+    "IGNORED_EXTENSIONS",
     "SEVENZIP",
     "config",
 ]

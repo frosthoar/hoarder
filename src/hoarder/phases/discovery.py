@@ -4,10 +4,8 @@ from pathlib import Path
 
 from ..archives import HashArchive
 from ..downloads import RealFile
+from ..utils import IGNORED_EXTENSIONS
 from ..utils.path_utils import AnchoredPath
-
-# Claude: .par2 will move to archive discovery once that's supported; ignored for now.
-IGNORED_EXTENSIONS = frozenset({".nfo", ".par2"})
 
 
 def _is_ignored(path: Path) -> bool:
