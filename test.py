@@ -10,10 +10,19 @@ s_plugin = SabnzbdPasswordPlugin({})
 p_store = s_plugin.extract_passwords()
 pprint(p_store)
 
-corr_path = pathlib.Path('/mnt/ds423plus/usenet')
-entry_path = pathlib.Path('Ironclad.2011.German.AC3.DL.1080p.BluRay.x265-FuN')
-a_path = AnchoredPath(corr_path, entry_path)
+def handle_download(name: str):
+    corr_path = pathlib.Path('/mnt/ds423plus/usenet')
+    entry_path = pathlib.Path(name)
+    a_path = AnchoredPath(corr_path, entry_path)
 
-scan_target = ScanTarget(a_path)
-corr = process_target(scan_target, p_store)
-pprint(corr)
+    scan_target = ScanTarget(a_path)
+    corr = process_target(scan_target, p_store)
+    pprint(corr)
+
+    scan_target = ScanTarget(a_path)
+    corr = process_target(scan_target, p_store)
+    pprint(corr)
+
+
+handle_download('Ironclad.2011.German.AC3.DL.1080p.BluRay.x265-FuN')
+handle_download('Foundation.S01E02.German.AC3.DL.1080p.WebHD.x265-FuN')
